@@ -4,5 +4,5 @@ server:
 server-dev:
     uv run fastapi dev server/server.py --reload --port 8000
 
-cli:
-    uv run cli/cli.py --help
+cli *args="":
+    uv run cli/cli.py {{args}}
