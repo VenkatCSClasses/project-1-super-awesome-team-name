@@ -1,5 +1,7 @@
-__pycache__
 .venv
 .env
 *.sqlite 
 *.log
+.vscode/
+.ruff_cache/
+__pycache__/
