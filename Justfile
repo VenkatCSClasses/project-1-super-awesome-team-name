@@ -6,3 +6,15 @@ server-dev:
 
 cli *args="":
     uv run cli/cli.py {{args}}
+
+lint:
+    ruff check . --fix
+
+create-migration name="":
+    uv run alembic revision --autogenerate -m "{{name}}"
+
+apply-migrations:
+    uv run alembic upgrade head
+
+create-env:
+    cp .env.example .env

@@ -5,3 +5,5 @@
 .vscode/
 .ruff_cache/
 __pycache__/
+server/__pycache__/
+cli/__pycache__/

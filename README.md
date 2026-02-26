@@ -2,6 +2,7 @@
 ```sh
 uv tool install ruff
 uv tool install rust-just
+uv tool update-shell
 ```
 
 ## Running the server
