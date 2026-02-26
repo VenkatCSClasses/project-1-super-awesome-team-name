@@ -1,6 +1,12 @@
 default:
     just --list
 
+install:
+    uv sync 
+    uv run alembic stamp head
+    uv run alembic upgrade head
+    cp .env.example .env
+
 server:
     uv run fastapi run server/server.py --port 8000
 
