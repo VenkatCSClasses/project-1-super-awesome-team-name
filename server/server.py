@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from database_helper import login_user, register_user
+from database_helper import login_user, register_user, get_user_by_id
 from fastapi import Depends, HTTPException, Header
 import jwt
 import os
@@ -76,5 +76,15 @@ async def protected_route(current_user: dict = Depends(verify_token)):
     }
 
 
+@app.get("/whoami")
+async def whoami(current_user: dict = Depends(verify_token)):
+    user = get_user_by_id(current_user["user_id"])
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {
+        "user_id": user.id,
+        "username": user.username
+    }
 
     

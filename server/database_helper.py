@@ -14,6 +14,11 @@ SECRET_KEY=os.getenv("SECRET_KEY", "placeholder_secret_key")
 ALGORITHM="HS256"
 
 
+def get_user_by_id(user_id: int):
+    with Session(engine) as session:
+        user = session.exec(select(User).where(User.id == user_id)).first()
+        return user
+
 def get_user_by_username(username: str):
     with Session(engine) as session:
         user = session.exec(select(User).where(User.username == username)).first()
