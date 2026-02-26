@@ -1,8 +1,8 @@
-"""inital
+"""changed name to username
 
-Revision ID: ccb3eee4786b
-Revises: 64db0791bdfc
-Create Date: 2026-02-25 18:47:20.025721
+Revision ID: d7a121c3b8bd
+Revises: a64819602a53
+Create Date: 2026-02-25 20:40:30.052185
 
 """
 from typing import Sequence, Union
@@ -10,8 +10,8 @@ from typing import Sequence, Union
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'ccb3eee4786b'
-down_revision: Union[str, Sequence[str], None] = '64db0791bdfc'
+revision: str = 'd7a121c3b8bd'
+down_revision: Union[str, Sequence[str], None] = 'a64819602a53'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

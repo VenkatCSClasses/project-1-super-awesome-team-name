@@ -7,7 +7,7 @@ from sqlalchemy import pool
 from alembic import context
 
 from sqlmodel import SQLModel
-from server.models import *
+from server.models import *  # noqa: F403
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -17,7 +17,7 @@ load_dotenv()
 # access to the values within the .ini file in use.
 config = context.config
 
-database_url = os.getenv("DATABASE_URL")
+database_url = os.getenv("DATABASE_URL", "sqlite:///./database.sqlite")
 if database_url:
     config.set_main_option("sqlalchemy.url", database_url)
 
