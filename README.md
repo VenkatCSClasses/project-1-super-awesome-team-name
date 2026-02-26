@@ -18,5 +18,5 @@ just server-dev
 
 ## Running the CLI
 ```sh
-just cli
+just cli [COMMAND]
 ```
