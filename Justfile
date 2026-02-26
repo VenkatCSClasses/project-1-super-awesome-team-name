@@ -30,3 +30,5 @@ apply-migrations:
 
 create-env:
     cp .env.example .env
+
+set windows-shell := ["C:\\Program Files\\Git\\bin\\sh.exe","-c"]
