@@ -2,7 +2,7 @@
 ```sh
 uv tool install ruff
 uv tool install rust-just
-uv tool update-shell
+uv tool update-shelluv
 uv sync
 ```
 
