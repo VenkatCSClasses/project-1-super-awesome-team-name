@@ -8,3 +8,4 @@ __pycache__/
 server/__pycache__/
 cli/__pycache__/
 /*/.DS_Store
+.DS_Store
