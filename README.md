@@ -20,7 +20,7 @@ The three use cases that are going to be implemented are:
 ```sh
 uv tool install ruff
 uv tool install rust-just
-uv tool update-shelluv
+uv tool update-shell
 uv sync
 ```
 
@@ -39,4 +39,11 @@ just server-dev
 just cli [COMMAND]
 ```
 
+<<<<<<< HEAD
 
+=======
+## Running tests
+```sh
+just test
+```
+>>>>>>> 559e9cb2d8e51543dca8c4a64eeeef80816587f2
