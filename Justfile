@@ -31,4 +31,7 @@ apply-migrations:
 create-env:
     cp .env.example .env
 
+test:
+    -uv run pytest server/tests
+
 set windows-shell := ["C:\\Program Files\\Git\\bin\\sh.exe","-c"]
