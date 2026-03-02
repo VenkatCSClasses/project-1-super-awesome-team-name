@@ -39,11 +39,7 @@ just server-dev
 just cli [COMMAND]
 ```
 
-<<<<<<< HEAD
-
-=======
 ## Running tests
 ```sh
 just test
 ```
->>>>>>> 559e9cb2d8e51543dca8c4a64eeeef80816587f2
