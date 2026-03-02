@@ -2,7 +2,7 @@
 ```sh
 uv tool install ruff
 uv tool install rust-just
-uv tool update-shelluv
+uv tool update-shell
 uv sync
 ```
 
@@ -19,4 +19,9 @@ just server-dev
 ## Running the CLI
 ```sh
 just cli [COMMAND]
+```
+
+## Running tests
+```sh
+just test
 ```
