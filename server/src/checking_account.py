@@ -74,7 +74,7 @@ class CheckingAccount:
         if self.is_frozen:
             raise AccountFrozenException(self.account_num)
         elif not self._is_amount_valid(amount):
-            raise AmountInvalidException(amount, self.balance)
+            raise AmountInvalidException(amount)
         
         self.balance += amount
         #TODO transaction logging
