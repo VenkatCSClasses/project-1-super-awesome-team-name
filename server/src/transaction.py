@@ -5,7 +5,8 @@ class Transaction:
     A class used to represent a single transaction.
 
     Attributes: 
-        transaction_id (int): ID of the transaction.
+        relative_transaction_id (int): ID of the transaction relative to the account.
+        absolute_transaction_id (int): ID of the transaction relative to the total bank transactions.
         account_num (int): Account number where the transaction occured.
         timestamp (datetime): When the transaction occured.
         amount (float): The change in account balance of the transaction.
@@ -15,12 +16,31 @@ class Transaction:
         Initialize the Transaction with the transaction id, account number, timestamp, and amount.
         
         Args:
-            transaction_id (int): ID of the transaction.
+            relative_transaction_id (int): Relative ID of the transaction.
+            absolute_transaction_id (int): Absolute ID of the transaction.
             account_num: Account number where the transaction occurred.
             amount (float): The change in account balance of the transaction.
         """
         pass
 
+    def get_relative_id(self) -> int:
+        """
+        Returns the relative ID of the transaction based on the account.
+
+        Returns:
+            int: The relative ID of the transaction.
+        """
+        pass
+
+    def get_absolute_id(self) -> int:
+        """
+        Returns the absolute ID of the transaction based on the entire bank.
+
+        Returns:
+            int: The absolute ID of the transaction.
+        """
+        pass
+    
     def get_time(self) -> datetime:
         """
         Returns when the transaction occurred.

@@ -93,12 +93,14 @@ class CheckingAccount:
         """
         pass
 
-    def get_transaction(self, transaction_num: int) -> Transaction:
+    def get_transaction(self, transaction_num: int, is_relative: bool = False) -> Transaction:
         """
         Retrieves a specific transaction by its number.
 
         Args:
             transaction_num (int): The transaction number to retrieve.
+            is_relative (bool, optional): Whether or not the transaction ID is relative (account) or absolute (bank).
+                Defaults to False.
 
         Raises:
             IndexError: If transaction_num is negative.
@@ -118,12 +120,14 @@ class CheckingAccount:
         """
         pass
 
-    def get_transaction_str(self, transaction_num: int) -> str:
+    def get_transaction_str(self, transaction_num: int, is_relative: bool = False) -> str:
         """
         Retrieves a specific transaction by its number as a human-readable string.
 
         Args:
             transaction_num (int): The transaction number to retrieve.
+            is_relative (bool, optional): Whether or not the transaction ID is relative (account) or absolute (bank).
+                Defaults to False.
 
         Raises:
             IndexError: If transaction_num is negative.
