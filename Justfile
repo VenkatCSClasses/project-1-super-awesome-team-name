@@ -4,6 +4,7 @@ default:
 install:
     uv sync 
     uv run alembic stamp head
+    uv run alembic revision --autogenerate
     uv run alembic upgrade head
     cp .env.example .env
 
