@@ -11,7 +11,6 @@ class SavingsAccount(CheckingAccount):
         transactions (list[Transaction]): The list of transactions associated with this account.
         curr_withdraw_total (float): Current withdraw total on the day.
         max_withdraw_total (float): Max withdraw total per day.
-
     """
 
     def __init__(self, account_num: int, balance: float = 0.0) -> None:
