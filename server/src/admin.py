@@ -1,4 +1,5 @@
-from .user import User
+from user import User
+from checking_account import CheckingAccount
 
 class Admin(User):
     def __init__(self, name, id, passwd):

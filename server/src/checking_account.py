@@ -44,7 +44,7 @@ class CheckingAccount:
         """
         pass
 
-    def transfer(self, amount: float, rec_account: 'Checking_Account') -> None:
+    def transfer(self, amount: float, rec_account: CheckingAccount) -> None:
         """
         Transfers a specified amount from this account to a receiving account.
 
@@ -101,6 +101,7 @@ class CheckingAccount:
             transaction_num (int): The transaction number to retrieve.
 
         Raises:
+            IndexError: If transaction_num is negative.
             KeyError: Transaction number not found in list of transactions.
 
         Returns:

@@ -1,4 +1,5 @@
-from server.src.checking_account import Checking_Account
+from server.src.checking_account import CheckingAccount
+from server.src.transaction import Transaction
 import pytest
 
 
@@ -8,7 +9,7 @@ class TestCheckingAccount:
         """
         Test that the initial balance of the checking account is set correctly.
         """
-        account = Checking_Account(1, balance=100.00)
+        account = CheckingAccount(1, balance=100.00)
         assert account.check_balance() == 100.00
 
 
@@ -16,7 +17,7 @@ class TestCheckingAccount:
         """
         Test that withdrawing from the checking account updates the balance correctly.
         """
-        account = Checking_Account(1, balance=100)
+        account = CheckingAccount(1, balance=100)
         account.withdraw(30)
         assert account.check_balance() == 70
         account.withdraw(20)
@@ -30,7 +31,7 @@ class TestCheckingAccount:
         """
         Test that depositing into the checking account updates the balance correctly.
         """
-        account = Checking_Account(1, balance=100)
+        account = CheckingAccount(1, balance=100)
         account.deposit(50)
         assert account.check_balance() == 150
         account.deposit(25) 
@@ -42,8 +43,8 @@ class TestCheckingAccount:
         """
         Test that transferring between two checking accounts updates both balances correctly.
         """
-        account1 = Checking_Account(1, balance=100)
-        account2 = Checking_Account(2, balance=50)
+        account1 = CheckingAccount(1, balance=100)
+        account2 = CheckingAccount(2, balance=50)
         account1.transfer(30, account2)
         assert account1.check_balance() == 70
         assert account2.check_balance() == 80
@@ -56,8 +57,8 @@ class TestCheckingAccount:
         """
         Test that a frozen account does not allow withdrawals or transfers.
         """
-        account1 = Checking_Account(1, balance=100)
-        account2 = Checking_Account(2, balance=50)
+        account1 = CheckingAccount(1, balance=100)
+        account2 = CheckingAccount(2, balance=50)
         account1.toggle_frozen()  # Freeze account1
         assert account1.is_frozen() == True
         with pytest.raises(Exception):
@@ -69,8 +70,8 @@ class TestCheckingAccount:
         """
         Test that an unfrozen account allows withdrawals and transfers.
         """
-        account1 = Checking_Account(1, balance=100)
-        account2 = Checking_Account(2, balance=50)
+        account1 = CheckingAccount(1, balance=100)
+        account2 = CheckingAccount(2, balance=50)
         account1.toggle_frozen()  # Freeze account1
         account1.toggle_frozen()  # Unfreeze account1
         assert account1.is_frozen() == False
@@ -84,7 +85,7 @@ class TestCheckingAccount:
         """
         Test that the account number is returned correctly.
         """
-        account = Checking_Account(12345)
+        account = CheckingAccount(12345)
         assert account.get_acct_num() == 12345
 
     def test_get_acct_num_invalid(self):
@@ -92,13 +93,13 @@ class TestCheckingAccount:
         Test that an invalid account number raises an exception.
         """
         with pytest.raises(Exception):
-            Checking_Account(-1)  # Should raise an exception for negative account number
+            CheckingAccount(-1)  # Should raise an exception for negative account number
     
     def test_get_transaction(self):
         """
         Test that retrieving a transaction by its number returns the correct transaction.
         """
-        account = Checking_Account(1, balance=100)
+        account = CheckingAccount(1, balance=100)
         account.deposit(50)  # Transaction 1
         account.withdraw(30)  # Transaction 2
         transaction = account.get_transaction(1)
@@ -112,7 +113,7 @@ class TestCheckingAccount:
         """
         Test that retrieving a transaction with an invalid number raises an exception.
         """
-        account = Checking_Account(1, balance=100)
+        account = CheckingAccount(1, balance=100)
         with pytest.raises(Exception):
             account.get_transaction(999)  # Should raise an exception for non-existent transaction number
 
@@ -120,7 +121,7 @@ class TestCheckingAccount:
         """
         Test that the transaction history is returned correctly.
         """
-        account = Checking_Account(1, balance=100)
+        account = CheckingAccount(1, balance=100)
         account.deposit(50)  # Transaction 1
         account.withdraw(30)  # Transaction 2
         history = account.get_all_transactions()
