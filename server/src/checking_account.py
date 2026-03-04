@@ -1,4 +1,6 @@
 from server.src.transaction import Transaction
+from server.src.exceptions.amount_invalid_exception import AmountInvalidException
+from server.src.exceptions.insufficient_funds_exception import InsufficientFundsException
 
 class CheckingAccount:
     """
@@ -20,8 +22,15 @@ class CheckingAccount:
             account_num (int): The account number of the checking account.
             balance (float, optional): The initial balance of the checking account.
                 Defaults to 0.0.
+
+        Raises:
+            AmountInvalidException: If the inputted balance is invalid.
         """
-        pass
+
+        self.account_num: int = account_num
+        self.balance: float = balance
+        self.is_frozen: bool = False
+        self.transactions: list[Transaction] = []
     
     def withdraw(self, amount: float) -> None:
         """
@@ -33,6 +42,7 @@ class CheckingAccount:
         Raises:
             AmountInvalidException: If the withdraw amount is non-positive or > 2 decimal places.
             InsufficientFundsException: If the withdraw amount exceeds the balance.
+            AccountFrozenException: If the account is frozen.
         """
         pass
 
@@ -45,6 +55,7 @@ class CheckingAccount:
 
         Raises:
             AmountInvalidException: If the deposit amount is non-positive or > 2 decimal places.
+            AccountFrozenException: If the account is frozen.
         """
         pass
 
@@ -59,6 +70,7 @@ class CheckingAccount:
         Raises:
             AmountInvalidException: If the transfer amount is non-positive or > 2 decimal places.
             InsufficientFundsException: If the withdraw amount exceeds the balance.
+            AccountFrozenException: If the account is frozen.
         """
         pass
 
@@ -149,6 +161,17 @@ class CheckingAccount:
 
         Returns:
             str: The human-readable string showing information about all transactions.
+        """
+        pass
+
+    @staticmethod
+    def _is_amount_valid(self, amount: float) -> bool:
+        """
+        Returns true if an amount is valid (non-negative and 2 or less decimal places), false if not.
+        Protected security to be used by subclass SavingsAccount.
+
+        Returns:
+            bool: True if valid, false if invalid.
         """
         pass
 

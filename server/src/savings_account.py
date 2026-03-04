@@ -37,6 +37,7 @@ class SavingsAccount(CheckingAccount):
             AmountInvalidException: If the withdraw amount is non-positive or > 2 decimal places.
             InsufficientFundsException: If withdraw amount exceeds balance.
             WithdrawMaxedException: If withdraw amount exceeds withdraw limit.
+            AccountFrozenException: If the account is frozen.
         """
 
     def transfer(self, amount: float, rec_account: CheckingAccount) -> None:
@@ -51,6 +52,7 @@ class SavingsAccount(CheckingAccount):
             AmountInvalidException: If the withdraw amount is non-positive or > 2 decimal places.
             InsufficientFundsException: If the withdraw amount exceeds the balance.
             WithdrawMaxedException: If withdraw amount exceeds withdraw limit.
+            AccountFrozenException: If the account is frozen.
         """
         pass
 

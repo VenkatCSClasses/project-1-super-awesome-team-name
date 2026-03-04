@@ -1,4 +1,4 @@
-class AccountFrozen(Exception):
+class AccountFrozenException(Exception):
     """
     Exception raised when an account has been frozen but a transaction was attempted.
     """
@@ -13,7 +13,3 @@ class AccountFrozen(Exception):
         self.account_number = account_number
 
         super().__init__(f"Cannot perform this transaction on the frozen account with account number of {self.account_number}.")
-            
-
-
-   

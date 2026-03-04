@@ -1,6 +1,9 @@
 from server.src.checking_account import CheckingAccount
-import pytest
+from server.src.exceptions.account_frozen_exception import AccountFrozenException
+from server.src.exceptions.amount_invalid_exception import AmountInvalidException
+from server.src.exceptions.insufficient_funds_exception import InsufficientFundsException
 
+import pytest
 
 class TestCheckingAccount:
 
@@ -8,7 +11,10 @@ class TestCheckingAccount:
         """Test that the initial balance of the checking account is set correctly."""
         account = CheckingAccount(1, balance=100.00)
         assert account.check_balance() == 100.00
-
+        with pytest.raises(AmountInvalidException):
+            account = CheckingAccount(1, -0.01)
+        with pytest.raises(AmountInvalidException):
+            account = CheckingAccount(1, 10.111)
 
     def test_withdraw(self):
         """Test that withdrawing from the checking account updates the balance correctly."""
@@ -19,7 +25,7 @@ class TestCheckingAccount:
         assert account.check_balance() == 50
         account.withdraw(50)
         assert account.check_balance() == 0
-        with pytest.raises(Exception):
+        with pytest.raises(InsufficientFundsException):
             account.withdraw(10)  # Should raise an exception for insufficient funds
 
     def test_deposit(self):
@@ -29,8 +35,8 @@ class TestCheckingAccount:
         assert account.check_balance() == 150
         account.deposit(25) 
         assert account.check_balance() == 175
-        pytest.raises(Exception, account.deposit, -10)  # Should raise an exception for negative deposit
-        pytest.raises(Exception, account.deposit, 0.000001)  # Should raise an exception for depositing more than 2 decimal places
+        pytest.raises(AmountInvalidException, account.deposit, -10)  # Should raise an exception for negative deposit
+        pytest.raises(AmountInvalidException, account.deposit, 0.000001)  # Should raise an exception for depositing more than 2 decimal places
     
     def test_transfer(self):
         """Test that transferring between two checking accounts updates both balances correctly."""
@@ -40,9 +46,9 @@ class TestCheckingAccount:
         assert account1.check_balance() == 70
         assert account2.check_balance() == 80
         
-        pytest.raises(Exception, account1.transfer, 100, account2)  # Should raise an exception for insufficient funds
-        pytest.raises(Exception, account1.transfer, -10, account2)  # Should raise an exception for negative transfer amount
-        pytest.raises(Exception, account1.transfer, 0.000001, account2)  # Should raise an exception for transferring more than 2 decimal places
+        pytest.raises(InsufficientFundsException, account1.transfer, 100, account2)  # Should raise an exception for insufficient funds
+        pytest.raises(AmountInvalidException, account1.transfer, -10, account2)  # Should raise an exception for negative transfer amount
+        pytest.raises(AmountInvalidException, account1.transfer, 0.000001, account2)  # Should raise an exception for transferring more than 2 decimal places
 
     def test_frozen_account(self):
         """Test that a frozen account does not allow withdrawals or transfers."""
@@ -50,9 +56,9 @@ class TestCheckingAccount:
         account2 = CheckingAccount(2, balance=50)
         account1.toggle_frozen()  # Freeze account1
         assert account1.is_frozen() == True
-        with pytest.raises(Exception):
+        with pytest.raises(AccountFrozenException):
             account1.withdraw(30)
-        with pytest.raises(Exception):
+        with pytest.raises(AccountFrozenException):
             account1.transfer(30, account2)
 
     def test_unfreeze_account(self):
@@ -72,11 +78,6 @@ class TestCheckingAccount:
         """Test that the account number is returned correctly."""
         account = CheckingAccount(12345)
         assert account.get_acct_num() == 12345
-
-    def test_get_acct_num_invalid(self):
-        """Test that an invalid account number raises an exception."""
-        with pytest.raises(Exception):
-            CheckingAccount(-1)
     
     def test_get_transaction(self):
         """Test that retrieving a transaction by its number returns the correct transaction."""
@@ -97,7 +98,7 @@ class TestCheckingAccount:
         Test that retrieving a transaction with an invalid number raises an exception.
         """
         account = CheckingAccount(1, balance=100)
-        with pytest.raises(Exception):
+        with pytest.raises(KeyError):
             account.get_transaction(999)  # Should raise an exception for non-existent transaction number
 
     def test_get_all_transactions(self):
@@ -127,6 +128,18 @@ class TestCheckingAccount:
         account.deposit(50)  # Transaction ID 0
         account.withdraw(30)  # Transaction ID 1
         #TODO after transaction string implemented
+
+    def test_is_amount_valid(self):
+        """Tests to see if an amount is valid (non-negative and 2 or less decimal places)"""
+        assert CheckingAccount._is_amount_valid(10) == True
+        assert CheckingAccount._is_amount_valid(10.01) == True
+        assert CheckingAccount._is_amount_valid(0.01) == True
+
+        assert CheckingAccount._is_amount_valid(0) == False
+        assert CheckingAccount._is_amount_valid(-10) == False
+        assert CheckingAccount._is_amount_valid(-10.001) == False
+        assert CheckingAccount._is_amount_valid(0.001) == False
+        assert CheckingAccount._is_amount_valid(0.11111111) == False
 
 
     
