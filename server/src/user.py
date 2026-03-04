@@ -42,7 +42,7 @@ class User(ABC):
     """
     @property
     @abstractmethod
-    def accType(self):
+    def acc_type(self):
         pass
 
 
@@ -50,5 +50,5 @@ class User(ABC):
     returns all details of the account (e.g. account info, bank accounts held, etc), depending on the type of account. 
     """
     @abstractmethod
-    def getAccDetails(self):
+    def get_acc_details(self):
         pass

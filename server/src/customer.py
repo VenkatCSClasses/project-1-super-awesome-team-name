@@ -21,15 +21,24 @@ class Customer(User):
         return self.passwd
     
     @property
-    def accType(self):
+    def acc_type(self):
         return self.accType
     
-    def getAccDetails(self):
+    """
+    returns name, id, and customer in visual string
+    """
+    def get_acc_details(self):
         return "Name:" , self.name , "\nID:" , self.id , "\naccType: Customer"
     
-    def getAccounts(self):
+    """
+    returns the customer's accounts
+    """
+    def get_accounts(self):
         return self.accounts
 
-    def getTotalTransactHist(self):
+    """
+    returns a formatted string containing all transactions in an accounts history
+    """
+    def get_total_transact_hist(self):
         pass
     #TODO finish method above
