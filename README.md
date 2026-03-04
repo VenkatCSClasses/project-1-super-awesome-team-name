@@ -6,13 +6,19 @@
 ## Class Diagram
 ![Project Class Diagram](/images/class_diagram.png)
 
-# Project Progress
+
+# Project Details
 
 ## Project 01-03
 The three use cases that are going to be implemented are:
 - Login/Logout
 - Deposit
 - Withdraw
+
+## Coding Agent Usage
+The areas where coding agents were utilized in this project were:
+- Generating docstrings from method/class stubs in the src folder
+
 
 # Setup & Running
 
