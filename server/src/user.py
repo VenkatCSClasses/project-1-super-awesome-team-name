@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from server.src.bank import Bank
 class User(ABC):
     """
     A basic abstract class for all types of users.
@@ -7,7 +8,8 @@ class User(ABC):
         id (int): account id number
         name (string): the name of the account
         password (string): account password
-        accType (string): type of user account (e.g. admin, customer, or teller)
+        accType (int): type of user account (e.g. admin(2), customer(0) , or teller(1))
+        bank (Bank): bank the user belongs to 
     """
 
     """

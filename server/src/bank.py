@@ -54,7 +54,7 @@ class Bank:
         """
         pass
     
-    def get_all_accounts(self, only_savings:bool = False) -> list[CheckingAccount]:
+    def get_all_accounts(self, only_savings: bool = False) -> list[CheckingAccount]:
         """
         Returns a list of accounts that belong to the bank.
 
@@ -64,6 +64,36 @@ class Bank:
         
         Returns:
             list[CheckingAccount]: A list of accounts that belong to the bank.
+        """
+        pass
+
+    def get_user(self, user_id: int) -> User:
+        """
+        Returns a specific user that belongs to the bank.
+
+        Args:
+            user_id: The ID of the user that is being returned.
+        
+        Raises:
+            KeyError: ID not found in the list of users.
+
+        Returns:
+            User: User that is being returned.
+        """
+        pass
+
+    def get_account(self, account_num: int) -> CheckingAccount:
+        """
+        Returns a specific account that belongs to the bank.
+
+        Args:
+            account_id: The number of the account that is being returned.
+        
+        Raises:
+            KeyError: Account number not found in the list of accounts.
+
+        Returns:
+            CheckingAccount: Account that is being returned.
         """
         pass
     
