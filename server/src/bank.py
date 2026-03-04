@@ -6,8 +6,8 @@ class Bank:
     A class used to represent a bank.
 
     Attributes:
-    users (list[User]): The users associated with the bank.
-    accounts (list[Checking_Account]): The accounts associated with the bank.
+        users (list[User]): The users associated with the bank.
+        accounts (list[Checking_Account]): The accounts associated with the bank.
     """
     
     def __init__(self) -> None:
