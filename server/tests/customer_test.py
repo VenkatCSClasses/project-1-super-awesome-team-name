@@ -1,5 +1,5 @@
 import pytest
-from .customer import Customer
+from server.src.customer import Customer
 
 class TestCustomer:
     def test_get_name(self):
