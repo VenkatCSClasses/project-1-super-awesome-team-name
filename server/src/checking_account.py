@@ -31,6 +31,7 @@ class CheckingAccount:
             amount (float): The amount to withdraw from the account.
 
         Raises:
+            AmountInvalidException: If the withdraw amount is non-positive or > 2 decimal places.
             InsufficientFundsException: If the withdraw amount exceeds the balance.
         """
         pass
@@ -41,6 +42,9 @@ class CheckingAccount:
 
         Args:
             amount (float): The amount to deposit into the account.
+
+        Raises:
+            AmountInvalidException: If the deposit amount is non-positive or > 2 decimal places.
         """
         pass
 
@@ -53,6 +57,7 @@ class CheckingAccount:
             rec_account (Checking_Account): The account receiving the transfer.
 
         Raises:
+            AmountInvalidException: If the transfer amount is non-positive or > 2 decimal places.
             InsufficientFundsException: If the withdraw amount exceeds the balance.
         """
         pass

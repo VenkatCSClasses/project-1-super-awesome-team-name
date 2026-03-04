@@ -34,6 +34,7 @@ class SavingsAccount(CheckingAccount):
             amount (float): The amount to withdraw from the account.
 
         Raises:
+            AmountInvalidException: If the withdraw amount is non-positive or > 2 decimal places.
             InsufficientFundsException: If withdraw amount exceeds balance.
             WithdrawMaxedException: If withdraw amount exceeds withdraw limit.
         """
@@ -47,6 +48,7 @@ class SavingsAccount(CheckingAccount):
             rec_account (CheckingAccount): The account receiving the transfer.
 
         Raises:
+            AmountInvalidException: If the withdraw amount is non-positive or > 2 decimal places.
             InsufficientFundsException: If the withdraw amount exceeds the balance.
             WithdrawMaxedException: If withdraw amount exceeds withdraw limit.
         """
