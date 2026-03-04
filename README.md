@@ -15,6 +15,12 @@ The three use cases that are going to be implemented are:
 - Deposit
 - Withdraw
 
+Work Distribution:
+Abe: CLI and Login Implementation
+Andrew: checking_account, savings_account, bank, and transaction classes 
+Dylan: user interface and customer class
+Cameron: Deposit + Withdraw tests
+
 ## Coding Agent Usage
 The areas where coding agents were utilized in this project were:
 - Generating docstrings from method/class stubs in the src folder
