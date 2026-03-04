@@ -11,4 +11,7 @@ class InsufficientFundsException(Exception):
             withdraw_amount (float): The amount attempted to be withdrawn.
             balance (float): The current balance of the account.
         """
-        pass
+        self.withdraw_amount = withdraw_amount
+        self.balance = balance
+
+        super().__init__(f"Attempted withdraw amount of {self.withdraw_amount} exceeds account balance of {self.balance}.")

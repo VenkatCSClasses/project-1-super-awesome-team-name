@@ -12,4 +12,8 @@ class WithdrawMaxedException(Exception):
             curr_withdraw_limit (float): The current withdrawal limit.
             withdraw_amount (float): The amount attempted to be withdrawn.
         """
-        pass
+        self.max_withdraw_limit = max_withdraw_limit
+        self.curr_withdraw_limit = curr_withdraw_limit
+        self.withdraw_amount = withdraw_amount
+
+        super().__init__(f"Attempted withdraw amount of {self.withdraw_amount}, along with the current daily withdraw amount of {self.curr_withdraw_limit} exceeds the max withdraw limit of {self.max_withdraw_limit}.")
