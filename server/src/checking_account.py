@@ -13,7 +13,8 @@ class Checking_Account:
 
     def __init__(self, account_num: int, balance: float = 0.0) -> None:
         """
-        Initialize the Checking_Account with the account number and optional balance.
+        Initialize the Checking_Account with the params account number and optional balance.
+        Also initalizes the attributes is_frozen to false and transactions to an empty list of transactions.
 
         Args:
             account_num (int): The account number of the checking account.
