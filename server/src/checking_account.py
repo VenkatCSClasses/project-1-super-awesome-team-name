@@ -29,6 +29,9 @@ class Checking_Account:
 
         Args:
             amount (float): The amount to withdraw from the account.
+
+        Raises:
+            InsufficientFundsException: If the withdraw amount exceeds the balance.
         """
         pass
 
@@ -48,6 +51,9 @@ class Checking_Account:
         Args:
             amount (float): The amount to transfer.
             rec_account (Checking_Account): The account receiving the transfer.
+
+        Raises:
+            InsufficientFundsException: If the withdraw amount exceeds the balance.
         """
         pass
 
