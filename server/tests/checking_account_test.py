@@ -1,5 +1,4 @@
 from server.src.checking_account import CheckingAccount
-from server.src.transaction import Transaction
 import pytest
 
 

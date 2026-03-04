@@ -1,4 +1,4 @@
-from transaction import Transaction
+from server.src.transaction import Transaction
 
 class CheckingAccount:
     """
