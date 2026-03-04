@@ -36,7 +36,7 @@ class Bank:
         """
         pass
     
-    def add_account(self, account: Checking_Account) -> None:
+    def add_account(self, account: CheckingAccount) -> None:
         """
         Adds a new account to the bank.
 
@@ -54,7 +54,7 @@ class Bank:
         """
         pass
     
-    def get_all_accounts(self, only_savings:bool = False) -> list[Checking_Account]:
+    def get_all_accounts(self, only_savings:bool = False) -> list[CheckingAccount]:
         """
         Returns a list of accounts that belong to the bank.
 
@@ -82,7 +82,7 @@ class Bank:
         """
         pass
 
-    def remove_account(self, id: int) -> Checking_Account:
+    def remove_account(self, id: int) -> CheckingAccount:
         """
         Removes an account from the bank.
 
@@ -97,7 +97,6 @@ class Bank:
         """
         pass
     
-
 
     
 
