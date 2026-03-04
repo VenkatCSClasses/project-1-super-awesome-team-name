@@ -54,7 +54,7 @@ class Bank:
         """
         pass
     
-    def get_all_accounts(self, only_savings=False) -> list[Checking_Account]:
+    def get_all_accounts(self, only_savings:bool = False) -> list[Checking_Account]:
         """
         Returns a list of accounts that belong to the bank.
 
