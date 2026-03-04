@@ -1,6 +1,6 @@
 from transaction import Transaction
 
-class Checking_Account:
+class CheckingAccount:
     """
     A class used to represent a checking account.
 
@@ -13,7 +13,7 @@ class Checking_Account:
 
     def __init__(self, account_num: int, balance: float = 0.0) -> None:
         """
-        Initialize the Checking_Account with the params account number and optional balance.
+        Initialize the CheckingAccount with the params account number and optional balance.
         Also initalizes the attributes is_frozen to false and transactions to an empty list of transactions.
 
         Args:
@@ -29,6 +29,9 @@ class Checking_Account:
 
         Args:
             amount (float): The amount to withdraw from the account.
+
+        Raises:
+            InsufficientFundsException: If the withdraw amount exceeds the balance.
         """
         pass
 
@@ -48,6 +51,9 @@ class Checking_Account:
         Args:
             amount (float): The amount to transfer.
             rec_account (Checking_Account): The account receiving the transfer.
+
+        Raises:
+            InsufficientFundsException: If the withdraw amount exceeds the balance.
         """
         pass
 

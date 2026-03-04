@@ -1,5 +1,5 @@
 from user import User
-from checking_account import Checking_Account
+from checking_account import CheckingAccount
 
 class Bank:
     """
@@ -7,7 +7,7 @@ class Bank:
 
     Attributes:
         users (list[User]): The users associated with the bank.
-        accounts (list[Checking_Account]): The accounts associated with the bank.
+        accounts (list[CheckingAccount]): The accounts associated with the bank.
     """
     
     def __init__(self) -> None:
@@ -41,7 +41,7 @@ class Bank:
         Adds a new account to the bank.
 
         Args:
-            account (Checking_Account): The account object that is being added to the bank.
+            account (CheckingAccount): The account object that is being added to the bank.
         """
         pass
 
@@ -63,7 +63,7 @@ class Bank:
                 Defaults to False.
         
         Returns:
-            list[Checking_Account]: A list of accounts that belong to the bank.
+            list[CheckingAccount]: A list of accounts that belong to the bank.
         """
         pass
     
@@ -93,7 +93,7 @@ class Bank:
             KeyError: ID not found in the list of accounts.
 
         Returns:
-            Checking_Account: The account removed from the bank.
+            CheckingAccount: The account removed from the bank.
         """
         pass
     
