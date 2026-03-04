@@ -29,6 +29,9 @@ class CheckingAccount:
             AmountInvalidException: If the inputted balance is invalid.
         """
 
+        if not self._is_amount_valid(balance):
+            raise AmountInvalidException(balance)
+        
         self.account_num: int = account_num
         self.balance: float = balance
         self.is_frozen: bool = False
@@ -101,7 +104,7 @@ class CheckingAccount:
         Returns:
             float: The current balance of the account.
         """
-        pass
+        return self.balance
 
     def get_acct_num(self) -> int:
         """

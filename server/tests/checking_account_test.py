@@ -7,7 +7,7 @@ import pytest
 
 class TestCheckingAccount:
 
-    def test_initial_balance(self):
+    def test_initial_balance_check_balance(self):
         """Test that the initial balance of the checking account is set correctly."""
         account = CheckingAccount(1, balance=100.00)
         assert account.check_balance() == 100.00
