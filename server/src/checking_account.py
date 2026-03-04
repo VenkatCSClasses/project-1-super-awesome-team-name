@@ -117,3 +117,29 @@ class CheckingAccount:
             list[Transaction]: A list of all transactions on the account.
         """
         pass
+
+    def get_transaction_str(self, transaction_num: int) -> str:
+        """
+        Retrieves a specific transaction by its number as a human-readable string.
+
+        Args:
+            transaction_num (int): The transaction number to retrieve.
+
+        Raises:
+            IndexError: If transaction_num is negative.
+            KeyError: Transaction number not found in list of transactions.
+
+        Returns:
+            str: The human-readable string showing information about the transaction.
+        """
+        pass
+
+    def get_all_transaction_str(self) -> str:
+        """
+        Retrieves all transactions as one human-readable string.
+
+        Returns:
+            str: The human-readable string showing information about all transactions.
+        """
+        pass
+
