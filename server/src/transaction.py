@@ -59,6 +59,15 @@ class Transaction:
         """
         pass
 
+    def get_account_num(self) -> int:
+        """
+        Returns the account number that the transaction belongs to.
+
+        Returns:
+            int: The amount number that the transaction belongs to.
+        """
+        pass
+
     def __str__(self) -> str:
         """
         toString method to turn the transaction into a human-readable string.

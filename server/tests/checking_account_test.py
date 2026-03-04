@@ -79,16 +79,18 @@ class TestCheckingAccount:
             CheckingAccount(-1)
     
     def test_get_transaction(self):
-        """
-        Test that retrieving a transaction by its number returns the correct transaction.
-        """
+        """Test that retrieving a transaction by its number returns the correct transaction."""
         account = CheckingAccount(1, balance=100)
         account.deposit(50)  # Transaction ID 0
         account.withdraw(30)  # Transaction ID 1
-        transaction = account.get_transaction(1)
+        transaction = account.get_transaction(0)
         assert transaction.amount == 50
-        transaction = account.get_transaction(2)
+        assert transaction.get_account_num == 1
+        assert transaction.get_relative_id == 0
+        transaction = account.get_transaction(1)
         assert transaction.amount == -30
+        assert transaction.get_account_num == 1
+        assert transaction.get_relative_id == 1
 
     def test_get_transaction_invalid(self):
         """
@@ -105,8 +107,26 @@ class TestCheckingAccount:
         account.withdraw(30)  # Transaction ID 1
         history = account.get_all_transactions()
         assert len(history) == 2
+        assert history[0].get_account_num == 1
+        assert history[1].get_account_num == 1
+        assert history[0].get_relative_id == 0
+        assert history[1].get_relative_id == 1
+        assert history[0].get_amount == 50
+        assert history[1].get_amount == -30
 
+    def test_get_transaction_str(self):
+        """Test that a transaction is returned correctly as a human readable string."""
+        account = CheckingAccount(1, balance=100)
+        account.deposit(50)  # Transaction ID 0
+        account.withdraw(30)  # Transaction ID 1
+        #TODO after transaction string implemented
 
+    def test_get_all_transaction_str(self):
+        """Test that the transaction history is returned correctly as a human-readable string."""
+        account = CheckingAccount(1, balance=100)
+        account.deposit(50)  # Transaction ID 0
+        account.withdraw(30)  # Transaction ID 1
+        #TODO after transaction string implemented
 
 
     
