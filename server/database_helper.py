@@ -34,10 +34,10 @@ def register_user(username: str, password: str) -> bool:
         session.commit()
     return True
 
-def generate_login_token(user_id: int) -> str:
+def generate_login_token(user_id: int, permission: int) -> str:
     minutes_valid = os.getenv("TOKEN_LIFETIME_MINUTES", "60")
     expire = datetime.utcnow() + timedelta(minutes=int(minutes_valid))
-    to_encode = {"user_id": user_id, "exp": expire}
+    to_encode = {"user_id": user_id, "exp": expire, "permission": permission}
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -48,7 +48,7 @@ def login_user(username: str, password: str):
 
     try:
         ph.verify(user.hashed_password, password)
-        return generate_login_token(user.id)
+        return generate_login_token(user.id, user.permission)
         
     except VerifyMismatchError:
         return False
