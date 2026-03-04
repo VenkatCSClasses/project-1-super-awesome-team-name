@@ -1,6 +1,6 @@
-from checking_account import Checking_Account
+from checking_account import CheckingAccount
 
-class Savings_Account(Checking_Account):
+class SavingsAccount(CheckingAccount):
     """
     A class used to represent a savings account.
 
@@ -16,7 +16,7 @@ class Savings_Account(Checking_Account):
 
     def __init__(self, account_num: int, balance: float = 0.0) -> None:
         """
-        Initialize the Savings_Account with the account number and optional balance.
+        Initialize the SavingsAccount with the account number and optional balance.
         Also initalizes the is_frozen to false, transactions to an empty list, curr_withdraw_total to 0.0, and max_withdraw_total to 10,000.
 
         Args:
@@ -39,13 +39,13 @@ class Savings_Account(Checking_Account):
             WithdrawMaxedException: If withdraw amount exceeds withdraw limit.
         """
 
-    def transfer(self, amount: float, rec_account: 'Checking_Account') -> None:
+    def transfer(self, amount: float, rec_account: CheckingAccount) -> None:
         """
         Transfers a specified amount from this account to a receiving account.
 
         Args:
             amount (float): The amount to transfer.
-            rec_account (Checking_Account): The account receiving the transfer.
+            rec_account (CheckingAccount): The account receiving the transfer.
 
         Raises:
             InsufficientFundsException: If the withdraw amount exceeds the balance.

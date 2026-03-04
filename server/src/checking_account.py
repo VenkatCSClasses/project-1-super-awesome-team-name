@@ -1,6 +1,6 @@
 from transaction import Transaction
 
-class Checking_Account:
+class CheckingAccount:
     """
     A class used to represent a checking account.
 
@@ -13,7 +13,7 @@ class Checking_Account:
 
     def __init__(self, account_num: int, balance: float = 0.0) -> None:
         """
-        Initialize the Checking_Account with the params account number and optional balance.
+        Initialize the CheckingAccount with the params account number and optional balance.
         Also initalizes the attributes is_frozen to false and transactions to an empty list of transactions.
 
         Args:
