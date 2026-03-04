@@ -2,6 +2,8 @@ from server.src.transaction import Transaction
 from server.src.exceptions.amount_invalid_exception import AmountInvalidException
 from server.src.exceptions.insufficient_funds_exception import InsufficientFundsException
 
+from decimal import Decimal
+
 class CheckingAccount:
     """
     A class used to represent a checking account.
@@ -165,7 +167,7 @@ class CheckingAccount:
         pass
 
     @staticmethod
-    def _is_amount_valid(self, amount: float) -> bool:
+    def _is_amount_valid(amount: float) -> bool:
         """
         Returns true if an amount is valid (non-negative and 2 or less decimal places), false if not.
         Protected security to be used by subclass SavingsAccount.
@@ -173,5 +175,11 @@ class CheckingAccount:
         Returns:
             bool: True if valid, false if invalid.
         """
-        pass
 
+        if amount <= 0:
+            return False
+        
+        # Using Decimal and isInteger to do integer rounding in python to determine 2+ decimal place
+        dec = Decimal(str(amount)) * 100
+
+        return dec == dec.to_integral()
