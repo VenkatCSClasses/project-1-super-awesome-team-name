@@ -1,6 +1,7 @@
 from server.src.transaction import Transaction
 from server.src.exceptions.amount_invalid_exception import AmountInvalidException
 from server.src.exceptions.insufficient_funds_exception import InsufficientFundsException
+from server.src.exceptions.account_frozen_exception import AccountFrozenException
 
 from decimal import Decimal
 
@@ -49,7 +50,15 @@ class CheckingAccount:
             InsufficientFundsException: If the withdraw amount exceeds the balance.
             AccountFrozenException: If the account is frozen.
         """
-        pass
+        if self.is_frozen:
+            raise AccountFrozenException(self.account_num)
+        elif not self._is_amount_valid(amount):
+            raise AmountInvalidException(amount)
+        elif amount > self.balance:
+            raise InsufficientFundsException(amount, self.balance)
+        
+        self.balance -= amount
+        #TODO transaction logging
 
     def deposit(self, amount: float) -> None:
         """
@@ -62,7 +71,13 @@ class CheckingAccount:
             AmountInvalidException: If the deposit amount is non-positive or > 2 decimal places.
             AccountFrozenException: If the account is frozen.
         """
-        pass
+        if self.is_frozen:
+            raise AccountFrozenException(self.account_num)
+        elif not self._is_amount_valid(amount):
+            raise AmountInvalidException(amount, self.balance)
+        
+        self.balance += amount
+        #TODO transaction logging
 
     def transfer(self, amount: float, rec_account: CheckingAccount) -> None:
         """
@@ -77,7 +92,8 @@ class CheckingAccount:
             InsufficientFundsException: If the withdraw amount exceeds the balance.
             AccountFrozenException: If the account is frozen.
         """
-        pass
+        self.withdraw(amount)    
+        rec_account.deposit(amount) 
 
     def is_frozen(self) -> bool:
         """
