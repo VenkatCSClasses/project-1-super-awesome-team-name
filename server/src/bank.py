@@ -23,9 +23,15 @@ class Bank:
         """
         pass
 
-    def compound_savings_interest(self) -> None:
+    def _compound_savings_interest(self) -> None:
         """Compounds interest across all savings accounts in the bank."""
         pass
+
+    def _reset_withdraw_limits(self) -> None:
+        """Resets withdraw limits across all savings accounts in the bank."""
+
+    def daily_changes(self) -> None:
+        """Runs the compound savings interest and resets withdraw limits."""
 
     def add_user(self, user: Customer) -> None:
         """
