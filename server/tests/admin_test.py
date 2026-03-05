@@ -1,6 +1,4 @@
 import pytest
-from server.src.teller import Teller
-from server.src.customer import Customer
 from server.src.admin import Admin
 from server.src.checking_account import CheckingAccount
 from server.src.exceptions.account_frozen_exception import AccountFrozenException

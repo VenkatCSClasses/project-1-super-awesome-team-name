@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from database_helper import login_user, register_user, get_user_by_id, ensure_root_user
-from fastapi import Depends, HTTPException, Header
+from fastapi import Depends, HTTPException
 from server_utils import verify_token
 import os
 from dotenv import load_dotenv

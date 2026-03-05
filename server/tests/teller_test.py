@@ -1,4 +1,3 @@
-import pytest
 from server.src.teller import Teller
 from server.src.customer import Customer
 

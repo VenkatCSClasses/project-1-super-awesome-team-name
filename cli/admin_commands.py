@@ -1,4 +1,4 @@
-from typer import Typer, Option, confirm, Argument, prompt
+from typer import Typer, confirm, Argument, prompt
 from enum import Enum
 from typing import Annotated
 import requests

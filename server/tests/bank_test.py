@@ -1,4 +1,3 @@
-import pytest
 
 class TestBank:
     def test_hello(self):
