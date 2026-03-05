@@ -1,36 +1,15 @@
-from .user import User
-from .customer import Customer
-from .checking_account import CheckingAccount
+from server.src.customer import Customer
+from server.src.checking_account import CheckingAccount
 
 
-class Teller(User):
-    def __init__(self, name, id, passwd):
-        self.name = name
-        self.id = id
-        self.passwd = passwd
-        self.accType = 1
-
-    @property
-    def name(self):
-        return self.name
-    
-    @property
-    def id(self):
-        return self.id
-
-    @property  
-    def password(self):
-        return self.passwd
-    
-    @property
-    def acc_type(self):
-        return self.accType
+class Teller(Customer):
     
     """
     returns name, id, and customer in visual string
     """
     def get_acc_details(self):
         return "Name:" , self.name , "\nID:" , self.id , "\naccType: Teller"
+
 
     """
     adds a checking or savings account to a given customer's account list
@@ -41,10 +20,10 @@ class Teller(User):
     """
     def create_account(self, owner: Customer, isChecking : bool):
         if isChecking:
-            #TODO owner.getAccounts().append(new CheckingAccount())
+            #TODO owner.get_accounts().append(new CheckingAccount())
             pass
         else:
-            #TODO owner.getAccounts().append(new SavingsAccount())
+            #TODO owner.get_accounts().append(new SavingsAccount())
             pass
 
     """
@@ -55,7 +34,12 @@ class Teller(User):
     acc - the account to remove
     """
     def close_account(self, owner : Customer, acc : CheckingAccount):
+        pass
+        """
         for account in owner.getAccounts():
             if acc.get_acct_num() == account.get_acct_num():
-                owner.accounts.remove(account)
+                owner.get_accounts.remove(account)
                 break
+
+        """
+        
