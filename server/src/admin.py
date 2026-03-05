@@ -1,5 +1,5 @@
 from server.src.teller import Teller
-from checking_account import CheckingAccount
+from server.src.checking_account import CheckingAccount
 
 class Admin(Teller):
     def __init__(self, name, id, passwd):

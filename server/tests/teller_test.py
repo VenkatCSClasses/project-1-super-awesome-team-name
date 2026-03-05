@@ -21,10 +21,6 @@ class TestTeller:
 
     def test_get_user_acc_details(self):
         test = Teller("john", 5, "password")
-        assert test.get_user_acc_details() == ('Name:', 'john' , '\nID:', 5 , '\naccType: Customer')
-
-    def test_get_user_acc_details(self):
-        test = Teller("john", 5, "password")
         assert test.get_user_acc_details() == ('Name:', 'john' , '\nID:', 5 , '\naccType: Teller')
 
     def test_create_close_account(self):
