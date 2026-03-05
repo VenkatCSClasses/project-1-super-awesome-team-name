@@ -1,4 +1,4 @@
-from server.src.user import User
+from server.src.customer import Customer
 from checking_account import CheckingAccount
 
 class Bank:
@@ -27,7 +27,7 @@ class Bank:
         """Compounds interest across all savings accounts in the bank."""
         pass
 
-    def add_user(self, user: User) -> None:
+    def add_user(self, user: Customer) -> None:
         """
         Adds a new user to the bank.
 
@@ -45,7 +45,7 @@ class Bank:
         """
         pass
 
-    def get_all_users(self) -> list[User]:
+    def get_all_users(self) -> list[Customer]:
         """
         Returns all the users that belong to the bank.
 
@@ -67,7 +67,7 @@ class Bank:
         """
         pass
 
-    def get_user(self, user_id: int) -> User:
+    def get_user(self, user_id: int) -> Customer:
         """
         Returns a specific user that belongs to the bank.
 
@@ -97,7 +97,7 @@ class Bank:
         """
         pass
     
-    def remove_user(self, id: int) -> User:
+    def remove_user(self, id: int) -> Customer:
         """
         Removes a user from the bank.
 
