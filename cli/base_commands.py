@@ -12,17 +12,18 @@ from teller_commands import teller
 load_dotenv()
 server_base_url = os.getenv("SERVER_BASE_URL")
 
-app = Typer(no_args_is_help=True)
-app.add_typer(admin, name="admin", help="Admin commands (requires admin permissions)")
-app.add_typer(teller, name="teller", help="Teller commands (requires teller or admin permissions)")
 
-permissions = -1
+permissions = get_permissions()
+
+app = Typer(no_args_is_help=True)
+app.add_typer(admin, name="admin", help="Admin commands (requires admin permissions)", hidden=permissions < 2)
+app.add_typer(teller, name="teller", help="Teller commands (requires teller or admin permissions)", hidden=permissions < 1)
+
+
 
 @app.callback()
 def main():
-    global permissions
-    permissions = get_permissions()
-    print(permissions)
+    pass
 
 @app.command()
 def register():
@@ -69,7 +70,7 @@ def logout():
     print("[green]Logged out successfully![/green]")
 
 
-@app.command()
+@app.command(hidden=permissions < 0)
 def whoami():
     """
     Get the username of the currently logged-in user
@@ -91,7 +92,7 @@ def whoami():
         print("Failed to retrieve user info with status code:", response.status_code)
 
 
-@app.command()
+@app.command(hidden=permissions < 0)
 def list_accounts():
     """
     List all accounts for the logged-in user
@@ -117,7 +118,7 @@ def list_accounts():
     print(f"Total balance: ${sum(account['balance'] for account in response['accounts']):.2f}")
 
 
-@app.command()
+@app.command(hidden=permissions < 0)
 def deposit(account_id: Annotated[int, Argument(help="Account ID to deposit into")], 
             amount: Annotated[float, Argument(help="Amount of money to deposit")]
 ):
@@ -134,7 +135,7 @@ def deposit(account_id: Annotated[int, Argument(help="Account ID to deposit into
     }
 
 
-@app.command()
+@app.command(hidden=permissions < 0)
 def withdraw(account_id: Annotated[int, Argument(help="Account ID to withdraw from")], 
             amount: Annotated[float, Argument(help="Amount of money to withdraw")]
 ):
@@ -151,7 +152,7 @@ def withdraw(account_id: Annotated[int, Argument(help="Account ID to withdraw fr
     }
 
 
-@app.command()
+@app.command(hidden=permissions < 0)
 def transfer(amount: Annotated[float, Argument(help="Amount of money to transfer")], 
              account: Annotated[int, Argument(help="Account ID to transfer from")] = -1, 
              to: Annotated[int, Argument(help="Account ID to transfer to")] = -1
