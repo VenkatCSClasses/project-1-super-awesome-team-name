@@ -19,8 +19,8 @@ class Teller(Customer):
 
 
     """
-    adds a checking or savings account to a given customer's account list
-
+    adds a checking or savings account to a given customer's account list and returns the account
+    created
     PARAMS:
     owner - the customer to add the acc to
     isChecking - determines what type of account to add
@@ -32,6 +32,7 @@ class Teller(Customer):
         else:
             #TODO owner.get_accounts().append(new SavingsAccount())
             pass
+        #return new acc
 
     """
     removes a checking or savings account from a given customer's account list
