@@ -55,7 +55,7 @@ class TestCheckingAccount:
         account1 = CheckingAccount(1, balance=100)
         account2 = CheckingAccount(2, balance=50)
         account1.toggle_frozen()  # Freeze account1
-        assert account1.is_frozen() == True
+        assert account1.is_frozen()
         with pytest.raises(AccountFrozenException):
             account1.withdraw(30)
         with pytest.raises(AccountFrozenException):
@@ -67,7 +67,7 @@ class TestCheckingAccount:
         account2 = CheckingAccount(2, balance=50)
         account1.toggle_frozen()  # Freeze account1
         account1.toggle_frozen()  # Unfreeze account1
-        assert account1.is_frozen() == False
+        assert not account1.is_frozen()
         account1.withdraw(30)
         assert account1.check_balance() == 70
         account1.transfer(30, account2)
@@ -131,15 +131,15 @@ class TestCheckingAccount:
 
     def test_is_amount_valid(self):
         """Tests to see if an amount is valid (non-negative and 2 or less decimal places)"""
-        assert CheckingAccount._is_amount_valid(10) == True
-        assert CheckingAccount._is_amount_valid(10.01) == True
-        assert CheckingAccount._is_amount_valid(0.01) == True
-
-        assert CheckingAccount._is_amount_valid(0) == False
-        assert CheckingAccount._is_amount_valid(-10) == False
-        assert CheckingAccount._is_amount_valid(-10.001) == False
-        assert CheckingAccount._is_amount_valid(0.001) == False
-        assert CheckingAccount._is_amount_valid(0.11111111) == False
+        assert CheckingAccount._is_amount_valid(10) 
+        assert CheckingAccount._is_amount_valid(10.01)
+        assert CheckingAccount._is_amount_valid(0.01)
+    
+        assert not CheckingAccount._is_amount_valid(0) 
+        assert not CheckingAccount._is_amount_valid(-10) 
+        assert not CheckingAccount._is_amount_valid(-10.001)
+        assert not CheckingAccount._is_amount_valid(0.001) 
+        assert not CheckingAccount._is_amount_valid(0.11111111) 
 
 
     
