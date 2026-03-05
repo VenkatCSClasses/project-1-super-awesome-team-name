@@ -3,9 +3,16 @@ from server.src.checking_account import CheckingAccount
 
 
 class Teller(Customer):
-    
+    def __init__(self, name, id, passwd):
+        self.name = name
+        self.id = id
+        self.passwd = passwd
+        self.accType = 1
+        self.accounts = []
+
+
     """
-    returns name, id, and customer in visual string
+    returns name, id, and teller in visual string
     """
     def get_acc_details(self):
         return "Name:" , self.name , "\nID:" , self.id , "\naccType: Teller"
