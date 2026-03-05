@@ -55,3 +55,17 @@ def login_user(username: str, password: str):
 
     return None
 
+
+def ensure_root_user():
+    """Ensure a root user exists with username 'root', password 'root', permission=2."""
+    root = get_user_by_username("root")
+    if root is not None:
+        return False
+
+    hashed_password = ph.hash("root")
+    new_user = User(username="root", hashed_password=hashed_password, permission=2)
+    with Session(engine) as session:
+        session.add(new_user)
+        session.commit()
+    return True
+

@@ -2,7 +2,7 @@ from typer import Typer, Argument
 import requests
 from dotenv import load_dotenv
 import os
-from cli_utils import handle_authorization
+from token_utils import handle_authorization
 load_dotenv()
 server_base_url = os.getenv("SERVER_BASE_URL")
 

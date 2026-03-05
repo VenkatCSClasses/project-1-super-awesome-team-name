@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from database_helper import login_user, register_user, get_user_by_id
+from database_helper import login_user, register_user, get_user_by_id, ensure_root_user
 from fastapi import Depends, HTTPException, Header
 import jwt
 import os
@@ -10,6 +10,16 @@ SECRET_KEY = os.getenv("SECRET_KEY", "placeholder_secret_key")
 ALGORITHM = "HS256"
 
 app = FastAPI()
+
+
+@app.on_event("startup")
+def _ensure_root():
+    # Ensure the root account exists when the server starts
+    try:
+        ensure_root_user()
+    except Exception:
+        # avoid startup failure if DB not ready; keep silent
+        pass
 
 @app.get("/")
 async def root():

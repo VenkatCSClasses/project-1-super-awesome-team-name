@@ -4,7 +4,7 @@ from typing import Annotated
 import requests
 from dotenv import load_dotenv
 import os
-from cli_utils import handle_authorization
+from token_utils import handle_authorization
 load_dotenv()
 server_base_url = os.getenv("SERVER_BASE_URL")
 
@@ -18,8 +18,8 @@ class AccountType(str, Enum):
 
 @admin.command()
 def create_user():
-    token = handle_authorization()
-    if not token:
+    headers, permission = handle_authorization()
+    if not headers:
         return
     """Create a new user (customer, teller, or admin)"""
     username =  prompt("Enter a username")
@@ -54,9 +54,9 @@ def create_user():
 
 
 @admin.command()
-def delete_user(username: Annotated[str, help="Username of the user to delete"]):
-    token = handle_authorization()
-    if not token:
+def delete_user(username: Annotated[str, Argument(help="Username of the user to delete")]):
+    headers, permission = handle_authorization()
+    if not headers:
         return
     """Delete an existing user by username"""
     pass
@@ -74,8 +74,8 @@ def delete_user(username: Annotated[str, help="Username of the user to delete"])
 
 @admin.command()
 def get_total_balance():
-    token = handle_authorization()
-    if not token:
+    headers, permission = handle_authorization()
+    if not headers:
         return
     """Get the total balance across all accounts in the system"""
     pass

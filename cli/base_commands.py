@@ -7,8 +7,8 @@ from rich.table import Table
 from rich.panel import Panel
 from dotenv import load_dotenv
 from admin_commands import admin
-from token_utils import save_token, load_token, delete_token
-from cli_utils import handle_authorization
+from token_utils import save_token, load_token, delete_token, handle_authorization, get_permissions
+from teller_commands import teller
 load_dotenv()
 server_base_url = os.getenv("SERVER_BASE_URL")
 
@@ -16,10 +16,13 @@ app = Typer(no_args_is_help=True)
 app.add_typer(admin, name="admin", help="Admin commands (requires admin permissions)")
 app.add_typer(teller, name="teller", help="Teller commands (requires teller or admin permissions)")
 
+permissions = -1
 
 @app.callback()
 def main():
-    pass
+    global permissions
+    permissions = get_permissions()
+    print(permissions)
 
 @app.command()
 def register():
@@ -71,7 +74,7 @@ def whoami():
     """
     Get the username of the currently logged-in user
     """
-    headers = handle_authorization()
+    headers, permission = handle_authorization()
     if not headers:
         return
     response = requests.get(f"{server_base_url}/whoami", headers=headers)
@@ -93,7 +96,7 @@ def list_accounts():
     """
     List all accounts for the logged-in user
     """
-    headers = handle_authorization()
+    headers, permission = handle_authorization()
     if not headers:
         return
 
@@ -119,7 +122,7 @@ def deposit(account_id: Annotated[int, Argument(help="Account ID to deposit into
             amount: Annotated[float, Argument(help="Amount of money to deposit")]
 ):
     """Deposit money into an account"""
-    headers = handle_authorization()
+    headers, permission = handle_authorization()
     if not headers:
         return
 
@@ -136,7 +139,7 @@ def withdraw(account_id: Annotated[int, Argument(help="Account ID to withdraw fr
             amount: Annotated[float, Argument(help="Amount of money to withdraw")]
 ):
     """Withdraw money from an account"""
-    headers = handle_authorization()
+    headers, permission = handle_authorization()
     if not headers:
         return
 
@@ -159,7 +162,7 @@ def transfer(amount: Annotated[float, Argument(help="Amount of money to transfer
     [bold cyan]Example:[/bold cyan] 
     [magenta]$[/magenta] transfer 100 --account 1 --to 2
     """
-    headers = handle_authorization()
+    headers, permission = handle_authorization()
     if not headers:
         return
 
