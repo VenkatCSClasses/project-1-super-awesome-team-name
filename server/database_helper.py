@@ -4,9 +4,8 @@ import jwt
 from dotenv import load_dotenv
 from argon2.exceptions import VerifyMismatchError
 from argon2 import PasswordHasher
-from sqlmodel import Session, select
 from models import User
-from database import engine
+from database import read_db, write_db
 
 load_dotenv()
 ph = PasswordHasher()
@@ -15,23 +14,34 @@ ALGORITHM="HS256"
 
 
 def get_user_by_id(user_id: int):
-    with Session(engine) as session:
-        user = session.exec(select(User).where(User.id == user_id)).first()
-        return user
+    data = read_db()
+    for record in data["users"]:
+        if record["id"] == user_id:
+            return User(**record)
+    return None
 
 def get_user_by_username(username: str):
-    with Session(engine) as session:
-        user = session.exec(select(User).where(User.username == username)).first()
-        return user
+    data = read_db()
+    for record in data["users"]:
+        if record["username"] == username:
+            return User(**record)
+    return None
 
 def register_user(username: str, password: str) -> bool:
     if get_user_by_username(username) is not None:
         return False
     hashed_password = ph.hash(password)
-    new_user = User(username=username, hashed_password=hashed_password)
-    with Session(engine) as session:
-        session.add(new_user)
-        session.commit()
+    data = read_db()
+    next_id = int(data["counters"]["users"]) + 1
+    new_user = {
+        "id": next_id,
+        "username": username,
+        "hashed_password": hashed_password,
+        "permission": 0,
+    }
+    data["users"].append(new_user)
+    data["counters"]["users"] = next_id
+    write_db(data)
     return True
 
 def generate_login_token(user_id: int, permission: int) -> str:
@@ -63,9 +73,15 @@ def ensure_root_user():
         return False
 
     hashed_password = ph.hash("root")
-    new_user = User(username="root", hashed_password=hashed_password, permission=2)
-    with Session(engine) as session:
-        session.add(new_user)
-        session.commit()
+    data = read_db()
+    next_id = int(data["counters"]["users"]) + 1
+    new_user = {
+        "id": next_id,
+        "username": "root",
+        "hashed_password": hashed_password,
+        "permission": 2,
+    }
+    data["users"].append(new_user)
+    data["counters"]["users"] = next_id
+    write_db(data)
     return True
-

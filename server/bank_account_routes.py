@@ -1,7 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
 from server_utils import verify_token
 from dotenv import load_dotenv
-import os
 load_dotenv()
 
 bank = FastAPI()
@@ -94,3 +93,43 @@ async def account_info(account_id: int, current_user: dict = Depends(verify_toke
     
     # Logic to view account information would go here
     return {"message": f"Information for account {account_id} displayed successfully!"}
+
+
+@bank.get("/get-suspicious-accounts")
+async def get_suspicious_accounts(current_user: dict = Depends(verify_token)):
+    # Only allow users with permission level 2 (admin) to view suspicious accounts
+    if current_user.get("permission", -1) < 2:
+        raise HTTPException(status_code=403, detail="Must be an admin to view suspicious accounts")
+
+    # Logic to get suspicious accounts would go here
+    return {"message": "List of suspicious accounts displayed successfully!"}
+
+
+@bank.get("/toggle-freeze/{account_id}")
+async def toggle_freeze(account_id: int, current_user: dict = Depends(verify_token)):
+    # Only allow users with permission level 2 (admin) or higher to freeze/unfreeze accounts
+    if current_user.get("permission", -1) < 2:
+        raise HTTPException(status_code=403, detail="Must be an admin or higher to freeze/unfreeze accounts")
+    
+    # Logic to toggle freeze status of a bank account would go here
+    return {"message": f"Freeze status for account {account_id} toggled successfully!"}
+
+
+@bank.get("/view-frozen-accounts")
+async def view_frozen_accounts(current_user: dict = Depends(verify_token)):
+    # Only allow users with permission level 2 (admin) or higher to view frozen accounts
+    if current_user.get("permission", -1) < 2:
+        raise HTTPException(status_code=403, detail="Must be an admin or higher to view frozen accounts")
+    
+    # Logic to view frozen accounts would go here
+    return {"message": "List of frozen accounts displayed successfully!"}
+
+
+@bank.get("/isfrozen/{account_id}")
+async def is_frozen(account_id: int, current_user: dict = Depends(verify_token)):
+    # Only allow users with permission level 2 (admin) or higher to check freeze status
+    if current_user.get("permission", -1) < 0:
+        raise HTTPException(status_code=403, detail="Must be an loggeded in to check if an account is frozen")
+
+    # Logic to check if an account is frozen would go here
+    return {"message": f"Check completed for account {account_id}!"}

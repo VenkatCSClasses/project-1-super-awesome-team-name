@@ -47,18 +47,6 @@ async def login(form_data: dict):
         "login_success": True,
         "token": token
     }
-
-
-
-        
-    except ValueError:
-        raise HTTPException(status_code=401, detail="Invalid authorization header format")
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-
 @app.get("/whoami")
 async def whoami(current_user: dict = Depends(verify_token)):
     user = get_user_by_id(current_user["user_id"])
