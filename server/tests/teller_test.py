@@ -1,3 +1,6 @@
+import sys
+sys.path.append('./server/src')
+
 from server.src.teller import Teller
 from server.src.customer import Customer
 

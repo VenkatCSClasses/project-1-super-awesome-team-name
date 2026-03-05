@@ -1,5 +1,8 @@
-from server.src.customer import Customer
-from server.src.checking_account import CheckingAccount
+import sys
+sys.path.append('./server/src')
+
+from customer import Customer
+from checking_account import CheckingAccount
 
 
 class Teller(Customer):

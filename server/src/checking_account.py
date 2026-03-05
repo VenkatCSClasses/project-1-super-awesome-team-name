@@ -1,7 +1,11 @@
-from server.src.transaction import Transaction
-from server.src.exceptions.amount_invalid_exception import AmountInvalidException
-from server.src.exceptions.insufficient_funds_exception import InsufficientFundsException
-from server.src.exceptions.account_frozen_exception import AccountFrozenException
+import sys
+sys.path.append('./server/src')
+
+from transaction import Transaction
+from exceptions.amount_invalid_exception import AmountInvalidException
+from exceptions.insufficient_funds_exception import InsufficientFundsException
+from exceptions.account_frozen_exception import AccountFrozenException
+from checking_account import CheckingAccount
 
 from decimal import Decimal
 

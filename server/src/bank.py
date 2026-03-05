@@ -1,4 +1,7 @@
-from server.src.customer import Customer
+import sys
+sys.path.append('./server/src')
+
+from customer import Customer
 from checking_account import CheckingAccount
 
 class Bank:

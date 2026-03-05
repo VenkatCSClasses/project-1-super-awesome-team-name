@@ -1,7 +1,10 @@
-from server.src.checking_account import CheckingAccount
-from server.src.exceptions.account_frozen_exception import AccountFrozenException
-from server.src.exceptions.amount_invalid_exception import AmountInvalidException
-from server.src.exceptions.insufficient_funds_exception import InsufficientFundsException
+import sys
+sys.path.append('./server/src')
+
+from checking_account import CheckingAccount
+from exceptions.account_frozen_exception import AccountFrozenException
+from exceptions.amount_invalid_exception import AmountInvalidException
+from exceptions.insufficient_funds_exception import InsufficientFundsException
 
 import pytest
 

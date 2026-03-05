@@ -1,5 +1,8 @@
-from server.src.teller import Teller
-from server.src.checking_account import CheckingAccount
+import sys
+sys.path.append('./server/src')
+
+from teller import Teller
+from checking_account import CheckingAccount
 
 class Admin(Teller):
     def __init__(self, name, id, passwd):
