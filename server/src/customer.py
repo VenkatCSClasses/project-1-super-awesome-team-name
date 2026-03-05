@@ -40,7 +40,7 @@ class Customer():
     """
     returns name, id, and customer in visual string
     """
-    def get_acc_details(self):
+    def get_user_acc_details(self):
         return "Name:" , self.name , "\nID:" , self.id , "\naccType: Customer"
 
     """

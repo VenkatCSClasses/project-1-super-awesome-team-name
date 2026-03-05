@@ -19,9 +19,9 @@ class TestCustomer:
         test = Customer("john", 5, "password")
         assert test.get_accType() == 0
 
-    def test_get_acc_details(self):
+    def test_get_user_acc_details(self):
         test = Customer("john", 5, "password")
-        assert test.get_acc_details() == ('Name:', 'john' , '\nID:', 5 , '\naccType: Customer')
+        assert test.get_user_acc_details() == ('Name:', 'john' , '\nID:', 5 , '\naccType: Customer')
 
     def test_get_total_transact_hist(self):
         test = Customer("john", 5, "password")
