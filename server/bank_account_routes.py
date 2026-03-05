@@ -84,3 +84,13 @@ async def close_bank_account(account_id: int, current_user: dict = Depends(verif
     
     # Logic to close a bank account would go here
     return {"message": f"Bank account {account_id} closed successfully!"}
+
+
+@bank.get("/account_info/{account_id}")
+async def account_info(account_id: int, current_user: dict = Depends(verify_token)):
+    # Only allow users with permission level 0 (customer) or higher to view account info
+    if current_user.get("permission", -1) < 0:
+        raise HTTPException(status_code=403, detail="Must be logged in to view account information")
+    
+    # Logic to view account information would go here
+    return {"message": f"Information for account {account_id} displayed successfully!"}
