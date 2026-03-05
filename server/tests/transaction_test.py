@@ -51,6 +51,6 @@ class TestTransaction:
         # Get the timestamp from the object since it is set on init
         timestamp = trans.get_time().strftime("%A, %B %d, %Y, %H:%M")
         
-        expected_str = f"Transaction (Absolute ID: {abs_id}, Relative ID: {rel_id}) of account {acc_num} occured on {timestamp} with the amount changed of {amount}."
+        expected_str = f"Transaction (Absolute ID: {abs_id}, Relative ID: {rel_id}) of account {acc_num} occured on {timestamp} with the amount changed being {amount}."
         
         assert str(trans) == expected_str
