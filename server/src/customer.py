@@ -47,5 +47,8 @@ class Customer():
     returns a formatted string containing all transactions in an accounts history
     """
     def get_total_transact_hist(self):
-        pass
-    #TODO finish method above
+        result = ""
+        for acc in self.accounts:
+            result.append(acc.get_all_transaction_str())
+            result.append("\n")
+        return result
