@@ -3,10 +3,7 @@ default:
 
 install:
     uv sync 
-    uv run alembic stamp head
-    uv run alembic revision --autogenerate
-    uv run alembic upgrade head
-    cp .env.example .env
+    just create-env
 
 server:
     uv run fastapi run server/server.py --port 8000
@@ -22,12 +19,6 @@ lint:
 
 lint-watch:
     ruff check . --fix --watch
-
-create-migration name="":
-    uv run alembic revision --autogenerate -m "{{name}}"
-
-apply-migrations:
-    uv run alembic upgrade head
 
 create-env:
     cp .env.example .env
