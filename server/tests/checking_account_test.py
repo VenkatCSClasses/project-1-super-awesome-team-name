@@ -16,6 +16,7 @@ class TestCheckingAccount:
         with pytest.raises(AmountInvalidException):
             account = CheckingAccount(1, 10.111)
 
+
     def test_withdraw(self):
         """Test that withdrawing from the checking account updates the balance correctly."""
         account = CheckingAccount(1, balance=100)
@@ -28,6 +29,7 @@ class TestCheckingAccount:
         with pytest.raises(InsufficientFundsException):
             account.withdraw(10)  # Should raise an exception for insufficient funds
 
+
     def test_deposit(self):
         """Test that depositing into the checking account updates the balance correctly."""
         account = CheckingAccount(1, balance=100)
@@ -38,6 +40,7 @@ class TestCheckingAccount:
         pytest.raises(AmountInvalidException, account.deposit, -10)  # Should raise an exception for negative deposit
         pytest.raises(AmountInvalidException, account.deposit, 0.000001)  # Should raise an exception for depositing more than 2 decimal places
     
+
     def test_transfer(self):
         """Test that transferring between two checking accounts updates both balances correctly."""
         account1 = CheckingAccount(1, balance=100)
@@ -50,6 +53,7 @@ class TestCheckingAccount:
         pytest.raises(AmountInvalidException, account1.transfer, -10, account2)  # Should raise an exception for negative transfer amount
         pytest.raises(AmountInvalidException, account1.transfer, 0.000001, account2)  # Should raise an exception for transferring more than 2 decimal places
 
+
     def test_frozen_account(self):
         """Test that a frozen account does not allow withdrawals or transfers."""
         account1 = CheckingAccount(1, balance=100)
@@ -60,6 +64,7 @@ class TestCheckingAccount:
             account1.withdraw(30)
         with pytest.raises(AccountFrozenException):
             account1.transfer(30, account2)
+
 
     def test_unfreeze_account(self):
         """Test that an unfrozen account allows withdrawals and transfers."""
@@ -74,24 +79,27 @@ class TestCheckingAccount:
         assert account1.check_balance() == 40
         assert account2.check_balance() == 80
 
+
     def test_get_acct_num(self):
         """Test that the account number is returned correctly."""
         account = CheckingAccount(12345)
         assert account.get_acct_num() == 12345
     
+
     def test_get_transaction(self):
         """Test that retrieving a transaction by its number returns the correct transaction."""
         account = CheckingAccount(1, balance=100)
         account.deposit(50)  # Transaction ID 0
         account.withdraw(30)  # Transaction ID 1
-        transaction = account.get_transaction(0)
+        transaction = account.get_transaction(0, True)
         assert transaction.amount == 50
         assert transaction.get_account_num == 1
         assert transaction.get_relative_id == 0
-        transaction = account.get_transaction(1)
+        transaction = account.get_transaction(1, True)
         assert transaction.amount == -30
         assert transaction.get_account_num == 1
         assert transaction.get_relative_id == 1
+
 
     def test_get_transaction_invalid(self):
         """
@@ -100,6 +108,7 @@ class TestCheckingAccount:
         account = CheckingAccount(1, balance=100)
         with pytest.raises(KeyError):
             account.get_transaction(999)  # Should raise an exception for non-existent transaction number
+
 
     def test_get_all_transactions(self):
         """Test that the transaction history is returned correctly."""
@@ -115,19 +124,35 @@ class TestCheckingAccount:
         assert history[0].get_amount == 50
         assert history[1].get_amount == -30
 
+
     def test_get_transaction_str(self):
         """Test that a transaction is returned correctly as a human readable string."""
         account = CheckingAccount(1, balance=100)
         account.deposit(50)  # Transaction ID 0
         account.withdraw(30)  # Transaction ID 1
-        #TODO after transaction string implemented
+        
+        trans1 = account.get_transaction(0, True)
+        trans2 = account.get_transaction(1, True)
+
+        assert trans1.__str__() == account.get_transaction_str(0, True)
+        assert trans2.__str__() == account.get_transaction_str(1, True)
+
 
     def test_get_all_transaction_str(self):
         """Test that the transaction history is returned correctly as a human-readable string."""
         account = CheckingAccount(1, balance=100)
         account.deposit(50)  # Transaction ID 0
         account.withdraw(30)  # Transaction ID 1
-        #TODO after transaction string implemented
+
+        trans1 = account.get_transaction(0, True)
+        trans2 = account.get_transaction(1, True)
+
+        assert (trans1 + '\n' + trans2) == account.get_all_transaction_str
+
+        trans3 = account.get_transaction(2, True)
+
+        assert (trans1 + '\n' + trans2 + '\n' + trans3) == account.get_all_transaction_str
+
 
     def test_is_amount_valid(self):
         """Tests to see if an amount is valid (non-negative and 2 or less decimal places)"""
@@ -140,11 +165,3 @@ class TestCheckingAccount:
         assert not CheckingAccount._is_amount_valid(-10.001)
         assert not CheckingAccount._is_amount_valid(0.001) 
         assert not CheckingAccount._is_amount_valid(0.11111111) 
-
-
-    
-
-    
-    
-
-    

@@ -79,7 +79,7 @@ class CheckingAccount:
         self.balance += amount
         #TODO transaction logging
 
-    def transfer(self, amount: float, rec_account: CheckingAccount) -> None:
+    def transfer(self, amount: float, rec_account: 'CheckingAccount') -> None:
         """
         Transfers a specified amount from this account to a receiving account.
 
@@ -181,7 +181,7 @@ class CheckingAccount:
         Retrieves all transactions as one human-readable string.
 
         Returns:
-            str: The human-readable string showing information about all transactions.
+            str: The human-readable string showing information about all transactions, with a new line between each one.
         """
         pass
 
