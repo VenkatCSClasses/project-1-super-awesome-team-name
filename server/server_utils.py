@@ -1,5 +1,5 @@
 import jwt
-from fastapi import Header, HTTPException, Depends
+from fastapi import Header, HTTPException
 import os
 from dotenv import load_dotenv
 load_dotenv()

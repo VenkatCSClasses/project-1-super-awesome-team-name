@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends
 from server_utils import verify_token
 from dotenv import load_dotenv
-import os
 load_dotenv()
 
 admin = FastAPI()
