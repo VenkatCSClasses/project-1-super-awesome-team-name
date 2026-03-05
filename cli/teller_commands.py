@@ -1,8 +1,7 @@
-from typer import Typer, Argument
+from typer import Typer
 import requests
 from dotenv import load_dotenv
 import os
-from token_utils import handle_authorization
 load_dotenv()
 server_base_url = os.getenv("SERVER_BASE_URL")
 

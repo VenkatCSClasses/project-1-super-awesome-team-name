@@ -1,4 +1,3 @@
-import pytest
 from server.src.customer import Customer
 from server.src.checking_account import CheckingAccount
 

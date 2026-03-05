@@ -1,4 +1,3 @@
-import pytest
 
 class TestSavingsAccount:
     def test_hello(self):

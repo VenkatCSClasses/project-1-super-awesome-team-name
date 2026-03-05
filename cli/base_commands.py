@@ -1,13 +1,12 @@
 import os
 from typing import Annotated
-from typer import Typer, Option, Argument, prompt
+from typer import Typer, Argument, prompt
 import requests
 from rich import print
 from rich.table import Table
-from rich.panel import Panel
 from dotenv import load_dotenv
 from admin_commands import admin
-from token_utils import save_token, load_token, delete_token, handle_authorization, get_permissions
+from token_utils import save_token, delete_token, handle_authorization, get_permissions
 from teller_commands import teller
 load_dotenv()
 server_base_url = os.getenv("SERVER_BASE_URL")

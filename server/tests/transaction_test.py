@@ -1,7 +1,6 @@
 from server.src.transaction import Transaction
-from datetime import datetime, date, timezone
+from datetime import datetime, timezone
 
-import pytest
 
 class TestTransaction:
 
