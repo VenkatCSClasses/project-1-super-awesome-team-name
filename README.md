@@ -24,6 +24,8 @@ Cameron: Deposit + Withdraw tests
 ## Coding Agent Usage
 The areas where coding agents were utilized in this project were:
 - Generating docstrings from method/class stubs in the src folder
+- Assisting in writing in-depth tests in certain test classes
+    - Helping with equivalence classes/boundary cases
 
 
 # Setup & Running

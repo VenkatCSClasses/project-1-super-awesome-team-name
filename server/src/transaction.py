@@ -8,16 +8,16 @@ class Transaction:
         relative_transaction_id (int): ID of the transaction relative to the account.
         absolute_transaction_id (int): ID of the transaction relative to the total bank transactions.
         account_num (int): Account number where the transaction occured.
-        timestamp (datetime): When the transaction occured.
+        timestamp (datetime): When the transaction occured in UTC.
         amount (float): The change in account balance of the transaction.
     """
-    def __init__(self, transaction_id: int, account_num: int, amount: float) -> None:
+    def __init__(self, absolute_transaction_id: int, relative_transaction_id: int, account_num: int, amount: float) -> None:
         """
-        Initialize the Transaction with the transaction id, account number, timestamp, and amount.
+        Initialize the Transaction with the transaction ids, account number, timestamp, and amount.
         
         Args:
-            relative_transaction_id (int): Relative ID of the transaction.
             absolute_transaction_id (int): Absolute ID of the transaction.
+            relative_transaction_id (int): Relative ID of the transaction.
             account_num: Account number where the transaction occurred.
             amount (float): The change in account balance of the transaction.
         """
@@ -71,7 +71,10 @@ class Transaction:
     def __str__(self) -> str:
         """
         toString method to turn the transaction into a human-readable string.
-
+        Format: Transaction (Absolute ID: {abs_id}, Relative ID: {rel_id}) of account {acc_num} 
+                occured on {timestamp} with the amount changed of {amount}.
+                Timestamp format is ("%A, %B %d, %Y, %H:%M")
+        
         Returns:
             str: Human-readable string showing information about the transaction.
         """
