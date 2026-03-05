@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from server.src.bank import Bank
 class User(ABC):
     """
     A basic abstract class for all types of users.

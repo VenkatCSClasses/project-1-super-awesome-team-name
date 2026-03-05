@@ -1,4 +1,4 @@
-from .user import User
+from server.src.user import User
 
 class Customer(User):
     def __init__(self, name, id, passwd):

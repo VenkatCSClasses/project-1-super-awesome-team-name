@@ -1,4 +1,4 @@
-from user import User
+from server.src.user import User
 from checking_account import CheckingAccount
 
 class Bank:
