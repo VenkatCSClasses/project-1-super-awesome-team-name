@@ -10,29 +10,25 @@ server_base_url = os.getenv("SERVER_BASE_URL")
 
 admin = Typer(no_args_is_help=True)
 
-class AccountType(str, Enum):
-    customer = 0
-    teller = 1 
-    admin = 2 # Highest permission level
-
 
 @admin.command()
 def create_user():
+    """Create a new user (customer, teller, or admin)"""
     headers, permission = handle_authorization()
     if not headers:
         return
-    """Create a new user (customer, teller, or admin)"""
+
     username =  prompt("Enter a username")
     password = prompt(f"Enter password for {username}", hide_input=True, confirmation_prompt=True)
 
     is_teller = confirm("Should this user be a teller?", default=False)
 
-    permission_level = AccountType.customer.value
+    permission_level = 0
     if is_teller:
-        permission_level = AccountType.teller.value
+        permission_level = 1 
         is_admin = confirm("Should this user be an admin?", default=False)
     
-        permission_level = AccountType.admin.value if is_admin else AccountType.teller.value
+        permission_level = 2 if is_admin else 1
 
     response = requests.post(
         f"{server_base_url}/create_user", 
@@ -55,11 +51,11 @@ def create_user():
 
 @admin.command()
 def delete_user(username: Annotated[str, Argument(help="Username of the user to delete")]):
+    """Delete an existing user by username"""
     headers, permission = handle_authorization()
     if not headers:
         return
-    """Delete an existing user by username"""
-    pass
+
     # response = requests.delete(f"{server_base_url}/delete_user/{username}")
     # if response.status_code == 200:
     #     print(response.json().get("message", "User deleted successfully!"))
@@ -74,10 +70,10 @@ def delete_user(username: Annotated[str, Argument(help="Username of the user to 
 
 @admin.command()
 def get_total_balance():
+    """Get the total balance across all accounts in the system"""
     headers, permission = handle_authorization()
     if not headers:
         return
-    """Get the total balance across all accounts in the system"""
     pass
     # headers = handle_authorization()
     # if not headers:
