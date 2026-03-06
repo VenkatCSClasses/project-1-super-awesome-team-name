@@ -77,9 +77,9 @@ class TestBank:
         """Test that get_next_transaction_ID works correctly"""
         bank = Bank()
 
-        assert bank.get_next_transaction_id() == 0
         assert bank.get_next_transaction_id() == 1
         assert bank.get_next_transaction_id() == 2
+        assert bank.get_next_transaction_id() == 3
 
 
         
