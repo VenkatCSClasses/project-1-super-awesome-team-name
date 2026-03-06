@@ -126,12 +126,18 @@ def deposit(account_id: Annotated[int, Argument(help="Account ID to deposit into
     if not headers:
         return
 
-    print(f"Depositing ${amount:.2f} to account {account_id}")
+    response = requests.post(f"{server_base_url}/deposit", json={"account_id": account_id, "amount": amount}, headers=headers)
+    if response.status_code == 200:
+        response_data = response.json()
+        print(response_data.get("message", f"Deposit successful! Balance is now ${response_data.get('balance', 'unknown')}"))
+    elif response.status_code == 400:
+        print(f"[red]Deposit failed: {response.json().get('detail')}[/red]")
+    elif response.status_code == 500:
+        print("[red]Server error occurred. Please try again later.[/red]")
+    else:
+        print(f"[red]Deposit failed with status code: {response.status_code}[/red]")
 
-    request = {
-        "account_id": account_id,
-        "amount": amount
-    }
+    
 
 
 @app.command(hidden=permissions < 0)
@@ -143,12 +149,16 @@ def withdraw(account_id: Annotated[int, Argument(help="Account ID to withdraw fr
     if not headers:
         return
 
-    print(f"Withdrawing ${amount:.2f} from account {account_id}")
-
-    request = {
-        "account_id": account_id,
-        "amount": amount
-    }
+    response = requests.post(f"{server_base_url}/withdraw", json={"account_id": account_id, "amount": amount}, headers=headers)
+    if response.status_code == 200:
+        response_data = response.json()
+        print(response_data.get("message", f"Withdrawal successful! Balance is now ${response_data.get('balance', 'unknown')}"))
+    elif response.status_code == 400:
+        print(f"[red]Withdrawal failed: {response.json().get('detail')}[/red]")
+    elif response.status_code == 500:
+        print("[red]Server error occurred. Please try again later.[/red]")
+    else:
+        print(f"[red]Withdrawal failed with status code: {response.status_code}[/red]")
 
 
 @app.command(hidden=permissions < 0)
@@ -166,10 +176,13 @@ def transfer(amount: Annotated[float, Argument(help="Amount of money to transfer
     if not headers:
         return
 
-    print(f"Transferring ${amount:.2f} from account {account} to account {to}")
-
-    request = {
-        "from_account_id": account,
-        "to_account_id": to,
-        "amount": amount
-    }
+    response = requests.post(f"{server_base_url}/transfer", json={"from_account_id": account, "to_account_id": to, "amount": amount}, headers=headers)
+    if response.status_code == 200:
+        response_data = response.json()
+        print(response_data.get("message", f"Transfer successful! Balance is now ${response_data.get('balance', 'unknown')}"))
+    elif response.status_code == 400:
+        print(f"[red]Transfer failed: {response.json().get('detail')}[/red]")
+    elif response.status_code == 500:
+        print("[red]Server error occurred. Please try again later.[/red]")
+    else:
+        print(f"[red]Transfer failed with status code: {response.status_code}[/red]")
