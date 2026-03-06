@@ -4,12 +4,14 @@ sys.path.append('./server/src')
 from checking_account import CheckingAccount
 
 class Customer():
+    
     def __init__(self, name, id, passwd, permissions=0):
         self.name = name
         self.id = id
         self.passwd = passwd
         self.permissions = permissions
         self.accounts = []
+
 
     def get_name(self):
         return self.name
@@ -30,16 +32,13 @@ class Customer():
     def get_passwd(self):
         return self.passwd
     
+
     def set_passwd(self, pss:str):
         self.passwd = pss
 
 
     def get_permissions(self):
-        return self.accType
-    
-
-    def set_accType(self, type:int):
-        self.accType = type
+        return self.permissions
 
 
     def get_accounts(self):

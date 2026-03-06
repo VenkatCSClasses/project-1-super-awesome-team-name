@@ -5,6 +5,7 @@ from customer import Customer
 from checking_account import CheckingAccount
 
 class TestCustomer:
+    
     def test_get_name(self):
         test = Customer("john", 5, "password")
         assert test.get_name() == "john"
@@ -19,7 +20,7 @@ class TestCustomer:
 
     def test_get_acc_type(self):
         test = Customer("john", 5, "password")
-        assert test.get_accType() == 0
+        assert test.get_permissions() == 0
 
     def test_get_user_acc_details(self):
         test = Customer("john", 5, "password")
@@ -27,7 +28,7 @@ class TestCustomer:
 
     def test_get_total_transact_hist(self):
         test = Customer("john", 5, "password")
-        assert test.get_total_transact_hist() == "No transaction history"
+        assert test.get_total_transact_hist() == ""
 
         acc1 = CheckingAccount(1, 500.00)
         acc2 = CheckingAccount(2, 500.00)

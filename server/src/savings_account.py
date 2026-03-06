@@ -87,9 +87,9 @@ class SavingsAccount(CheckingAccount):
         pass
 
     def compound_interest(self) -> None:
-        """Compounds the interest of the savings account."""
+        """Compounds the interest of the savings account, rounding down."""
         pass
 
     def reset_withdraw_limit(self) -> None:
-        """Resets the current withdraw limit back to zero each day."""
+        """Resets the current withdraw limit back to zero."""
         pass
