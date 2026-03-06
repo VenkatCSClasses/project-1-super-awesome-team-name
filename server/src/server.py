@@ -1,5 +1,7 @@
 from fastapi import Depends, FastAPI, HTTPException
 import os
+import uvicorn
+
 
 from bank import Bank
 from dotenv import load_dotenv
@@ -61,8 +63,6 @@ async def whoami(current_user: dict = Depends(verify_token)):
 
 
 if __name__ == "__main__":
-    import uvicorn
-
     try:
         uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=False)
     except KeyboardInterrupt:

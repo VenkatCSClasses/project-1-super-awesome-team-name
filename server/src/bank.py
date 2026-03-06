@@ -212,6 +212,17 @@ class Bank:
         self.accounts.append(account)
 
 
+    def create_account_for_user(self, user: Customer, account_type: str = "checking") -> CheckingAccount:
+        if account_type == "savings":
+            account = SavingsAccount(self._next_account_num(), 0.0)
+        else:
+            account = CheckingAccount(self._next_account_num(), 0.0)
+
+        self.add_account(account)
+        user.register_account(account)
+        return account
+
+
 
     def get_all_users(self) -> list[Customer]:
         pass

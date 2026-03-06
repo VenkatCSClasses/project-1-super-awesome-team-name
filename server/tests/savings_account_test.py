@@ -2,10 +2,6 @@ import sys
 sys.path.append("./server/src")
 
 from savings_account import SavingsAccount
-from checking_account import CheckingAccount
-from exceptions.account_frozen_exception import AccountFrozenException
-from exceptions.amount_invalid_exception import AmountInvalidException
-from exceptions.insufficient_funds_exception import InsufficientFundsException
 from exceptions.withdraw_maxed_exception import WithdrawMaxedException
 
 import pytest
