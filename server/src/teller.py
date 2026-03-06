@@ -11,7 +11,7 @@ class Teller(Customer):
         self.id = id
         self.passwd = passwd
         self.permissions = 1
-        self.accounts = []
+        self.accounts = bank.get_all_accounts()
         self.bank = bank
 
 

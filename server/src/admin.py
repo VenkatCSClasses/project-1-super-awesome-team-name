@@ -10,7 +10,7 @@ class Admin(Teller):
         self.id = id
         self.passwd = passwd
         self.permissions = 2
-        self.accounts = []
+        self.accounts = bank.get_all_accounts()
         self.bank = bank
     
     """
