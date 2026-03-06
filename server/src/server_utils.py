@@ -20,11 +20,12 @@ def verify_token(authorization: str = Header(None)):
         # Decode and verify the token
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("user_id")
+        permission = payload.get("permission", 0)
         
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token payload")
             
-        return {"user_id": user_id}
+        return {"user_id": user_id, "permission": permission}
 
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, ValueError):
         raise HTTPException(status_code=401, detail="Invalid or expired token")

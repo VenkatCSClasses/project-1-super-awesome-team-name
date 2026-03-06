@@ -1,14 +1,20 @@
+import sys
+sys.path.append('./server/src')
+
+from checking_account import CheckingAccount
+
 class Customer():
-    def __init__(self, name, id, passwd):
+    def __init__(self, name, id, passwd, permissions=0):
         self.name = name
         self.id = id
         self.passwd = passwd
-        self.accType = 0
+        self.permissions = permissions
         self.accounts = []
 
     def get_name(self):
         return self.name
     
+
     def set_name(self, name:str):
         self.name = name
 
@@ -16,8 +22,9 @@ class Customer():
     def get_id(self):
         return self.id
     
+
     def set_id(self, id:int):
-        self.int = self.int
+        self.id = id
 
 
     def get_passwd(self):
@@ -27,15 +34,20 @@ class Customer():
         self.passwd = pss
 
 
-    def get_accType(self):
+    def get_permissions(self):
         return self.accType
     
+
     def set_accType(self, type:int):
         self.accType = type
 
 
     def get_accounts(self):
         return self.accounts
+
+    
+    def register_account(self, account: CheckingAccount):
+        self.accounts.append(account)
         
     """
     returns name, id, and customer in visual string

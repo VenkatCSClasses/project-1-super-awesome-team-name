@@ -1,3 +1,6 @@
+import sys
+sys.path.append('./server/src')
+
 from server.src.transaction import Transaction
 from datetime import datetime, timezone
 

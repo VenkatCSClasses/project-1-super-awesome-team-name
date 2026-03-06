@@ -85,3 +85,10 @@ def ensure_root_user():
     data["counters"]["users"] = next_id
     write_db(data)
     return True
+
+
+
+
+
+            
+    

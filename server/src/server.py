@@ -1,25 +1,26 @@
-from fastapi import FastAPI
-from database_helper import login_user, register_user, get_user_by_id, ensure_root_user
-from fastapi import Depends, HTTPException
-from server_utils import verify_token
+from fastapi import Depends, FastAPI, HTTPException
 import os
+
+from bank import Bank
 from dotenv import load_dotenv
+from server_utils import verify_token
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "placeholder_secret_key")
 ALGORITHM = "HS256"
 
 app = FastAPI()
+bank = Bank.load_from_file()
 
 
 @app.on_event("startup")
 def _ensure_root():
-    # Ensure the root account exists when the server starts
-    try:
-        ensure_root_user()
-    except Exception:
-        # avoid startup failure if DB not ready; keep silent
-        pass
+    bank.ensure_root_user()
+
+
+@app.on_event("shutdown")
+def _save_bank_state():
+    bank.save_to_file()
 
 @app.get("/")
 async def root():
@@ -28,10 +29,10 @@ async def root():
 
 @app.post("/register", response_model=dict)
 async def register(user_data: dict):
-    if register_user(user_data["username"], user_data["password"]):
+    if bank.register_user(user_data["username"], user_data["password"]):
         return {
             "message": "User registered successfully",
-            "token": login_user(user_data["username"], user_data["password"])
+            "token": bank.login_user(user_data["username"], user_data["password"])
         }
     else:
         raise HTTPException(status_code=400, detail="Username already exists")
@@ -39,7 +40,7 @@ async def register(user_data: dict):
 
 @app.post("/login", response_model=dict)
 async def login(form_data: dict):
-    token = login_user(form_data["username"], form_data["password"])
+    token = bank.login_user(form_data["username"], form_data["password"])
     if token is False:
         raise HTTPException(status_code=401, detail="Invalid username or password")
     return {
@@ -49,11 +50,21 @@ async def login(form_data: dict):
     }
 @app.get("/whoami")
 async def whoami(current_user: dict = Depends(verify_token)):
-    user = get_user_by_id(current_user["user_id"])
+    user = bank.get_user_by_id(current_user["user_id"])
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
     return {
-        "user_id": user.id,
-        "username": user.username
+        "user_id": user.get_id(),
+        "username": user.get_name()
     } 
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    try:
+        uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=False)
+    except KeyboardInterrupt:
+        print("Shutting down server...")
+        bank.save_to_file()

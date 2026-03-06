@@ -1,7 +1,10 @@
+import sys
 import pytest
-from server.src.admin import Admin
-from server.src.checking_account import CheckingAccount
-from server.src.exceptions.account_frozen_exception import AccountFrozenException
+sys.path.append('./server/src')
+
+from admin import Admin
+from checking_account import CheckingAccount
+from account_frozen_exception import AccountFrozenException
 
 class TestAdmin:
     def test_get_name(self):
@@ -31,8 +34,8 @@ class TestAdmin:
         acc2 = CheckingAccount(2,50000.00)
         acc.withdraw(25000)
         acc2.withdraw(100)
-        assert test.check_sus_activity(acc) == True
-        assert test.check_sus_activity(acc2) == False
+        assert test.check_sus_activity(acc)
+        assert test.check_sus_activity(acc2)
 
 
     def test_toggle_frozen(self):
