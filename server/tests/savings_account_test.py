@@ -2,6 +2,7 @@ import sys
 sys.path.append("./server/src")
 
 from savings_account import SavingsAccount
+from bank import Bank
 from exceptions.withdraw_maxed_exception import WithdrawMaxedException
 
 import pytest
@@ -14,8 +15,9 @@ class TestSavingsAccount:
 
     def test_constructor_getters(self):
         """Tests covering the constructor and the accessors of the savingsaccount"""
-        acc0 = SavingsAccount(0)
-        acc1 = SavingsAccount(1, 100)
+        bank = Bank()
+        acc0 = SavingsAccount(0, bank)
+        acc1 = SavingsAccount(1, bank, 100)
 
         assert acc0.check_balance() == 0
         assert acc1.check_balance() == 100
@@ -30,7 +32,8 @@ class TestSavingsAccount:
 
     def test_withdraw_limit(self):
         """Tests covering the updated withdraw method and ensuring withdraw limit is changed"""
-        acc0 = SavingsAccount(0, float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)) + 200)
+        bank = Bank()
+        acc0 = SavingsAccount(0, bank, float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)) + 200)
         acc0.withdraw(200)
 
         assert acc0.get_current_withdraw_limit() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)) - 200
@@ -47,8 +50,9 @@ class TestSavingsAccount:
 
     def test_transfer_limit(self):
         """Tests covering the updated transfer method and ensuring withdraw limit is changed"""
-        acc0 = SavingsAccount(0, float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)) + 200)
-        acc1 = SavingsAccount(1)
+        bank = Bank()
+        acc0 = SavingsAccount(0, bank, float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)) + 200)
+        acc1 = SavingsAccount(1, bank)
         acc0.transfer(200, acc1)
 
         assert acc0.get_current_withdraw_limit() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000) - 200)
@@ -65,8 +69,9 @@ class TestSavingsAccount:
 
     def test_compound_interest(self):
         """Tests covering the compound interest method"""
-        acc0 = SavingsAccount(0, 100)
-        acc1 = SavingsAccount(1, 500)
+        bank = Bank()
+        acc0 = SavingsAccount(0, bank, 100)
+        acc1 = SavingsAccount(1, bank, 500)
 
         acc0.compound_interest()
         acc1.compound_interest()
@@ -83,8 +88,9 @@ class TestSavingsAccount:
 
     def test_reset_withdraw_limit(self):
         """Tests covering resetting the withdraw limit"""
-        acc0 = SavingsAccount(0, 50)
-        acc1 = SavingsAccount(1, 100)
+        bank = Bank()
+        acc0 = SavingsAccount(0, bank, 50)
+        acc1 = SavingsAccount(1, bank, 100)
 
         acc0.withdraw(20)
         acc1.withdraw(50)
