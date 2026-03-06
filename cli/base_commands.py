@@ -141,10 +141,13 @@ def deposit(account_id: Annotated[int, Argument(help="Account ID to deposit into
         print(response_data.get("message", f"Deposit successful! Balance is now ${response_data.get('balance', 'unknown')}"))
     elif response.status_code == 400:
         print(f"[red]Deposit failed: {response.json().get('detail')}[/red]")
+    elif response.status_code == 401:
+        print("[red]Unauthorized. Please log in again.[/red]")
+        delete_token()
     elif response.status_code == 500:
         print("[red]Server error occurred. Please try again later.[/red]")
     else:
-        print(f"[red]Deposit failed with status code: {response.status_code}[/red]")
+        print(f"[red]Deposit failed: {response.json().get('detail')}[/red]")
 
     
 @app.command(hidden=permissions < 0)
@@ -162,10 +165,13 @@ def withdraw(account_id: Annotated[int, Argument(help="Account ID to withdraw fr
         print(response_data.get("message", f"Withdrawal successful! Balance is now ${response_data.get('balance', 'unknown')}"))
     elif response.status_code == 400:
         print(f"[red]Withdrawal failed: {response.json().get('detail')}[/red]")
+    elif response.status_code == 401:
+        print("[red]Unauthorized. Please log in again.[/red]")
+        delete_token()
     elif response.status_code == 500:
         print("[red]Server error occurred. Please try again later.[/red]")
     else:
-        print(f"[red]Withdrawal failed with status code: {response.status_code}[/red]")
+        print(f"[red]Withdrawal failed: {response.json().get('detail')}[/red]")
 
 
 @app.command(hidden=permissions < 0)
@@ -189,10 +195,13 @@ def transfer(amount: Annotated[float, Argument(help="Amount of money to transfer
         print(response_data.get("message", f"Transfer successful! Balance is now ${response_data.get('balance', 'unknown')}"))
     elif response.status_code == 400:
         print(f"[red]Transfer failed: {response.json().get('detail')}[/red]")
+    elif response.status_code == 401:
+        print("[red]Unauthorized. Please log in again.[/red]")
+        delete_token()
     elif response.status_code == 500:
         print("[red]Server error occurred. Please try again later.[/red]")
     else:
-        print(f"[red]Transfer failed with status code: {response.status_code}[/red]")
+        print(f"[red]{response.json().get('detail', 'Unknown error occurred')}[/red]")
 
 
 @app.command()
@@ -211,7 +220,10 @@ def open_account(account_type: Annotated[str, Argument(help="Type of account to 
         print(response_data.get("message", f"{account_type.capitalize()} account created successfully! Account ID: {response_data.get('account_id', 'unknown')}"))
     elif response.status_code == 400:
         print(f"[red]Account creation failed: {response.json().get('detail')}[/red]")
+    elif response.status_code == 401:
+        print("[red]Unauthorized. Please log in again.[/red]")
+        delete_token()
     elif response.status_code == 500:
         print("[red]Server error occurred. Please try again later.[/red]")
     else:
-        print(f"[red]Account creation failed with status code: {response.status_code}[/red]")
+        print(f"[red]{response.json().get('detail', 'Unknown error occurred')}[/red]")

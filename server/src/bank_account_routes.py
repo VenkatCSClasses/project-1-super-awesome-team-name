@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from app_state import bank
 load_dotenv()
 
+# Everything starts at "/bank" for these routes, 
+# so the full path for creating a bank account would be "/bank/create_bank_account"
 bank_routes = APIRouter()
 
 
@@ -93,8 +95,8 @@ async def deposit(form_data: dict, current_user: dict = Depends(verify_token)):
     
 
     user = bank.get_user_by_id(current_user["user_id"])
-    accounts = bank.get_accounts_ids_for_user(user)
-    if form_data["account_id"] not in accounts and current_user.get("permission", -1) == 0:
+    accounts = bank.get_accounts_for_user(user)
+    if form_data["account_id"] not in [account.get_id() for account in accounts] and current_user.get("permission", -1) == 0:
         raise HTTPException(status_code=403, detail="Customers can only deposit into their own accounts")
 
     account = bank.get_account_by_id(form_data["account_id"])
@@ -118,8 +120,8 @@ async def withdraw(form_data: dict, current_user: dict = Depends(verify_token)):
     
 
     user = bank.get_user_by_id(current_user["user_id"])
-    accounts = bank.get_accounts_ids_for_user(user)
-    if form_data["account_id"] not in accounts and current_user.get("permission", -1) == 0:
+    accounts = bank.get_accounts_for_user(user)
+    if form_data["account_id"] not in [account.get_id() for account in accounts] and current_user.get("permission", -1) == 0:
         raise HTTPException(status_code=403, detail="Customers can only withdraw from their own accounts")
 
     account = bank.get_account_by_id(form_data["account_id"])
@@ -142,8 +144,8 @@ async def transfer(form_data: dict, current_user: dict = Depends(verify_token)):
         raise HTTPException(status_code=403, detail="Must be logged in to transfer between bank accounts")
     
     user = bank.get_user_by_id(current_user["user_id"])
-    accounts = bank.get_accounts_ids_for_user(user)
-    if form_data["from_account_id"] not in accounts and current_user.get("permission", -1) == 0:
+    accounts = bank.get_accounts_for_user(user)
+    if form_data["from_account_id"] not in [account.get_id() for account in accounts] and current_user.get("permission", -1) == 0:
         raise HTTPException(status_code=403, detail="Customers can only transfer from their own accounts")
     
     from_account = bank.get_account_by_id(form_data["from_account_id"])

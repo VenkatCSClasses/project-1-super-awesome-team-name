@@ -177,7 +177,7 @@ class Bank:
         user = Customer(
             "root",
             self._next_user_id,
-            self._password_hasher.hash("root"),
+            self._password_hasher.hash(os.getenv("ROOT_PASSWORD", "root")),
             permissions=2,
         )
         self._next_user_id += 1
@@ -242,6 +242,13 @@ class Bank:
     
     def get_accounts_for_user(self, user: Customer) -> list[int]:
         return user.get_accounts()
+
+
+    def get_account_by_id(self, account_id: int) -> CheckingAccount | None:
+        for account in self.accounts:
+            if account.account_num == account_id:
+                return account
+        return None
     
 
     def get_all_users(self) -> list[Customer]:
