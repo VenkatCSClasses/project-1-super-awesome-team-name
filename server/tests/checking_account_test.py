@@ -58,7 +58,7 @@ class TestCheckingAccount:
 
 
     def test_frozen_account(self):
-        """Test that a frozen account does not allow withdrawals or transfers."""
+        """Test that a frozen account does not allow withdrawals, transfers, and deposit."""
         account1 = CheckingAccount(1, balance=100)
         account2 = CheckingAccount(2, balance=50)
         account1.toggle_frozen()  # Freeze account1
@@ -67,10 +67,11 @@ class TestCheckingAccount:
             account1.withdraw(30)
         with pytest.raises(AccountFrozenException):
             account1.transfer(30, account2)
-
+        with pytest.raises(AccountFrozenException):
+            account1.deposit(30)
 
     def test_unfreeze_account(self):
-        """Test that an unfrozen account allows withdrawals and transfers."""
+        """Test that an unfrozen account allows withdrawals, transfers, and deposit"""
         account1 = CheckingAccount(1, balance=100)
         account2 = CheckingAccount(2, balance=50)
         account1.toggle_frozen()  # Freeze account1
@@ -81,6 +82,8 @@ class TestCheckingAccount:
         account1.transfer(30, account2)
         assert account1.check_balance() == 40
         assert account2.check_balance() == 80
+        account1.deposit(30)
+        assert account1.check_balance() == 70
 
 
     def test_get_acct_num(self):

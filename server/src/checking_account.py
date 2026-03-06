@@ -15,7 +15,7 @@ class CheckingAccount:
     Attributes:
         account_num (int): The account number of the checking account.
         balance (float): The current balance of the checking account.
-        is_frozen (bool): Whether the account is frozen or not.
+        frozen (bool): Whether the account is frozen or not.
         transactions (list[Transaction]): The list of transactions associated with this account.
     """
 
@@ -33,12 +33,12 @@ class CheckingAccount:
             AmountInvalidException: If the inputted balance is invalid.
         """
 
-        if not self._is_amount_valid(balance):
+        if balance != 0.0 and not self._is_amount_valid(balance):
             raise AmountInvalidException(balance)
         
         self.account_num: int = account_num
         self.balance: float = balance
-        self.is_frozen: bool = False
+        self.frozen: bool = False
         self.transactions: list[Transaction] = []
     
     def withdraw(self, amount: float) -> None:
@@ -53,7 +53,7 @@ class CheckingAccount:
             InsufficientFundsException: If the withdraw amount exceeds the balance.
             AccountFrozenException: If the account is frozen.
         """
-        if self.is_frozen:
+        if self.frozen:
             raise AccountFrozenException(self.account_num)
         elif not self._is_amount_valid(amount):
             raise AmountInvalidException(amount)
@@ -74,7 +74,7 @@ class CheckingAccount:
             AmountInvalidException: If the deposit amount is non-positive or > 2 decimal places.
             AccountFrozenException: If the account is frozen.
         """
-        if self.is_frozen:
+        if self.frozen:
             raise AccountFrozenException(self.account_num)
         elif not self._is_amount_valid(amount):
             raise AmountInvalidException(amount)
@@ -105,7 +105,7 @@ class CheckingAccount:
         Returns:
             bool: True if the account is frozen, False otherwise.
         """
-        return self.is_frozen
+        return self.frozen
 
     def toggle_frozen(self) -> bool:
         """
@@ -114,8 +114,8 @@ class CheckingAccount:
         Returns:
             bool: The new frozen status of the account.
         """
-        self.is_frozen = not self.is_frozen
-        return self.is_frozen
+        self.frozen = not self.frozen
+        return self.frozen
 
     def check_balance(self) -> float:
         """
@@ -151,7 +151,20 @@ class CheckingAccount:
         Returns:
             Transaction: The transaction object corresponding to the transaction number.
         """
-        pass
+        if (transaction_num < 0):
+            raise IndexError("Transaction number must be non-negative.")
+        
+        # If is_relative = false, search by absolute id. If is_relative = true, search by relative id.
+        if (is_relative):
+            for transaction in self.transactions:
+                if (transaction.get_relative_id() == transaction_num):
+                    return transaction
+        else:
+            for transaction in self.transactions:
+                if (transaction.get_absolute_id() == transaction_num):
+                    return transaction
+                
+        raise KeyError(f"Transaction with number {transaction_num} not found in list of transactions for {self.account_num}.")
 
     def get_all_transactions(self) -> list[Transaction]:
         """
@@ -160,7 +173,7 @@ class CheckingAccount:
         Returns:
             list[Transaction]: A list of all transactions on the account.
         """
-        pass
+        return self.transactions
 
     def get_transaction_str(self, transaction_num: int, is_relative: bool = False) -> str:
         """
@@ -178,7 +191,20 @@ class CheckingAccount:
         Returns:
             str: The human-readable string showing information about the transaction.
         """
-        pass
+        if (transaction_num < 0):
+            raise IndexError("Transaction number must be non-negative.")
+        
+        # If is_relative = false, search by absolute id. If is_relative = true, search by relative id.
+        if (is_relative):
+            for transaction in self.transactions:
+                if (transaction.get_relative_id() == transaction_num):
+                    return transaction.__str__
+        else:
+            for transaction in self.transactions:
+                if (transaction.get_absolute_id() == transaction_num):
+                    return transaction.__str__
+                
+        raise KeyError(f"Transaction with number {transaction_num} not found in list of transactions for {self.account_num}.")
 
     def get_all_transaction_str(self) -> str:
         """
