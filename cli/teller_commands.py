@@ -1,4 +1,4 @@
-from typer import Typer
+from typer import Typer, prompt, confirm
 import requests
 from dotenv import load_dotenv
 import os
