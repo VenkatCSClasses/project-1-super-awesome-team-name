@@ -20,9 +20,9 @@ class TestAdmin:
         test = Admin("john", 5, "password")
         assert test.get_passwd() == "password"
 
-    def test_get_acc_type(self):
+    def test_get_permissions(self):
         test = Admin("john", 5, "password")
-        assert test.get_accType() == 2
+        assert test.get_permissions() == 2
 
     def test_get_user_acc_details(self):
         test = Admin("john", 5, "password")

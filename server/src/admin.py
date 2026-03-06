@@ -9,7 +9,7 @@ class Admin(Teller):
         self.name = name
         self.id = id
         self.passwd = passwd
-        self.accType = 2
+        self.permissions = 2
         self.accounts = []
     
     """

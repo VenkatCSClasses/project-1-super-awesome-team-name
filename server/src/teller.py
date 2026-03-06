@@ -10,7 +10,7 @@ class Teller(Customer):
         self.name = name
         self.id = id
         self.passwd = passwd
-        self.accType = 1
+        self.permissions = 1
         self.accounts = []
 
 
