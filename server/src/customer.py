@@ -5,12 +5,13 @@ from checking_account import CheckingAccount
 
 class Customer():
     
-    def __init__(self, name, id, passwd, permissions=0):
+    def __init__(self, name, id, passwd, bank):
         self.name = name
         self.id = id
         self.passwd = passwd
-        self.permissions = permissions
+        self.permissions = 0
         self.accounts = []
+        self.bank = bank
 
 
     def get_name(self):
