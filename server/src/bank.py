@@ -10,6 +10,7 @@ from argon2.exceptions import VerifyMismatchError
 from checking_account import CheckingAccount
 from customer import Customer
 from savings_account import SavingsAccount
+from transaction import Transaction 
 
 
 class Bank:
@@ -24,6 +25,7 @@ class Bank:
         self.accounts: list[CheckingAccount] = []
         self._next_user_id = 1
         self._next_account_id = 1
+        self._next_transaction_id = 1
         self._password_hasher = PasswordHasher()
 
         if json_data:
@@ -262,7 +264,9 @@ class Bank:
                 return user
         return None
     
-
+    def get_next_transaction_id(self) -> int:
+        """Returns a num for the next absolute transaction ID, increments the next ID by 1"""
+        pass
 
     def get_user_by_name(self, username: str) -> Customer | None:
         for user in self.users:

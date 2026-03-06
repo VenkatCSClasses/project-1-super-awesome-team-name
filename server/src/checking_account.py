@@ -44,7 +44,7 @@ class CheckingAccount:
         self.balance: float = balance
         self.frozen: bool = False
         self.transactions: list[Transaction] = []
-        self.next_transaction_num = 0
+        self.next_transaction_id = 0
         self.bank = bank
 
  
