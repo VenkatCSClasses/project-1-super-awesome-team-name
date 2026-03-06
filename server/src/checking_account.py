@@ -126,6 +126,16 @@ class CheckingAccount:
         """
         return self.balance
 
+    
+    def get_balance(self) -> float:
+        """
+        Returns the current balance of the account.
+
+        Returns:
+            float: The current balance of the account.
+        """
+        return self.balance
+
     def get_acct_num(self) -> int:
         """
         Returns the account number.
@@ -232,3 +242,22 @@ class CheckingAccount:
         dec = Decimal(str(amount)) * 100
 
         return dec == dec.to_integral()
+
+
+    def get_id(self) -> int:
+        """
+        Returns the account number of the checking account.
+
+        Returns:
+            int: The account number of the checking account.
+        """
+        return self.account_num
+
+    def get_account_type(self) -> str:
+        """
+        Returns the type of the account as a string.
+
+        Returns:
+            str: The type of the account.
+        """
+        return "checking"

@@ -2,18 +2,19 @@ from fastapi import Depends, FastAPI, HTTPException
 import os
 import uvicorn
 
-
-from bank import Bank
+from app_state import bank
 from dotenv import load_dotenv
 from server_utils import verify_token
+from bank_account_routes import bank_routes
+from admin_routes import admin
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "placeholder_secret_key")
 ALGORITHM = "HS256"
 
 app = FastAPI()
-bank = Bank.load_from_file()
-
+app.include_router(bank_routes, prefix="/bank")
+app.include_router(admin, prefix="/admin")
 
 @app.on_event("startup")
 def _ensure_root():

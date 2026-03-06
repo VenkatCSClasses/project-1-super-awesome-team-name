@@ -23,6 +23,7 @@ class Bank:
         self.users: list[Customer] = []
         self.accounts: list[CheckingAccount] = []
         self._next_user_id = 1
+        self._next_account_id = 1
         self._password_hasher = PasswordHasher()
 
         if json_data:
@@ -94,6 +95,9 @@ class Bank:
         max_user_id = max((user.get_id() for user in self.users), default=0)
         counter_user_id = int(json_data.get("counters", {}).get("users", 0))
         self._next_user_id = max(max_user_id, counter_user_id) + 1
+        max_account_id = max((account.account_num for account in self.accounts), default=0)
+        counter_account_id = int(json_data.get("counters", {}).get("accounts", 0))
+        self._next_account_id = max(max_account_id, counter_account_id) + 1
 
 
     def save_to_json(self) -> dict:
@@ -121,7 +125,14 @@ class Bank:
                 }
             )
 
-        return {"users": users, "accounts": accounts, "counters": {"users": self._next_user_id - 1}}
+        return {
+            "users": users,
+            "accounts": accounts,
+            "counters": {
+                "users": self._next_user_id - 1,
+                "accounts": self._next_account_id - 1,
+            },
+        }
 
 
     def generate_login_token(self, user_id: int, permission: int) -> str:
@@ -210,6 +221,12 @@ class Bank:
         if any(existing.account_num == account.account_num for existing in self.accounts):
             raise KeyError(f"Account id already exists: {account.account_num}")
         self.accounts.append(account)
+        self._next_account_id = max(self._next_account_id, account.account_num + 1)
+
+    def _next_account_num(self) -> int:
+        next_id = self._next_account_id
+        self._next_account_id += 1
+        return next_id
 
 
     def create_account_for_user(self, user: Customer, account_type: str = "checking") -> CheckingAccount:
@@ -221,6 +238,10 @@ class Bank:
         self.add_account(account)
         user.register_account(account)
         return account
+
+    
+    def get_accounts_for_user(self, user: Customer) -> list[int]:
+        return user.get_accounts()
 
 
 

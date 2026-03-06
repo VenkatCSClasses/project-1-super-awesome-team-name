@@ -1,9 +1,9 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from server_utils import verify_token
 from dotenv import load_dotenv
 load_dotenv()
 
-admin = FastAPI()
+admin = APIRouter()
 
 @admin.get("/delete_user/{user_id}", response_model=dict)
 async def delete_user(user_id: int, current_user: dict = Depends(verify_token)):

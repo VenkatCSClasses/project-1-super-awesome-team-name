@@ -1,12 +1,13 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from server_utils import verify_token
 from dotenv import load_dotenv
-from server import bank
+from app_state import bank
 load_dotenv()
 
-bank_routes = FastAPI()
+bank_routes = APIRouter()
 
-@bank_routes.get("/create_bank_account", response_model=dict)
+
+@bank_routes.post("/create_bank_account", response_model=dict)
 async def create_bank_account(form_data: dict, current_user: dict = Depends(verify_token)):
     # Only allow users with permission level 1 (teller) or higher to create bank accounts
     if current_user.get("permission", -1) < 0:
@@ -62,7 +63,29 @@ async def delete_bank_account(current_user: dict = Depends(verify_token)):
     return {"message": "Bank account deleted successfully!"}
 
 
-@bank_routes.get("/deposit", response_model=dict)
+@bank_routes.get("/get_all_bank_accounts", response_model=dict)
+async def view_all_bank_accounts(current_user: dict = Depends(verify_token)):
+    # Need to be logged in. 
+    if current_user.get("permission", -1) < 0:
+        raise HTTPException(status_code=403, detail="Must be logged in to view bank accounts")
+
+    user = bank.get_user_by_id(current_user["user_id"])
+    user_accounts = bank.get_accounts_for_user(user)
+    if not user_accounts:
+        return {"message": "No bank accounts found for this user", "accounts": []}
+
+    accounts = []
+    for account in user_accounts:
+        accounts.append({
+            "account_id": account.get_id(),
+            "account_type": account.get_account_type(),
+            "balance": account.get_balance(),
+            "is_frozen": account.is_frozen()
+        })
+    return {"message": "All bank accounts displayed successfully!", "accounts": accounts}
+
+
+@bank_routes.post("/deposit", response_model=dict)
 async def deposit(form_data: dict, current_user: dict = Depends(verify_token)):
     # Only allow users with permission level 1 (teller) or higher to deposit into bank accounts
     if current_user.get("permission", -1) < 0:
@@ -87,7 +110,7 @@ async def deposit(form_data: dict, current_user: dict = Depends(verify_token)):
     }
 
 
-@bank_routes.get("/withdraw", response_model=dict)
+@bank_routes.post("/withdraw", response_model=dict)
 async def withdraw(form_data: dict, current_user: dict = Depends(verify_token)):
     # Only allow users with permission level 1 (teller) or higher to withdraw from bank accounts
     if current_user.get("permission", -1) < 0:
@@ -112,7 +135,7 @@ async def withdraw(form_data: dict, current_user: dict = Depends(verify_token)):
     }
 
 
-@bank_routes.get("/transfer", response_model=dict)
+@bank_routes.post("/transfer", response_model=dict)
 async def transfer(form_data: dict, current_user: dict = Depends(verify_token)):
     # Only allow users with permission level 1 (teller) or higher to transfer between bank accounts
     if current_user.get("permission", -1) < 0:

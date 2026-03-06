@@ -100,21 +100,30 @@ def list_accounts():
     if not headers:
         return
 
-    response = {
-        "accounts": [
-            {"account_id": 1, "account_type": "checking", "balance": 1000.00},
-            {"account_id": 2, "account_type": "savings", "balance": 5000.00}
-        ]
-    }
+    response = requests.get(f"{server_base_url}/bank/get_all_bank_accounts", headers=headers)
+    if response.status_code == 200:
+        response_data = response.json()
+    elif response.status_code == 401:
+        print("Unauthorized. Please log in again.")
+        delete_token()
+        return
+    elif response.status_code == 500:
+        print("Server error occurred. Please try again later.")
+        return
+    else:
+        print("Response text:", response.text)
+        print("Failed to retrieve accounts with status code:", response.status_code)
+        return
+
 
     table = Table()
     table.add_column("Account ID", justify="right", style="cyan", no_wrap=True)
     table.add_column("Account Type", style="magenta")
     table.add_column("Balance", justify="right", style="green")
-    for account in response["accounts"]:
+    for account in response_data["accounts"]:
         table.add_row(str(account["account_id"]), account["account_type"], f"${account['balance']:.2f}")
     print(table)
-    print(f"Total balance: ${sum(account['balance'] for account in response['accounts']):.2f}")
+    print(f"Total balance: ${sum(account['balance'] for account in response_data['accounts']):.2f}")
 
 
 @app.command(hidden=permissions < 0)
@@ -126,7 +135,7 @@ def deposit(account_id: Annotated[int, Argument(help="Account ID to deposit into
     if not headers:
         return
 
-    response = requests.post(f"{server_base_url}/deposit", json={"account_id": account_id, "amount": amount}, headers=headers)
+    response = requests.post(f"{server_base_url}/bank/deposit", json={"account_id": account_id, "amount": amount}, headers=headers)
     if response.status_code == 200:
         response_data = response.json()
         print(response_data.get("message", f"Deposit successful! Balance is now ${response_data.get('balance', 'unknown')}"))
@@ -138,8 +147,6 @@ def deposit(account_id: Annotated[int, Argument(help="Account ID to deposit into
         print(f"[red]Deposit failed with status code: {response.status_code}[/red]")
 
     
-
-
 @app.command(hidden=permissions < 0)
 def withdraw(account_id: Annotated[int, Argument(help="Account ID to withdraw from")], 
             amount: Annotated[float, Argument(help="Amount of money to withdraw")]
@@ -149,7 +156,7 @@ def withdraw(account_id: Annotated[int, Argument(help="Account ID to withdraw fr
     if not headers:
         return
 
-    response = requests.post(f"{server_base_url}/withdraw", json={"account_id": account_id, "amount": amount}, headers=headers)
+    response = requests.post(f"{server_base_url}/bank/withdraw", json={"account_id": account_id, "amount": amount}, headers=headers)
     if response.status_code == 200:
         response_data = response.json()
         print(response_data.get("message", f"Withdrawal successful! Balance is now ${response_data.get('balance', 'unknown')}"))
@@ -176,7 +183,7 @@ def transfer(amount: Annotated[float, Argument(help="Amount of money to transfer
     if not headers:
         return
 
-    response = requests.post(f"{server_base_url}/transfer", json={"from_account_id": account, "to_account_id": to, "amount": amount}, headers=headers)
+    response = requests.post(f"{server_base_url}/bank/transfer", json={"from_account_id": account, "to_account_id": to, "amount": amount}, headers=headers)
     if response.status_code == 200:
         response_data = response.json()
         print(response_data.get("message", f"Transfer successful! Balance is now ${response_data.get('balance', 'unknown')}"))
@@ -186,3 +193,25 @@ def transfer(amount: Annotated[float, Argument(help="Amount of money to transfer
         print("[red]Server error occurred. Please try again later.[/red]")
     else:
         print(f"[red]Transfer failed with status code: {response.status_code}[/red]")
+
+
+@app.command()
+def open_account(account_type: Annotated[str, Argument(help="Type of account to open (checking or savings)")] = "checking"):
+    """Open a new bank account"""
+    headers, permission = handle_authorization()
+    if not headers:
+        return
+    if account_type not in ["checking", "savings"]:
+        print("[red]Invalid account type. Please choose 'checking' or 'savings'.[/red]")
+        return
+
+    response = requests.post(f"{server_base_url}/bank/create_bank_account", json={"bank_account_type": account_type}, headers=headers)
+    if response.status_code == 200:
+        response_data = response.json()
+        print(response_data.get("message", f"{account_type.capitalize()} account created successfully! Account ID: {response_data.get('account_id', 'unknown')}"))
+    elif response.status_code == 400:
+        print(f"[red]Account creation failed: {response.json().get('detail')}[/red]")
+    elif response.status_code == 500:
+        print("[red]Server error occurred. Please try again later.[/red]")
+    else:
+        print(f"[red]Account creation failed with status code: {response.status_code}[/red]")
