@@ -17,6 +17,7 @@ class CheckingAccount:
         balance (float): The current balance of the checking account.
         frozen (bool): Whether the account is frozen or not.
         transactions (list[Transaction]): The list of transactions associated with this account.
+        next_transaction_num (int): Next relative ID of transaction.
     """
 
     def __init__(self, account_num: int, balance: float = 0.0) -> None:
@@ -40,6 +41,7 @@ class CheckingAccount:
         self.balance: float = balance
         self.frozen: bool = False
         self.transactions: list[Transaction] = []
+        self.next_transaction_num = 0
     
     def withdraw(self, amount: float) -> None:
         """
