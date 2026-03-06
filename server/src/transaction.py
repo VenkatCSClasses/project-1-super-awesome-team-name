@@ -64,14 +64,14 @@ class Transaction:
         """
         return self.amount
 
-    def get_account_num(self) -> int:
+    def get_account_id(self) -> int:
         """
         Returns the account number that the transaction belongs to.
 
         Returns:
             int: The amount number that the transaction belongs to.
         """
-        return self.account_num
+        return self.account_id
 
     def __str__(self) -> str:
         """

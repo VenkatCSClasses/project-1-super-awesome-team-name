@@ -13,7 +13,7 @@ class TestTransaction:
         trans1 = Transaction(0, 0, 1, 50)
         assert trans1.get_absolute_id() == 0
         assert trans1.get_relative_id() == 0
-        assert trans1.get_account_num() == 1
+        assert trans1.get_account_id() == 1
         assert trans1.get_amount() == 50
         assert trans1.get_time().date() == datetime.now(timezone.utc).date()
 
@@ -21,7 +21,7 @@ class TestTransaction:
         trans2 = Transaction(1, 1, 1, -50)
         assert trans2.get_absolute_id() == 1
         assert trans2.get_relative_id() == 1
-        assert trans2.get_account_num() == 1
+        assert trans2.get_account_id() == 1
         assert trans2.get_amount() == -50
         assert trans2.get_time().date() == datetime.now(timezone.utc).date()
 
@@ -29,7 +29,7 @@ class TestTransaction:
         trans3 = Transaction(2, 0, 2, 0.01)
         assert trans3.get_absolute_id() == 2
         assert trans3.get_relative_id() == 0
-        assert trans3.get_account_num() == 2
+        assert trans3.get_account_id() == 2
         assert trans3.get_amount() == 0.01
         assert trans3.get_time().date() == datetime.now(timezone.utc).date()
 
@@ -37,7 +37,7 @@ class TestTransaction:
         trans4 = Transaction(999999, 500, 100, 1000000.00)
         assert trans4.get_absolute_id() == 999999
         assert trans4.get_relative_id() == 500
-        assert trans4.get_account_num() == 100
+        assert trans4.get_account_id() == 100
         assert trans4.get_amount() == 1000000.00
         assert trans4.get_time().date() == datetime.now(timezone.utc).date()
 
