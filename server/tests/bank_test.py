@@ -8,27 +8,33 @@ from bank import Bank
 
 class TestBank:
     def test_add_user(self):
+        """Test that a user can be added to the bank and is retrievable"""
         bank = Bank()
         assert len(bank.get_users()) == 0
         bank.add_user(Customer("john", 5, "password"))
         assert len(bank.get_users()) == 1
+        assert bank.find_user_by_id(5) == Customer("john", 5, "password")
 
     def test_remove_user(self):
+        """Test that a user can be removed from the bank and is no longer retrievable"""
         bank = Bank()
         user = Customer("john", 5, "password")
         bank.add_user(user)
         assert len(bank.get_users()) == 1
         bank.remove_user(user)
         assert len(bank.get_users()) == 0
+        assert bank.find_user_by_id(5) is None
 
 
     def test_remove_user_by_name(self):
+        """Test that a user can be removed from the bank by name and is no longer retrievable"""
         bank = Bank()
         user = Customer("john", 5, "password")
         bank.add_user(user)
         assert len(bank.get_users()) == 1
         bank.remove_user_by_name("john")
         assert len(bank.get_users()) == 0
+        assert bank.find_user_by_name("john") is None
 
 
     def test_remove_user_by_id(self):
@@ -38,6 +44,7 @@ class TestBank:
         assert len(bank.get_users()) == 1
         bank.remove_user_by_id(5)
         assert len(bank.get_users()) == 0
+        assert bank.find_user_by_name("john") is None
 
 
     def test_get_user_by_id(self):
@@ -55,6 +62,7 @@ class TestBank:
     
 
     def test_get_total_balance(self):
+        """Test that the total balance is correctly calculated if account balances change"""
         bank = Bank()
         user = Customer("john", 5, "password")
         bank.add_user(user)

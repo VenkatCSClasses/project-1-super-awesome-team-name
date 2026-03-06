@@ -209,20 +209,20 @@ class Bank:
     def add_account(self, account: CheckingAccount) -> None:
         if any(existing.account_num == account.account_num for existing in self.accounts):
             raise KeyError(f"Account id already exists: {account.account_num}")
-        self.accounts.append(accounqt)
+        self.accounts.append(account)
+
 
 
     def get_all_users(self) -> list[Customer]:
         pass
 
 
-    # Backward-compatible alias used in current tests.
     def get_users(self) -> list[Customer]:
         pass
 
+
     def get_all_accounts(self, only_savings: bool = False) -> list[CheckingAccount]:
         pass
-
 
 
     def get_user_by_id(self, user_id: int) -> Customer | None:

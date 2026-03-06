@@ -105,7 +105,7 @@ class CheckingAccount:
         Returns:
             bool: True if the account is frozen, False otherwise.
         """
-        pass
+        return self.is_frozen
 
     def toggle_frozen(self) -> bool:
         """
@@ -114,7 +114,8 @@ class CheckingAccount:
         Returns:
             bool: The new frozen status of the account.
         """
-        pass
+        self.is_frozen = not self.is_frozen
+        return self.is_frozen
 
     def check_balance(self) -> float:
         """
@@ -132,7 +133,7 @@ class CheckingAccount:
         Returns:
             int: The account number of the account.
         """
-        pass
+        return self.account_num
 
     def get_transaction(self, transaction_num: int, is_relative: bool = False) -> Transaction:
         """
@@ -186,7 +187,7 @@ class CheckingAccount:
         Returns:
             str: The human-readable string showing information about all transactions, with a new line between each one.
         """
-        pass
+        return '\n'.join(self.transactions.__str__() for transaction in self.transactions)
 
     @staticmethod
     def _is_amount_valid(amount: float) -> bool:
