@@ -22,24 +22,24 @@ class TestSavingsAccount:
         assert acc0.get_acct_num() == 0
         assert acc1.get_acct_num() == 1
 
-        assert acc0.get_interest_amount == os.getenv("DAILY_INTEREST", 0.05)
-        assert acc1.get_interest_amount == os.getenv("DAILY_INTEREST", 0.05)
-        assert acc1.get_interest_amount == os.getenv("MAX_WITHDRAW_LIMIT", 10000)
-        assert acc1.get_interest_amount == os.getenv("MAX_WITHDRAW_LIMIT", 10000)
+        assert acc0.get_interest_amount() == float(os.getenv("DAILY_INTEREST", 0.05))
+        assert acc1.get_interest_amount() == float(os.getenv("DAILY_INTEREST", 0.05))
+        assert acc1.get_max_withdraw_limit() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
+        assert acc1.get_max_withdraw_limit() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
     
 
     def test_withdraw_limit(self):
         """Tests covering the updated withdraw method and ensuring withdraw limit is changed"""
-        acc0 = SavingsAccount(0, os.getenv("MAX_WITHDRAW_LIMIT", 10000) + 200)
+        acc0 = SavingsAccount(0, float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)) + 200)
         acc0.withdraw(200)
 
-        assert acc0.get_current_withdraw_limit == os.getenv("MAX_WITHDRAW_LIMIT", 10000) - 200
-        assert acc0.check_balance == os.getenv("MAX_WITHDRAW_LIMIT", 10000)
+        assert acc0.get_current_withdraw_limit() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)) - 200
+        assert acc0.check_balance() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
 
-        acc0.withdraw(os.getenv("MAX_WITHDRAW_LIMIT", 10000) - 200)
+        acc0.withdraw(float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)) - 200)
         
-        assert acc0.get_current_withdraw_limit == 0
-        assert acc0.check_balance == 200
+        assert acc0.get_current_withdraw_limit() == 0
+        assert acc0.check_balance() == 200
 
         with pytest.raises(WithdrawMaxedException):
             acc0.withdraw(10)
@@ -47,17 +47,17 @@ class TestSavingsAccount:
 
     def test_transfer_limit(self):
         """Tests covering the updated transfer method and ensuring withdraw limit is changed"""
-        acc0 = SavingsAccount(0, os.getenv("MAX_WITHDRAW_LIMIT", 10000) + 200)
+        acc0 = SavingsAccount(0, float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)) + 200)
         acc1 = SavingsAccount(1)
         acc0.transfer(200, acc1)
 
-        assert acc0.get_current_withdraw_limit == os.getenv("MAX_WITHDRAW_LIMIT", 10000) - 200
-        assert acc0.check_balance == os.getenv("MAX_WITHDRAW_LIMIT", 10000)
+        assert acc0.get_current_withdraw_limit() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000) - 200)
+        assert acc0.check_balance() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
 
-        acc0.transfer(os.getenv("MAX_WITHDRAW_LIMIT", 10000) - 200, acc1)
+        acc0.transfer(float(os.getenv("MAX_WITHDRAW_LIMIT", 10000) - 200), acc1)
         
-        assert acc0.get_current_withdraw_limit == 0
-        assert acc0.check_balance == 200
+        assert acc0.get_current_withdraw_limit() == 0
+        assert acc0.check_balance() == 200
 
         with pytest.raises(WithdrawMaxedException):
             acc0.transfer(10, acc1)
@@ -71,14 +71,14 @@ class TestSavingsAccount:
         acc0.compound_interest()
         acc1.compound_interest()
 
-        assert acc0.check_balance() == (1 + os.getenv("DAILY_INTEREST", 0.05)) * 100
-        assert acc1.check_balance() == (1 + os.getenv("DAILY_INTEREST", 0.05)) * 500
+        assert acc0.check_balance() == round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * 100, 2)
+        assert acc1.check_balance() == round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * 500, 2)
 
         acc0.compound_interest()
         acc1.compound_interest()
 
-        assert acc0.check_balance() == ((1 + os.getenv("DAILY_INTEREST", 0.05)) * (1 + os.getenv("DAILY_INTEREST", 0.05))) * 100
-        assert acc1.check_balance() == ((1 + os.getenv("DAILY_INTEREST", 0.05)) * (1 + os.getenv("DAILY_INTEREST", 0.05))) * 500
+        assert acc0.check_balance() == round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * 100, 2), 2)
+        assert acc1.check_balance() == round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * 500, 2), 2)
 
 
     def test_reset_withdraw_limit(self):
@@ -89,11 +89,11 @@ class TestSavingsAccount:
         acc0.withdraw(20)
         acc1.withdraw(50)
 
-        assert acc0.get_current_withdraw_limit() == os.getenv("MAX_WITHDRAW_LIMIT", 10000) - 20
-        assert acc1.get_current_withdraw_limit() == os.getenv("MAX_WITHDRAW_LIMIT", 10000) - 50
+        assert acc0.get_current_withdraw_limit() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)) - 20
+        assert acc1.get_current_withdraw_limit() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)) - 50
 
         acc0.reset_withdraw_limit()
         acc1.reset_withdraw_limit()
 
-        assert acc0.get_current_withdraw_limit() == os.getenv("MAX_WITHDRAW_LIMIT", 10000) 
-        assert acc1.get_current_withdraw_limit() == os.getenv("MAX_WITHDRAW_LIMIT", 10000) 
+        assert acc0.get_current_withdraw_limit() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)) 
+        assert acc1.get_current_withdraw_limit() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
