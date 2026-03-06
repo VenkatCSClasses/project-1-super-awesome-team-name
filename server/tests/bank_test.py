@@ -2,7 +2,6 @@ import sys
 sys.path.append('./server/src')
 
 from customer import Customer
-from teller import Teller
 from checking_account import CheckingAccount
 from bank import Bank
 

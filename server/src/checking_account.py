@@ -5,7 +5,6 @@ from transaction import Transaction
 from exceptions.amount_invalid_exception import AmountInvalidException
 from exceptions.insufficient_funds_exception import InsufficientFundsException
 from exceptions.account_frozen_exception import AccountFrozenException
-from checking_account import CheckingAccount
 
 from decimal import Decimal
 
