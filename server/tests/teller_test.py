@@ -18,7 +18,7 @@ class TestTeller:
         test = Teller("john", 5, "password")
         assert test.get_passwd() == "password"
 
-    def test_get_acc_type(self):
+    def test_get_permissions(self):
         test = Teller("john", 5, "password")
         assert test.get_permissions() == 1
 
