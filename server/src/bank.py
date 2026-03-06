@@ -242,8 +242,7 @@ class Bank:
     
     def get_accounts_for_user(self, user: Customer) -> list[int]:
         return user.get_accounts()
-
-
+    
 
     def get_all_users(self) -> list[Customer]:
         pass
@@ -262,6 +261,7 @@ class Bank:
             if user.get_id() == user_id:
                 return user
         return None
+    
 
 
     def get_user_by_name(self, username: str) -> Customer | None:
@@ -269,11 +269,10 @@ class Bank:
             if user.get_name() == username:
                 return user
         return None
-
+    
 
     def get_account(self, account_num: int) -> CheckingAccount:
         pass
-
 
     def remove_user(self, identifier) -> Customer:
         pass
@@ -282,8 +281,11 @@ class Bank:
     def remove_user_by_id(self, user_id: int) -> Customer:
         pass
 
+
     def remove_user_by_name(self, username: str) -> Customer:
         pass
 
+
     def remove_account(self, id: int) -> CheckingAccount:
         pass
+
