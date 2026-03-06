@@ -35,4 +35,4 @@ class Admin(Teller):
     acc - the account to freeze
     """
     def toggle_frozen(self, acc : CheckingAccount):
-        pass
+        acc.toggle_frozen()
