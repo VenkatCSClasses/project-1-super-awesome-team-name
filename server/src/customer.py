@@ -1,7 +1,9 @@
 import sys
 sys.path.append('./server/src')
 
-from checking_account import CheckingAccount
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from checking_account import CheckingAccount
 
 class Customer():
     
@@ -45,7 +47,7 @@ class Customer():
         return self.accounts
 
     
-    def register_account(self, account: CheckingAccount):
+    def register_account(self, account: "CheckingAccount"):
         self.accounts.append(account)
         
     """

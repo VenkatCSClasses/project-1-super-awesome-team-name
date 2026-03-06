@@ -2,7 +2,9 @@ import sys
 sys.path.append('./server/src')
 
 from transaction import Transaction
-from bank import Bank
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from bank import Bank
 from exceptions.amount_invalid_exception import AmountInvalidException
 from exceptions.insufficient_funds_exception import InsufficientFundsException
 from exceptions.account_frozen_exception import AccountFrozenException
@@ -22,7 +24,7 @@ class CheckingAccount:
     """
 
 
-    def __init__(self, account_num: int, bank: Bank, balance: float = 0.0) -> None:
+    def __init__(self, account_num: int, bank: "Bank", balance: float = 0.0) -> None:
         """
         Initialize the CheckingAccount with the params account number and optional balance.
         Also initalizes the attributes is_frozen to false and transactions to an empty list of transactions.
@@ -39,7 +41,7 @@ class CheckingAccount:
 
         if balance != 0.0 and not self._is_amount_valid(balance):
             raise AmountInvalidException(balance)
-        
+
         self.account_num: int = account_num
         self.balance: float = balance
         self.frozen: bool = False

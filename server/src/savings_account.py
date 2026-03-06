@@ -2,7 +2,9 @@ import sys
 sys.path.append("./server/src")
 
 from checking_account import CheckingAccount
-from bank import Bank
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from bank import Bank
 
 from exceptions.withdraw_maxed_exception import WithdrawMaxedException
 
@@ -22,7 +24,7 @@ class SavingsAccount(CheckingAccount):
         curr_withdraw_limit (float): Current remaining withdraw limit on the day.
     """
 
-    def __init__(self, account_num: int, bank: Bank, balance: float = 0.0) -> None:
+    def __init__(self, account_num: int, bank: "Bank", balance: float = 0.0) -> None:
         """
         Initialize the SavingsAccount with the account number and optional balance.
         Also initalizes the is_frozen to false, transactions to an empty list, curr_withdraw_total to 0.0.
