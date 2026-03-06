@@ -17,9 +17,9 @@ class TestCheckingAccount:
         account = CheckingAccount(1, bank, balance=100.00)
         assert account.check_balance() == 100.00
         with pytest.raises(AmountInvalidException):
-            account = CheckingAccount(1, -0.01)
+            account = CheckingAccount(1, bank, -0.01)
         with pytest.raises(AmountInvalidException):
-            account = CheckingAccount(1, 10.111)
+            account = CheckingAccount(1, bank, 10.111)
 
 
     def test_withdraw(self):
@@ -108,12 +108,12 @@ class TestCheckingAccount:
         account.withdraw(30)  # Transaction ID 1
         transaction = account.get_transaction(0, True)
         assert transaction.amount == 50
-        assert transaction.get_account_num == 1
-        assert transaction.get_relative_id == 0
+        assert transaction.get_account_num() == 1
+        assert transaction.get_relative_id() == 0
         transaction = account.get_transaction(1, True)
         assert transaction.amount == -30
-        assert transaction.get_account_num == 1
-        assert transaction.get_relative_id == 1
+        assert transaction.get_account_num() == 1
+        assert transaction.get_relative_id() == 1
 
 
     def test_get_transaction_invalid(self):
@@ -134,12 +134,12 @@ class TestCheckingAccount:
         account.withdraw(30)  # Transaction ID 2
         history = account.get_all_transactions()
         assert len(history) == 2
-        assert history[0].get_account_num == 1
-        assert history[1].get_account_num == 1
-        assert history[0].get_relative_id == 1
-        assert history[1].get_relative_id == 2
-        assert history[0].get_amount == 50
-        assert history[1].get_amount == -30
+        assert history.get(1).get_account_num() == 1
+        assert history.get(2).get_account_num() == 1
+        assert history.get(1).get_relative_id() == 1
+        assert history.get(2).get_relative_id() == 2
+        assert history.get(1).get_amount() == 50
+        assert history.get(2).get_amount() == -30
 
 
     def test_get_transaction_str(self):
@@ -166,12 +166,12 @@ class TestCheckingAccount:
         trans1 = account.get_transaction(1, True)
         trans2 = account.get_transaction(2, True)
 
-        assert (trans1 + '\n' + trans2) == account.get_all_transaction_str
+        assert (trans1 + '\n' + trans2) == account.get_all_transaction_str()
 
         account.deposit(20)
         trans3 = account.get_transaction(3, True)
 
-        assert (trans1 + '\n' + trans2 + '\n' + trans3) == account.get_all_transaction_str
+        assert (trans1 + '\n' + trans2 + '\n' + trans3) == account.get_all_transaction_str()
 
 
     def test_is_amount_valid(self):
