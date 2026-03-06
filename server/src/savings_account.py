@@ -1,5 +1,8 @@
 from checking_account import CheckingAccount
 
+from dotenv import load_dotenv
+load_dotenv()
+
 class SavingsAccount(CheckingAccount):
     """
     A class used to represent a savings account.
@@ -10,13 +13,13 @@ class SavingsAccount(CheckingAccount):
         is_frozen (bool): Whether the account is frozen or not.
         transactions (list[Transaction]): The list of transactions associated with this account.
         curr_withdraw_total (float): Current withdraw total on the day.
-        max_withdraw_total (float): Max withdraw total per day.
     """
 
     def __init__(self, account_num: int, balance: float = 0.0) -> None:
         """
         Initialize the SavingsAccount with the account number and optional balance.
-        Also initalizes the is_frozen to false, transactions to an empty list, curr_withdraw_total to 0.0, and max_withdraw_total to 10,000.
+        Also initalizes the is_frozen to false, transactions to an empty list, curr_withdraw_total to 0.0.
+        max_withdraw_total and daily_interest are env variable, but default is 10,000 and 0.05%.
 
         Args:
             account_num (int): The account number of the savings account.
