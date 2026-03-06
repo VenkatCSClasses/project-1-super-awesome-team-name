@@ -5,12 +5,13 @@ from teller import Teller
 from checking_account import CheckingAccount
 
 class Admin(Teller):
-    def __init__(self, name, id, passwd):
+    def __init__(self, name, id, passwd, bank):
         self.name = name
         self.id = id
         self.passwd = passwd
-        self.accType = 2
+        self.permissions = 2
         self.accounts = []
+        self.bank = bank
     
     """
     returns name, id, and customer in visual string
@@ -34,4 +35,4 @@ class Admin(Teller):
     acc - the account to freeze
     """
     def toggle_frozen(self, acc : CheckingAccount):
-        pass
+        acc.toggle_frozen()
