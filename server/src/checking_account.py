@@ -2,6 +2,7 @@ import sys
 sys.path.append('./server/src')
 
 from transaction import Transaction
+from bank import Bank
 from exceptions.amount_invalid_exception import AmountInvalidException
 from exceptions.insufficient_funds_exception import InsufficientFundsException
 from exceptions.account_frozen_exception import AccountFrozenException
@@ -20,13 +21,15 @@ class CheckingAccount:
         next_transaction_num (int): Next relative ID of transaction.
     """
 
-    def __init__(self, account_num: int, balance: float = 0.0) -> None:
+
+    def __init__(self, account_num: int, bank: Bank, balance: float = 0.0) -> None:
         """
         Initialize the CheckingAccount with the params account number and optional balance.
         Also initalizes the attributes is_frozen to false and transactions to an empty list of transactions.
 
         Args:
             account_num (int): The account number of the checking account.
+            bank (Bank): The bank the account belongs to.
             balance (float, optional): The initial balance of the checking account.
                 Defaults to 0.0.
 
@@ -42,7 +45,9 @@ class CheckingAccount:
         self.frozen: bool = False
         self.transactions: list[Transaction] = []
         self.next_transaction_num = 0
-    
+        self.bank = bank
+
+ 
     def withdraw(self, amount: float) -> None:
         """
         Withdraws a specified amount from the checking account.
@@ -65,6 +70,7 @@ class CheckingAccount:
         self.balance -= amount
         #TODO transaction logging
 
+
     def deposit(self, amount: float) -> None:
         """
         Deposits a specified amount into the checking account.
@@ -84,6 +90,7 @@ class CheckingAccount:
         self.balance += amount
         #TODO transaction logging
 
+
     def transfer(self, amount: float, rec_account: 'CheckingAccount') -> None:
         """
         Transfers a specified amount from this account to a receiving account.
@@ -100,6 +107,7 @@ class CheckingAccount:
         self.withdraw(amount)    
         rec_account.deposit(amount) 
 
+
     def is_frozen(self) -> bool:
         """
         Checks if the account is currently frozen.
@@ -108,6 +116,7 @@ class CheckingAccount:
             bool: True if the account is frozen, False otherwise.
         """
         return self.frozen
+
 
     def toggle_frozen(self) -> bool:
         """
@@ -118,6 +127,7 @@ class CheckingAccount:
         """
         self.frozen = not self.frozen
         return self.frozen
+
 
     def check_balance(self) -> float:
         """
@@ -138,6 +148,7 @@ class CheckingAccount:
         """
         return self.balance
 
+
     def get_acct_num(self) -> int:
         """
         Returns the account number.
@@ -146,6 +157,7 @@ class CheckingAccount:
             int: The account number of the account.
         """
         return self.account_num
+
 
     def get_transaction(self, transaction_num: int, is_relative: bool = False) -> Transaction:
         """
@@ -178,6 +190,7 @@ class CheckingAccount:
                 
         raise KeyError(f"Transaction with number {transaction_num} not found in list of transactions for {self.account_num}.")
 
+
     def get_all_transactions(self) -> list[Transaction]:
         """
         Returns a list of all transactions associated with the account.
@@ -186,6 +199,7 @@ class CheckingAccount:
             list[Transaction]: A list of all transactions on the account.
         """
         return self.transactions
+
 
     def get_transaction_str(self, transaction_num: int, is_relative: bool = False) -> str:
         """
@@ -227,6 +241,7 @@ class CheckingAccount:
         """
         return '\n'.join(self.transactions.__str__() for transaction in self.transactions)
 
+
     @staticmethod
     def _is_amount_valid(amount: float) -> bool:
         """
@@ -254,6 +269,7 @@ class CheckingAccount:
             int: The account number of the checking account.
         """
         return self.account_num
+
 
     def get_account_type(self) -> str:
         """
