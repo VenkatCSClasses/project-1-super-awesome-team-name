@@ -102,7 +102,7 @@ async def deposit(form_data: dict, current_user: dict = Depends(verify_token)):
     account = bank.get_account_by_id(form_data["account_id"])
     if account is None:
         raise HTTPException(status_code=404, detail="Account not found")
-    if account.is_frozen:
+    if account.is_frozen():
         raise HTTPException(status_code=403, detail="Cannot deposit into a frozen account")
 
     account.deposit(form_data["amount"])
@@ -127,7 +127,7 @@ async def withdraw(form_data: dict, current_user: dict = Depends(verify_token)):
     account = bank.get_account_by_id(form_data["account_id"])
     if account is None:
         raise HTTPException(status_code=404, detail="Account not found")
-    if account.is_frozen:
+    if account.is_frozen():
         raise HTTPException(status_code=403, detail="Cannot withdraw from a frozen account")
 
     account.withdraw(form_data["amount"])
@@ -152,7 +152,7 @@ async def transfer(form_data: dict, current_user: dict = Depends(verify_token)):
     to_account = bank.get_account_by_id(form_data["to_account_id"])
     if from_account is None or to_account is None:
         raise HTTPException(status_code=404, detail="One or both accounts not found")
-    if from_account.is_frozen or to_account.is_frozen:
+    if from_account.is_frozen() or to_account.is_frozen:
         raise HTTPException(status_code=403, detail="Cannot transfer from or to a frozen account")
     
     from_account.transfer(to_account, form_data["amount"])
