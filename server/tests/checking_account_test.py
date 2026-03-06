@@ -130,14 +130,14 @@ class TestCheckingAccount:
         """Test that the transaction history is returned correctly."""
         bank = Bank()
         account = CheckingAccount(1, bank, balance=100)
-        account.deposit(50)  # Transaction ID 0
-        account.withdraw(30)  # Transaction ID 1
+        account.deposit(50)  # Transaction ID 1
+        account.withdraw(30)  # Transaction ID 2
         history = account.get_all_transactions()
         assert len(history) == 2
         assert history[0].get_account_num == 1
         assert history[1].get_account_num == 1
-        assert history[0].get_relative_id == 0
-        assert history[1].get_relative_id == 1
+        assert history[0].get_relative_id == 1
+        assert history[1].get_relative_id == 2
         assert history[0].get_amount == 50
         assert history[1].get_amount == -30
 
@@ -146,11 +146,11 @@ class TestCheckingAccount:
         """Test that a transaction is returned correctly as a human readable string."""
         bank = Bank()
         account = CheckingAccount(1, bank, balance=100)
-        account.deposit(50)  # Transaction ID 0
-        account.withdraw(30)  # Transaction ID 1
+        account.deposit(50)  # Transaction ID 1
+        account.withdraw(30)  # Transaction ID 2
         
-        trans1 = account.get_transaction(0, True)
-        trans2 = account.get_transaction(1, True)
+        trans1 = account.get_transaction(1, True)
+        trans2 = account.get_transaction(2, True)
 
         assert trans1.__str__() == account.get_transaction_str(0, True)
         assert trans2.__str__() == account.get_transaction_str(1, True)
@@ -160,15 +160,16 @@ class TestCheckingAccount:
         """Test that the transaction history is returned correctly as a human-readable string."""
         bank = Bank()
         account = CheckingAccount(1, bank, balance=100)
-        account.deposit(50)  # Transaction ID 0
-        account.withdraw(30)  # Transaction ID 1
+        account.deposit(50)  # Transaction ID 1
+        account.withdraw(30)  # Transaction ID 2
 
-        trans1 = account.get_transaction(0, True)
-        trans2 = account.get_transaction(1, True)
+        trans1 = account.get_transaction(1, True)
+        trans2 = account.get_transaction(2, True)
 
         assert (trans1 + '\n' + trans2) == account.get_all_transaction_str
 
-        trans3 = account.get_transaction(2, True)
+        account.deposit(20)
+        trans3 = account.get_transaction(3, True)
 
         assert (trans1 + '\n' + trans2 + '\n' + trans3) == account.get_all_transaction_str
 
