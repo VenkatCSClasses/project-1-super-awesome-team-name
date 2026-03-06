@@ -5,7 +5,7 @@ load_dotenv()
 
 admin = FastAPI()
 
-@admin.get("/delete_user/{user_id}")
+@admin.get("/delete_user/{user_id}", response_model=dict)
 async def delete_user(user_id: int, current_user: dict = Depends(verify_token)):
     # Only allow users with permission level 2 (admin) to delete users
     if current_user.get("permission", -1) < 2:
