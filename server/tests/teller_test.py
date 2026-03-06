@@ -1,10 +1,11 @@
 import sys
 sys.path.append('./server/src')
 
-from server.src.teller import Teller
-from server.src.customer import Customer
+from teller import Teller
+from customer import Customer
 
 class TestTeller:
+    
     def test_get_name(self):
         test = Teller("john", 5, "password")
         assert test.get_name() == "john"

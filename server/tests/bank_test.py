@@ -7,6 +7,7 @@ from bank import Bank
 
 
 class TestBank:
+    
     def test_add_user(self):
         """Test that a user can be added to the bank and is retrievable"""
         bank = Bank()

@@ -5,6 +5,7 @@ from customer import Customer
 from checking_account import CheckingAccount
 
 class TestCustomer:
+    
     def test_get_name(self):
         test = Customer("john", 5, "password")
         assert test.get_name() == "john"

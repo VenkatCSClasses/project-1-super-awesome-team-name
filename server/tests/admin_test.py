@@ -4,9 +4,10 @@ sys.path.append('./server/src')
 
 from admin import Admin
 from checking_account import CheckingAccount
-from account_frozen_exception import AccountFrozenException
+from exceptions.account_frozen_exception import AccountFrozenException
 
 class TestAdmin:
+    
     def test_get_name(self):
         test = Admin("john", 5, "password")
         assert test.get_name() == "john"
