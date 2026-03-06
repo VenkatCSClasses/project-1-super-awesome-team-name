@@ -6,6 +6,8 @@ from argon2.exceptions import VerifyMismatchError
 from argon2 import PasswordHasher
 from models import User
 from database import read_db, write_db
+from bank import Bank
+from transaction import Transaction
 
 load_dotenv()
 ph = PasswordHasher()
@@ -85,3 +87,10 @@ def ensure_root_user():
     data["counters"]["users"] = next_id
     write_db(data)
     return True
+
+
+
+
+
+            
+    

@@ -3,6 +3,8 @@ sys.path.append('./server/src')
 
 from customer import Customer
 from checking_account import CheckingAccount
+from transaction import Transaction
+from savings_account import SavingsAccount
 
 class Bank:
     """
@@ -13,9 +15,33 @@ class Bank:
         accounts (list[CheckingAccount]): The accounts associated with the bank.
     """
     
-    def __init__(self) -> None:
+    def __init__(self, json_data: dict = None) -> None:
         """Initialize the Bank with empty lists for users and accounts."""
-        pass
+        if json_data is not None:
+            for user_record in json_data.get("users", []):
+                new_user = Customer() 
+                for account_id in user_record.get("bank_account_ids", []):
+                    new_user.register_account(CheckingAccount(account_id))
+                self.add_user(new_user)
+
+            for account_record in json_data.get("accounts", []):
+                if account_record["type"] == "checking":
+                    account = CheckingAccount(account_record["id"], account_record["balance"])
+                else:
+                    account = SavingsAccount(account_record["id"], account_record["balance"])
+
+                account.is_frozen = account_record["frozen"]
+                for transaction_record in account_record.get("transactions", []):
+                    account.transactions.append(
+                        Transaction(
+                            transaction_record["id"],
+                            transaction_record["type"],
+                            transaction_record["amount"],
+                            transaction_record["timestamp"],
+                            transaction_record.get("source_account_id", None),
+                            transaction_record.get("destination_account_id", None)
+                        )
+                    )
     
     def get_total_balance(self) -> float:
         """
@@ -144,4 +170,3 @@ class Bank:
 
 
     
-
