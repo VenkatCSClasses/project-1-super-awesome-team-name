@@ -47,7 +47,7 @@ class Customer():
 
     
     def register_account(self, account: CheckingAccount):
-        self.accounts(account.get_id()) = account
+        self.accounts.append(account)
         
     """
     returns name, id, and customer in visual string
