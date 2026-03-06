@@ -17,11 +17,9 @@ The three use cases that are going to be implemented are:
 
 ## Work Distribution
 - Abe: CLI and Login Implementation, database setup and api endpoints
-- Andrew: checking_account, savings_account, bank, and transaction classes 
+- Andrew: checking_account class; savings_account, bank, and transaction classes/tests; custom exceptions
 - Dylan: user interface and customer class
-- Cameron: Deposit + Withdraw tests
-
-
+- Cameron: checking_account tests
 
 
 ## Coding Agent Usage
