@@ -17,24 +17,42 @@ class BankApp(App):
     """Main banking TUI application."""
 
     CSS = """
+    /* ============================================
+       GLOBAL STYLES - Terminal/btop aesthetic
+       ============================================ */
     Screen {
+        background: #0a0a0a;
+    }
+
+    Header {
+        background: #1a1a2e;
+        color: #00ff88;
+    }
+
+    Footer {
+        background: #1a1a2e;
+    }
+
+    /* ============================================
+       LOGIN SCREEN STYLES
+       ============================================ */
+    LoginScreen {
         align: center middle;
     }
 
-    #login-container, #dashboard-container {
+    #login-container {
         width: 60;
         height: auto;
         padding: 1 2;
-        background: $surface;
-        border: thick $primary;
-        border-title-color: $primary;
+        background: #0d0d0d;
+        border: heavy #00ff88;
     }
 
     #bank-logo {
         width: 100%;
         content-align: center middle;
         text-style: bold;
-        color: $primary;
+        color: #00ff88;
         text-opacity: 100%;
     }
 
@@ -42,21 +60,21 @@ class BankApp(App):
         width: 100%;
         content-align: center middle;
         text-style: bold;
-        color: $text;
+        color: #00ff88;
         padding-bottom: 0;
     }
 
     #subtitle {
         width: 100%;
         content-align: center middle;
-        color: $text-muted;
+        color: #666666;
         padding-bottom: 1;
     }
 
     #role-display {
         width: 100%;
         content-align: center middle;
-        color: $success;
+        color: #00ff88;
         padding: 1;
     }
 
@@ -69,23 +87,26 @@ class BankApp(App):
     #form Label {
         padding-top: 1;
         padding-bottom: 0;
-        color: $text;
+        color: #888888;
     }
 
     #form Input {
         width: 100%;
         margin-bottom: 0;
+        background: #1a1a1a;
+        border: tall #333333;
+        color: #00ff88;
     }
 
     #form Input:focus {
-        border: tall $primary;
+        border: tall #00ff88;
     }
 
     #error-message {
         width: 100%;
         height: auto;
         min-height: 0;
-        color: $error;
+        color: #ff4444;
         text-align: center;
         padding: 0;
         margin: 0;
@@ -120,6 +141,203 @@ class BankApp(App):
 
     Button {
         min-width: 16;
+        background: #1a1a2e;
+        border: tall #00ff88;
+        color: #00ff88;
+    }
+
+    Button:hover {
+        background: #00ff88;
+        color: #0a0a0a;
+    }
+
+    Button.-primary {
+        background: #0d4d2e;
+        border: tall #00ff88;
+    }
+
+    Button.-success {
+        background: #0d4d2e;
+        border: tall #00ff88;
+    }
+
+    Button.-warning {
+        background: #4d3d0d;
+        border: tall #ffaa00;
+        color: #ffaa00;
+    }
+
+    Button.-error {
+        background: #4d0d0d;
+        border: tall #ff4444;
+        color: #ff4444;
+    }
+
+    #login-btn {
+        width: 100%;
+        align: center middle;
+    }
+
+    /* ============================================
+       DASHBOARD SCREEN STYLES - btop aesthetic
+       ============================================ */
+    #status-bar {
+        width: 100%;
+        height: 1;
+        background: #0d0d0d;
+        padding: 0 1;
+        dock: top;
+    }
+
+    #status-bar Static {
+        width: 100%;
+        color: #888888;
+    }
+
+    #dashboard-main {
+        width: 100%;
+        height: 1fr;
+        layout: horizontal;
+        padding: 0;
+        max-height: 100%;
+    }
+
+    DashboardScreen {
+        layout: vertical;
+    }
+
+    #left-panel {
+        width: 45;
+        height: 100%;
+        padding: 0 1;
+    }
+
+    #right-panel {
+        width: 1fr;
+        height: 100%;
+        padding: 0 1;
+    }
+
+    /* User info box */
+    #user-info-box {
+        width: 100%;
+        height: auto;
+        margin-bottom: 1;
+    }
+
+    #user-details {
+        padding: 0 0;
+        color: #cccccc;
+    }
+
+    /* Box styling */
+    .box-top, .box-bottom, .box-divider {
+        color: #00ff88;
+        width: 100%;
+        height: 1;
+    }
+
+    /* Accounts section */
+    #accounts-section {
+        width: 100%;
+        height: auto;
+    }
+
+    #total-balance {
+        padding: 0 0;
+        height: 1;
+    }
+
+    #accounts-list {
+        width: 100%;
+        height: auto;
+        padding: 0;
+    }
+
+    .account-card {
+        width: 100%;
+        height: auto;
+        padding: 1 2;
+        margin: 0;
+        background: #0d0d0d;
+    }
+
+    .account-card:hover {
+        background: #1a1a2e;
+    }
+
+    .account-info {
+        width: 100%;
+    }
+
+    /* Trend box */
+    #trend-box {
+        width: 100%;
+        height: 12;
+        margin-bottom: 1;
+    }
+
+    #balance-sparkline {
+        width: 100%;
+        height: 5;
+        padding: 0 2;
+        color: #00ff88;
+    }
+
+    .trend-stats {
+        padding: 0 0;
+        height: 1;
+    }
+
+    /* Transactions box */
+    #transactions-box {
+        width: 100%;
+        height: 1fr;
+    }
+
+    #transactions-table {
+        width: 100%;
+        height: 1fr;
+        background: #0a0a0a;
+        margin: 0 1;
+    }
+
+    DataTable {
+        background: #0a0a0a;
+    }
+
+    DataTable > .datatable--header {
+        background: #1a1a2e;
+        color: #00ff88;
+        text-style: bold;
+    }
+
+    DataTable > .datatable--cursor {
+        background: #1a3a2e;
+    }
+
+    DataTable > .datatable--odd-row {
+        background: #0d0d0d;
+    }
+
+    DataTable > .datatable--even-row {
+        background: #0a0a0a;
+    }
+
+    /* Action bar */
+    #action-bar {
+        width: 100%;
+        height: 3;
+        padding: 0 1;
+        background: #0d0d0d;
+        align: center middle;
+        border-top: solid #333333;
+    }
+
+    #action-bar Button {
+        min-width: 14;
+        height: 3;
+        margin: 0 1;
     }
     """
 

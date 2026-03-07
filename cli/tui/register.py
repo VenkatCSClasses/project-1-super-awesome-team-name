@@ -13,6 +13,7 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, Input, Label, LoadingIndicator, Static, Header, Footer
 from dotenv import load_dotenv
+from register import RegisterScreen
 
 from token_utils import save_token
 
@@ -25,8 +26,6 @@ class LoginScreen(Screen):
     SUB_TITLE = "Login"
     BINDINGS = [
         Binding("escape", "app.quit", "Quit"),
-        Binding("r", "register", "Register"),
-        Binding("enter", "login", "Login"),
     ]
 
     logo = pyfiglet.figlet_format("BankOS")
@@ -34,7 +33,7 @@ class LoginScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Header()
         with Container(id="login-container"):
-            yield Static(f"BankOS ver{os.getenv('BANK_OS_VERSION', '1.0.1')}", id="title")
+            yield Static(f"BankOS Ver{os.getenv('BANK_OS_VERSION', '1.0.1')}", id="title")
             yield Static(self.logo, id="bank-logo")
             yield Static("Please sign in to continue", id="subtitle")
             
@@ -43,6 +42,8 @@ class LoginScreen(Screen):
                 yield Input(placeholder="Enter your username", id="username")
                 yield Label("Password")
                 yield Input(placeholder="Enter your password", password=True, id="password")
+                yield Label("Confirm Password")
+                yield Input(placeholder="Confirm your password", password=True, id="confirm-password")
                 
                 yield Static("", id="error-message")
                 yield LoadingIndicator(id="loading")
@@ -67,6 +68,8 @@ class LoginScreen(Screen):
         """Handle button presses."""
         if event.button.id == "login-btn":
             self.action_login()
+        elif event.button.id == "register-btn":
+            self.action_register()
 
     def action_login(self) -> None:
         """Attempt to log in."""
@@ -136,5 +139,6 @@ class LoginScreen(Screen):
         """Toggle loading state."""
         self.query_one("#loading").display = loading
         self.query_one("#login-btn", Button).disabled = loading
+        self.query_one("#register-btn", Button).disabled = loading
 
 
