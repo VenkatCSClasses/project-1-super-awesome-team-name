@@ -68,7 +68,7 @@ class TestSavingsAccount:
 
 
     def test_compound_interest(self):
-        """Tests covering the compound interest method"""
+        """Tests covering the compound interest method and transaction logging"""
         bank = Bank()
         acc0 = SavingsAccount(0, bank, 100)
         acc1 = SavingsAccount(1, bank, 500)
@@ -76,14 +76,27 @@ class TestSavingsAccount:
         acc0.compound_interest()
         acc1.compound_interest()
 
-        assert acc0.check_balance() == round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * 100, 2)
-        assert acc1.check_balance() == round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * 500, 2)
+        amount0 = round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * 100, 2)
+        amount1 = round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * 500, 2)
+
+        assert acc0.check_balance() == amount0
+        assert acc1.check_balance() == amount1
 
         acc0.compound_interest()
         acc1.compound_interest()
 
-        assert acc0.check_balance() == round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * 100, 2), 2)
-        assert acc1.check_balance() == round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * 500, 2), 2)
+        amount2 = round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * amount0, 2)
+        amount3 = round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * amount1, 2)
+ 
+        assert acc0.check_balance() == amount2
+        assert acc1.check_balance() == amount3
+
+        assert amount0 == acc0.get_transaction(0)
+        assert amount1 == acc1.get_transaction(1)
+        assert amount2 == acc0.get_transaction(2)
+        assert amount3 == acc1.get_transaction(3)
+
+
 
 
     def test_reset_withdraw_limit(self):
