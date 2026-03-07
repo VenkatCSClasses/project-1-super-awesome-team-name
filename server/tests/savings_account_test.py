@@ -21,8 +21,8 @@ class TestSavingsAccount:
 
         assert acc0.check_balance() == 0
         assert acc1.check_balance() == 100
-        assert acc0.get_acct_num() == 0
-        assert acc1.get_acct_num() == 1
+        assert acc0.get_account_id() == 0
+        assert acc1.get_account_id() == 1
 
         assert acc0.get_interest_amount() == float(os.getenv("DAILY_INTEREST", 0.05))
         assert acc1.get_interest_amount() == float(os.getenv("DAILY_INTEREST", 0.05))
@@ -91,10 +91,10 @@ class TestSavingsAccount:
         assert acc0.check_balance() == amount2
         assert acc1.check_balance() == amount3
 
-        assert amount0 == acc0.get_transaction(0)
-        assert amount1 == acc1.get_transaction(1)
-        assert amount2 == acc0.get_transaction(2)
-        assert amount3 == acc1.get_transaction(3)
+        assert amount0 - 100 == acc0.get_transaction(1).get_amount()
+        assert amount1 - 500 == acc1.get_transaction(2).get_amount()
+        assert amount2 - amount0 == acc0.get_transaction(3).get_amount()
+        assert amount3 - amount1 == acc1.get_transaction(4).get_amount()
 
 
 

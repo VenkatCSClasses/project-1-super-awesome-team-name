@@ -2,6 +2,7 @@ import sys
 sys.path.append("./server/src")
 
 from checking_account import CheckingAccount
+from transaction import Transaction
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from bank import Bank
@@ -112,8 +113,13 @@ class SavingsAccount(CheckingAccount):
 
     def compound_interest(self) -> None:
         """Compounds the interest of the savings account."""
-        self.balance = round(self.balance * (1 + float(os.getenv("DAILY_INTEREST", 0.05))), 2)
+        interest_amount = round(self.balance * (float(os.getenv("DAILY_INTEREST", 0.05))), 2)
 
+        self.transactions[self.next_transaction_id] = Transaction(self.bank.get_next_transaction_id(), self.next_transaction_id, self.account_id, interest_amount)
+        self.next_transaction_id += 1
+
+        self.balance += interest_amount
+        
 
     def reset_withdraw_limit(self) -> None:
         """Resets the current withdraw limit back to full."""
