@@ -12,7 +12,7 @@ class Customer():
         self.id = id
         self.passwd = passwd
         self.permissions = 0
-        self.accounts = {}
+        self.accounts: dict[int, CheckingAccount] = {}
         self.bank = bank
 
 
@@ -49,7 +49,7 @@ class Customer():
 
     
     def register_account(self, account: CheckingAccount):
-        self.accounts(account.get_id()) = account
+        self.accounts[account.get_id()] = account
         
     """
     returns name, id, and customer in visual string
