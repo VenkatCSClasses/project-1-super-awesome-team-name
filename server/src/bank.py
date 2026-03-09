@@ -151,8 +151,9 @@ class Bank:
 
         user = Customer(
             username,
-            self._next_user_id,
-            self._password_hasher.hash(password),
+            id=self._next_user_id,
+            passwd=self._password_hasher.hash(password),
+            bank=self,
             permissions=0,
         )
         self._next_user_id += 1
