@@ -10,6 +10,7 @@ from textual.binding import Binding
 from token_utils import load_token, get_permissions
 
 from login_screen import LoginScreen
+from register import RegisterScreen
 from dashboard import DashboardScreen
 
 
@@ -17,9 +18,6 @@ class BankApp(App):
     """Main banking TUI application."""
 
     CSS = """
-    /* ============================================
-       GLOBAL STYLES - Terminal/btop aesthetic
-       ============================================ */
     Screen {
         background: #0a0a0a;
     }
@@ -33,10 +31,11 @@ class BankApp(App):
         background: #1a1a2e;
     }
 
-    /* ============================================
-       LOGIN SCREEN STYLES
-       ============================================ */
     LoginScreen {
+        align: center middle;
+    }
+
+    RegisterScreen {
         align: center middle;
     }
 
@@ -174,6 +173,10 @@ class BankApp(App):
     }
 
     #login-btn {
+        width: 100%;
+        align: center middle;
+    }
+    #register-btn {
         width: 100%;
         align: center middle;
     }
@@ -354,7 +357,7 @@ class BankApp(App):
         if token and get_permissions() >= 0:
             self.push_screen(DashboardScreen())
         else:
-            self.push_screen(LoginScreen())
+            self.push_screen(RegisterScreen())
 
 
 if __name__ == "__main__":

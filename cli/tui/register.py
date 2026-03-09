@@ -13,19 +13,20 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, Input, Label, LoadingIndicator, Static, Header, Footer
 from dotenv import load_dotenv
-from register import RegisterScreen
 
 from token_utils import save_token
 
 load_dotenv()
 SERVER_BASE_URL = os.getenv("SERVER_BASE_URL", "http://localhost:8000")
 
-class LoginScreen(Screen):
-    """Login screen with username and password inputs."""
+class RegisterScreen(Screen):
+    """Register screen with username, password, and email inputs."""
 
-    SUB_TITLE = "Login"
+    SUB_TITLE = "Register"
     BINDINGS = [
         Binding("escape", "app.quit", "Quit"),
+        Binding("r", "register", "Register"),
+        Binding("enter", "login", "Login"),
     ]
 
     logo = pyfiglet.figlet_format("BankOS")
@@ -33,9 +34,9 @@ class LoginScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Header()
         with Container(id="login-container"):
-            yield Static(f"BankOS Ver{os.getenv('BANK_OS_VERSION', '1.0.1')}", id="title")
+            yield Static(f"BankOS ver{os.getenv('BANK_OS_VERSION', '1.0.1')}", id="title")
             yield Static(self.logo, id="bank-logo")
-            yield Static("Please sign in to continue", id="subtitle")
+            yield Static("Register an account", id="subtitle")
             
             with Vertical(id="form"):
                 yield Label("Username")
@@ -49,7 +50,7 @@ class LoginScreen(Screen):
                 yield LoadingIndicator(id="loading")
                 
                 with Horizontal(id="buttons"):
-                    yield Button("Login", id="login-btn", variant="primary")
+                    yield Button("Register", id="register-btn", variant="primary")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -62,37 +63,42 @@ class LoginScreen(Screen):
         if event.input.id == "username":
             self.query_one("#password", Input).focus()
         elif event.input.id == "password":
-            self.action_login()
+            self.query_one("#confirm-password", Input).focus()
+        elif event.input.id == "confirm-password":
+            self.action_register()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
-        if event.button.id == "login-btn":
-            self.action_login()
-        elif event.button.id == "register-btn":
+        if event.button.id == "register-btn":
             self.action_register()
 
-    def action_login(self) -> None:
-        """Attempt to log in."""
+    def action_register(self) -> None:
+        """Attempt to register."""
         username = self.query_one("#username", Input).value.strip()
         password = self.query_one("#password", Input).value
+        confirm_password = self.query_one("#confirm-password", Input).value
 
-        if not username or not password:
-            self.show_error("Please enter both username and password")
+        if not username or not password or not confirm_password:
+            self.show_error("Please fill in all fields")
             return
 
-        self.do_login(username, password)
+        if password != confirm_password:
+            self.show_error("Passwords do not match")
+            return
+
+        self.do_register(username, password)
 
 
     @work(exclusive=True)
-    async def do_login(self, username: str, password: str) -> None:
-        """Perform login request asynchronously."""
+    async def do_register(self, username: str, password: str) -> None:
+        """Perform registration request asynchronously."""
         self.set_loading(True)
         self.clear_error()
 
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
-                    f"{SERVER_BASE_URL}/login",
+                    f"{SERVER_BASE_URL}/register",
                     json={"username": username, "password": password},
                     timeout=10.0,
                 )
@@ -138,7 +144,6 @@ class LoginScreen(Screen):
     def set_loading(self, loading: bool) -> None:
         """Toggle loading state."""
         self.query_one("#loading").display = loading
-        self.query_one("#login-btn", Button).disabled = loading
         self.query_one("#register-btn", Button).disabled = loading
 
 
