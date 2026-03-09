@@ -46,6 +46,15 @@ class Admin(Teller):
                 return True
         return False
 
+    def check_all_sus_activity(self):
+        """
+        returns a list of all accounts within the bank that have a suspicious transaction
+        """
+        sus_accounts = []
+        for acc in self.accounts:
+            if self.check_sus_activity(acc):
+                sus_accounts.append(acc)
+        return sus_accounts
 
     def toggle_frozen(self, acc):
         """
