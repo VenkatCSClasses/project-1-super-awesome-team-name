@@ -22,7 +22,7 @@ async def create_bank_account(form_data: dict, current_user: dict = Depends(veri
 
     account = bank.create_account_for_user(user, form_data["bank_account_type"])
 
-    return {"message": f"Bank account of type {form_data['bank_account_type']} created successfully!", "account_id": account.get_id()}
+    return {"message": f"Bank account of type {form_data['bank_account_type']} created successfully!", "account_id": account.get_account_id()}
 
     
 @bank_routes.get("/view_bank_account", response_model=dict)
@@ -44,7 +44,7 @@ async def view_bank_account(form_data: dict, current_user: dict = Depends(verify
 
     return {
         "message": f"Bank account {form_data['account_id']} details displayed successfully!",
-        "account_id": account.get_id(),
+        "account_id": account.get_account_id(),
         "account_type": account.get_account_type(),
         "balance": account.get_balance(),
         "is_frozen": account.is_frozen()
@@ -77,9 +77,9 @@ async def view_all_bank_accounts(current_user: dict = Depends(verify_token)):
         return {"message": "No bank accounts found for this user", "accounts": []}
 
     accounts = []
-    for account in user_accounts:
+    for account in user_accounts.values():
         accounts.append({
-            "account_id": account.get_id(),
+            "account_id": account.get_account_id(),
             "account_type": account.get_account_type(),
             "balance": account.get_balance(),
             "is_frozen": account.is_frozen()
@@ -96,7 +96,7 @@ async def deposit(form_data: dict, current_user: dict = Depends(verify_token)):
 
     user = bank.get_user_by_id(current_user["user_id"])
     accounts = bank.get_accounts_for_user(user)
-    if form_data["account_id"] not in [account.get_id() for account in accounts] and current_user.get("permission", -1) == 0:
+    if form_data["account_id"] not in [account.get_account_id() for account in accounts.values()] and current_user.get("permission", -1) == 0:
         raise HTTPException(status_code=403, detail="Customers can only deposit into their own accounts")
 
     account = bank.get_account_by_id(form_data["account_id"])
@@ -121,7 +121,7 @@ async def withdraw(form_data: dict, current_user: dict = Depends(verify_token)):
 
     user = bank.get_user_by_id(current_user["user_id"])
     accounts = bank.get_accounts_for_user(user)
-    if form_data["account_id"] not in [account.get_id() for account in accounts] and current_user.get("permission", -1) == 0:
+    if form_data["account_id"] not in [account.get_account_id() for account in accounts.values()] and current_user.get("permission", -1) == 0:
         raise HTTPException(status_code=403, detail="Customers can only withdraw from their own accounts")
 
     account = bank.get_account_by_id(form_data["account_id"])
@@ -145,7 +145,7 @@ async def transfer(form_data: dict, current_user: dict = Depends(verify_token)):
     
     user = bank.get_user_by_id(current_user["user_id"])
     accounts = bank.get_accounts_for_user(user)
-    if form_data["from_account_id"] not in [account.get_id() for account in accounts] and current_user.get("permission", -1) == 0:
+    if form_data["from_account_id"] not in [account.get_account_id() for account in accounts.values()] and current_user.get("permission", -1) == 0:
         raise HTTPException(status_code=403, detail="Customers can only transfer from their own accounts")
     
     from_account = bank.get_account_by_id(form_data["from_account_id"])
