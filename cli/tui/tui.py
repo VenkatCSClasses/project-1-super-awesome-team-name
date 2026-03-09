@@ -1,8 +1,13 @@
 import sys
+import subprocess
 from pathlib import Path
+import time
+
 
 # Add parent directory to path to import token_utils
 sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "server" / "src")) 
+
 
 from textual.app import App
 from textual.binding import Binding
@@ -11,6 +16,9 @@ from token_utils import load_token, get_permissions
 
 from login_screen import LoginScreen
 from register import RegisterScreen
+import requests
+from dotenv import load_dotenv
+import os
 from dashboard import DashboardScreen
 
 
@@ -360,6 +368,37 @@ class BankApp(App):
             self.push_screen(RegisterScreen())
 
 
+def server_running() -> bool: 
+    """Simple function to test server connectivity."""
+    load_dotenv()
+    SERVER_BASE_URL = os.getenv("SERVER_BASE_URL", "http://localhost:8000")
+
+    try:
+        response = requests.get(f"{SERVER_BASE_URL}", timeout=5)
+        if response.status_code == 200:
+            return True
+        else:
+            print(f"Server responded with status code {response.status_code}.")
+    except requests.RequestException as e:
+        return False
+
+def main():
+    server_process = None
+    if not server_running():
+        server_script = Path(__file__).parent.parent.parent / "server" / "src" / "server.py"
+        server_process = subprocess.Popen(
+            [sys.executable, str(server_script)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        time.sleep(1)
+    try:
+        app = BankApp()
+        app.run()
+    finally:
+        if server_process:
+            server_process.terminate()
+
+
 if __name__ == "__main__":
-    app = BankApp()
-    app.run()
+    main()

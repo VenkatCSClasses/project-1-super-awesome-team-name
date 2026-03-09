@@ -62,10 +62,12 @@ async def whoami(current_user: dict = Depends(verify_token)):
         "username": user.get_name()
     } 
 
-
-if __name__ == "__main__":
+def main():
     try:
         uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=False)
     except KeyboardInterrupt:
         print("Shutting down server...")
         bank.save_to_file()
+
+if __name__ == "__main__":
+    main()
