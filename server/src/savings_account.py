@@ -2,6 +2,10 @@ import sys
 sys.path.append("./server/src")
 
 from checking_account import CheckingAccount
+from transaction import Transaction
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from bank import Bank
 
 from exceptions.withdraw_maxed_exception import WithdrawMaxedException
 
@@ -21,7 +25,7 @@ class SavingsAccount(CheckingAccount):
         curr_withdraw_limit (float): Current remaining withdraw limit on the day.
     """
 
-    def __init__(self, account_num: int, balance: float = 0.0) -> None:
+    def __init__(self, account_num: int, bank: "Bank", balance: float = 0.0) -> None:
         """
         Initialize the SavingsAccount with the account number and optional balance.
         Also initalizes the is_frozen to false, transactions to an empty list, curr_withdraw_total to 0.0.
@@ -32,7 +36,7 @@ class SavingsAccount(CheckingAccount):
             balance (float, optional): The initial balance of the savings account.
                 Defaults to 0.0.
         """
-        super().__init__(account_num, balance)
+        super().__init__(account_num, bank, balance)
         self.curr_withdraw_limit = float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
 
 
@@ -109,8 +113,13 @@ class SavingsAccount(CheckingAccount):
 
     def compound_interest(self) -> None:
         """Compounds the interest of the savings account."""
-        self.balance = round(self.balance * (1 + float(os.getenv("DAILY_INTEREST", 0.05))), 2)
+        interest_amount = round(self.balance * (float(os.getenv("DAILY_INTEREST", 0.05))), 2)
 
+        self.transactions[self.next_transaction_id] = Transaction(self.bank.get_next_transaction_id(), self.next_transaction_id, self.account_id, interest_amount)
+        self.next_transaction_id += 1
+
+        self.balance += interest_amount
+        
 
     def reset_withdraw_limit(self) -> None:
         """Resets the current withdraw limit back to full."""

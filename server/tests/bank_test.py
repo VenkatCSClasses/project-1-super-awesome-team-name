@@ -72,3 +72,14 @@ class TestBank:
         user = bank.get_user_by_id(5)
         account = CheckingAccount(1001, 1000.00)
         assert bank.get_total_balance(user) == 1000.00
+
+    def test_get_next_transaction_id(self):
+        """Test that get_next_transaction_ID works correctly"""
+        bank = Bank()
+
+        assert bank.get_next_transaction_id() == 1
+        assert bank.get_next_transaction_id() == 2
+        assert bank.get_next_transaction_id() == 3
+
+
+        

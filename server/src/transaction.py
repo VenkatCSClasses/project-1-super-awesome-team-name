@@ -11,7 +11,7 @@ class Transaction:
         timestamp (datetime): When the transaction occured in UTC.
         amount (float): The change in account balance of the transaction.
     """
-    def __init__(self, absolute_transaction_id: int, relative_transaction_id: int, account_num: int, amount: float) -> None:
+    def __init__(self, absolute_transaction_id: int, relative_transaction_id: int, account_id: int, amount: float) -> None:
         """
         Initialize the Transaction with the transaction ids, account number, timestamp, and amount.
         
@@ -23,7 +23,7 @@ class Transaction:
         """
         self.absolute_transaction_id: int = absolute_transaction_id
         self.relative_transaction_id: int = relative_transaction_id
-        self.account_num: int = account_num
+        self.account_id: int = account_id
         self.amount: float = amount
 
         self.timestamp: datetime = datetime.now(timezone.utc)
@@ -64,14 +64,14 @@ class Transaction:
         """
         return self.amount
 
-    def get_account_num(self) -> int:
+    def get_account_id(self) -> int:
         """
         Returns the account number that the transaction belongs to.
 
         Returns:
             int: The amount number that the transaction belongs to.
         """
-        return self.account_num
+        return self.account_id
 
     def __str__(self) -> str:
         """
@@ -85,4 +85,4 @@ class Transaction:
         """
         time_readable: str = self.timestamp.strftime("%A, %B %d, %Y, %H:%M")
 
-        return f"Transaction (Absolute ID: {self.absolute_transaction_id}, Relative ID: {self.relative_transaction_id}) of account {self.account_num} occured on {time_readable} with the amount changed being {self.amount}."
+        return f"Transaction (Absolute ID: {self.absolute_transaction_id}, Relative ID: {self.relative_transaction_id}) of account {self.account_id} occured on {time_readable} with the amount changed being {self.amount}."

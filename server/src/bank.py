@@ -7,9 +7,10 @@ import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 
-from checking_account import CheckingAccount
 from customer import Customer
 from savings_account import SavingsAccount
+from transaction import Transaction 
+from checking_account import CheckingAccount
 
 
 class Bank:
@@ -24,6 +25,7 @@ class Bank:
         self.accounts: list[CheckingAccount] = []
         self._next_user_id = 1
         self._next_account_id = 1
+        self._next_transaction_id = 1
         self._password_hasher = PasswordHasher()
 
         if json_data:
@@ -52,6 +54,7 @@ class Bank:
         temp_path.write_text(json.dumps(self.save_to_json(), indent=2), encoding="utf-8")
         temp_path.replace(target)
 
+
     def _load_from_json_data(self, json_data: dict) -> None:
         self.users = []
         self.accounts = []
@@ -78,9 +81,9 @@ class Bank:
             balance = float(account_record.get("balance", 0.0))
             account_type = account_record.get("type", "checking")
             if account_type == "savings":
-                account = SavingsAccount(account_id, balance)
+                account = SavingsAccount(account_id, self, balance)
             else:
-                account = CheckingAccount(account_id, balance)
+                account = CheckingAccount(account_id, self, balance)
 
             account.is_frozen = bool(account_record.get("frozen", False))
             self.accounts.append(account)
@@ -95,7 +98,7 @@ class Bank:
         max_user_id = max((user.get_id() for user in self.users), default=0)
         counter_user_id = int(json_data.get("counters", {}).get("users", 0))
         self._next_user_id = max(max_user_id, counter_user_id) + 1
-        max_account_id = max((account.account_num for account in self.accounts), default=0)
+        max_account_id = max((account.account_id for account in self.accounts), default=0)
         counter_account_id = int(json_data.get("counters", {}).get("accounts", 0))
         self._next_account_id = max(max_account_id, counter_account_id) + 1
 
@@ -109,7 +112,7 @@ class Bank:
                     "username": user.get_name(),
                     "hashed_password": user.get_passwd(),
                     "permission": self._user_permission(user),
-                    "bank_account_ids": [account.account_num for account in user.get_accounts()],
+                    "bank_account_ids": [account.account_id for account in user.get_accounts()],
                 }
             )
 
@@ -117,7 +120,7 @@ class Bank:
         for account in self.accounts:
             accounts.append(
                 {
-                    "id": account.account_num,
+                    "id": account.account_id,
                     "balance": account.balance,
                     "frozen": account.is_frozen,
                     "type": "savings" if isinstance(account, SavingsAccount) else "checking",
@@ -219,10 +222,10 @@ class Bank:
 
 
     def add_account(self, account: CheckingAccount) -> None:
-        if any(existing.account_num == account.account_num for existing in self.accounts):
-            raise KeyError(f"Account id already exists: {account.account_num}")
+        if any(existing.account_id == account.account_id for existing in self.accounts):
+            raise KeyError(f"Account id already exists: {account.account_id}")
         self.accounts.append(account)
-        self._next_account_id = max(self._next_account_id, account.account_num + 1)
+        self._next_account_id = max(self._next_account_id, account.account_id + 1)
 
     def _next_account_num(self) -> int:
         next_id = self._next_account_id
@@ -232,35 +235,31 @@ class Bank:
 
     def create_account_for_user(self, user: Customer, account_type: str = "checking") -> CheckingAccount:
         if account_type == "savings":
-            account = SavingsAccount(self._next_account_num(), 0.0)
+            account = SavingsAccount(self._next_account_num(), self, 0.0)
         else:
-            account = CheckingAccount(self._next_account_num(), 0.0)
+            account = CheckingAccount(self._next_account_num(), self, 0.0)
 
         self.add_account(account)
         user.register_account(account)
         return account
 
     
-    def get_accounts_for_user(self, user: Customer) -> list[int]:
+    def get_accounts_for_user(self, user: Customer) -> dict[int, CheckingAccount]:
         return user.get_accounts()
 
 
     def get_account_by_id(self, account_id: int) -> CheckingAccount | None:
         for account in self.accounts:
-            if account.account_num == account_id:
+            if account.account_id == account_id:
                 return account
         return None
     
 
-    def get_all_users(self) -> list[Customer]:
+    def get_all_users(self) -> dict[int, Customer]:
         pass
 
 
-    def get_users(self) -> list[Customer]:
-        pass
-
-
-    def get_all_accounts(self, only_savings: bool = False) -> list[CheckingAccount]:
+    def get_all_accounts(self, only_savings: bool = False) -> dict[int, CheckingAccount]:
         pass
 
 
@@ -270,17 +269,22 @@ class Bank:
                 return user
         return None
     
-
-
     def get_user_by_name(self, username: str) -> Customer | None:
         for user in self.users:
             if user.get_name() == username:
                 return user
         return None
     
+    def get_next_transaction_id(self) -> int:
+        """Returns a num for the next absolute transaction ID, increments the next ID by 1"""
+        temp = self._next_transaction_id
+        self._next_transaction_id += 1
+        return temp
 
-    def get_account(self, account_num: int) -> CheckingAccount:
+
+    def get_account(self, account_id: int) -> CheckingAccount:
         pass
+
 
     def remove_user(self, identifier) -> Customer:
         pass
