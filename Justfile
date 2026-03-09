@@ -17,6 +17,10 @@ server-dev:
 lint:
     ruff check . --fix
 
+
+tui:
+    uv run cli/tui/tui.py
+
 lint-watch:
     ruff check . --fix --watch
 
