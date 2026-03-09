@@ -49,6 +49,10 @@ class CheckingAccount:
         self.next_transaction_id = 0
         self.bank = bank
 
+        if balance != 0.0:
+            self.transactions[self.next_transaction_id] = Transaction(self.bank.get_next_transaction_id(), self.next_transaction_id, self.account_id, balance)
+            self.next_transaction_id += 1
+
  
     def withdraw(self, amount: float) -> None:
         """

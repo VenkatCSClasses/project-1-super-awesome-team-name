@@ -54,6 +54,7 @@ class Bank:
         temp_path.write_text(json.dumps(self.save_to_json(), indent=2), encoding="utf-8")
         temp_path.replace(target)
 
+
     def _load_from_json_data(self, json_data: dict) -> None:
         self.users = []
         self.accounts = []
