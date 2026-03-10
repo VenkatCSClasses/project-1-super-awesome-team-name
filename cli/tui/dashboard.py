@@ -5,6 +5,7 @@ from server_ping_utils import server_running
 from login_screen import LoginScreen
 from deposit_modal import DepositModal
 from withdraw_modal import WithdrawModal
+from freeze_accounts_modal import FreezeAccountsModal
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -223,7 +224,7 @@ class ActionBar(Horizontal):
         yield Button("[ TRANSFER ]", id="transfer-btn", variant="primary")
         yield Button("[ DEPOSIT ]", id="deposit-btn", variant="primary")
         yield Button("[ WITHDRAW ]", id="withdraw-btn", variant="warning")
-        yield Button("[ STATEMENTS ]", id="statements-btn", variant="default")
+        yield Button("[ FREEZE ACCOUNTS ]", id="freeze-accounts-btn", variant="error")
         yield Button("[ LOGOUT ]", id="logout-btn", variant="error")
 
 
@@ -359,8 +360,8 @@ class DashboardScreen(Screen):
             self.app.push_screen(DepositModal())
         elif event.button.id == "withdraw-btn":
             self.app.push_screen(WithdrawModal())
-        elif event.button.id == "statements-btn":
-            self.notify("Statements feature coming soon!", title="[ STATEMENTS ]", severity="information")
+        elif event.button.id == "freeze-accounts-btn":
+            self.app.push_screen(FreezeAccountsModal())
 
     def action_logout(self) -> None:
         """Log out and return to login screen."""

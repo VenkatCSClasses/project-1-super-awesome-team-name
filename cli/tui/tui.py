@@ -421,6 +421,79 @@ class BankApp(App):
     #modal-actions Button {
         margin-left: 1;
     }
+
+    .freeze-modal-container {
+        width: 110;
+        height: 34;
+    }
+
+    #freeze-controls {
+        width: 100%;
+        height: 3;
+        align: left middle;
+    }
+
+    #freeze-controls Button {
+        min-width: 14;
+        margin-right: 1;
+    }
+
+    #freeze-controls Checkbox {
+        margin-left: 2;
+        color: #cccccc;
+    }
+
+    #freeze-search-row {
+        width: 100%;
+        height: 3;
+        align: left middle;
+        margin-bottom: 1;
+    }
+
+    .freeze-search-prefix {
+        width: 10;
+        color: #00ff88;
+        text-style: bold;
+    }
+
+    #freeze-search-input {
+        width: 1fr;
+    }
+
+    #freeze-main {
+        width: 100%;
+        height: 1fr;
+    }
+
+    .freeze-left-panel {
+        width: 60%;
+        height: 100%;
+        margin-right: 1;
+    }
+
+    .freeze-right-panel {
+        width: 40%;
+        height: 100%;
+    }
+
+    #freeze-table {
+        width: 100%;
+        height: 1fr;
+        border: solid #2a2a2a;
+    }
+
+    #freeze-preview {
+        width: 100%;
+        height: 1fr;
+        padding: 1;
+        background: #101010;
+        border: solid #2a2a2a;
+    }
+
+    #freeze-feedback {
+        color: #8a8a8a;
+        margin-top: 1;
+    }
     """
 
     TITLE = "BankOS Terminal"
