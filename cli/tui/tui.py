@@ -2,6 +2,7 @@ import sys
 import subprocess
 from pathlib import Path
 import time
+from server_ping_utils import server_running
 
 
 # Add parent directory to path to import token_utils
@@ -350,6 +351,76 @@ class BankApp(App):
         height: 3;
         margin: 0 1;
     }
+
+    ModalScreen {
+        align: center middle;
+        background: rgba(0, 0, 0, 0.7);
+    }
+
+    .modal-container {
+        width: 64;
+        height: auto;
+        padding: 1 2;
+        background: #0d0d0d;
+        border: thick #00ff88;
+    }
+
+    .modal-title {
+        width: 100%;
+        content-align: center middle;
+        text-style: bold;
+        color: #00ff88;
+        margin-bottom: 1;
+    }
+
+    .modal-subtitle {
+        width: 100%;
+        content-align: center middle;
+        color: #7a7a7a;
+        margin-bottom: 1;
+    }
+
+    .modal-label {
+        color: #cfcfcf;
+        margin-top: 1;
+    }
+
+    .modal-hint {
+        color: #8a8a8a;
+        margin-top: 1;
+        margin-bottom: 1;
+    }
+
+    .modal-feedback {
+        min-height: 1;
+    }
+
+    .modal-container Input {
+        width: 100%;
+        background: #121212;
+        border: tall #333333;
+        color: #00ff88;
+    }
+
+    .modal-container Input:focus {
+        border: tall #00ff88;
+    }
+
+    #account-type-options {
+        margin: 1 0;
+        border: none;
+    }
+
+    #modal-actions {
+        margin-top: 1;
+        width: 100%;
+        height: 3;
+        align: right middle;
+    }
+
+    #modal-actions Button {
+        margin-left: 1;
+    }
     """
 
     TITLE = "BankOS Terminal"
@@ -365,22 +436,10 @@ class BankApp(App):
         if token and get_permissions() >= 0:
             self.push_screen(DashboardScreen())
         else:
-            self.push_screen(RegisterScreen())
+            self.push_screen(LoginScreen())
 
 
-def server_running() -> bool: 
-    """Simple function to test server connectivity."""
-    load_dotenv()
-    SERVER_BASE_URL = os.getenv("SERVER_BASE_URL", "http://localhost:8000")
 
-    try:
-        response = requests.get(f"{SERVER_BASE_URL}", timeout=5)
-        if response.status_code == 200:
-            return True
-        else:
-            print(f"Server responded with status code {response.status_code}.")
-    except requests.RequestException as e:
-        return False
 
 def main():
     server_process = None
