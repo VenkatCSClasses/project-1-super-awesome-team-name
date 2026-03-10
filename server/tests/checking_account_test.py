@@ -104,16 +104,18 @@ class TestCheckingAccount:
         """Test that retrieving a transaction by its number returns the correct transaction."""
         bank = Bank()
         account = CheckingAccount(1, bank, balance=100)
-        account.deposit(50)  # Transaction ID 0
-        account.withdraw(30)  # Transaction ID 1
-        transaction = account.get_transaction(0, True)
-        assert transaction.amount == 50
-        assert transaction.account_id == 1
-        assert transaction.get_relative_id() == 0
-        transaction = account.get_transaction(1, True)
-        assert transaction.amount == -30
-        assert transaction.account_id == 1
-        assert transaction.get_relative_id() == 1
+        account.deposit(50)  # Transaction ID 1
+        account.withdraw(30)  # Transaction ID 2
+        transaction = account.get_transaction(2, True)
+        assert transaction.get_amount() == 50
+        assert transaction.get_account_id() == 1
+        assert transaction.get_relative_id() == 2
+        assert transaction.get_post_balance() == 150
+        transaction = account.get_transaction(3, True)
+        assert transaction.get_amount() == -30
+        assert transaction.get_account_id() == 1
+        assert transaction.get_relative_id() == 3
+        assert transaction.get_post_balance() == 120
 
 
     def test_get_transaction_invalid(self):
@@ -133,14 +135,15 @@ class TestCheckingAccount:
         account.deposit(50)  # Transaction ID 1
         account.withdraw(30)  # Transaction ID 2
         history = account.get_all_transactions()
-        assert len(history) == 2
-        assert history.get(0).account_id == 1
-        assert history.get(1).account_id == 1
-        assert history.get(0).get_relative_id() == 0
-        assert history.get(1).get_relative_id() == 1
-        assert history.get(0).amount == 50
-        assert history.get(1).amount == -30
-
+        assert len(history) == 3
+        assert history.get(2).get_account_id() == 1
+        assert history.get(3).get_account_id() == 1
+        assert history.get(2).get_relative_id() == 2
+        assert history.get(3).get_relative_id() == 3
+        assert history.get(2).get_amount() == 50
+        assert history.get(3).get_amount() == -30
+        assert history.get(2).get_post_balance() == 150
+        assert history.get(3).get_post_balance() == 120
 
     def test_get_transaction_str(self):
         """Test that a transaction is returned correctly as a human readable string."""
@@ -161,15 +164,14 @@ class TestCheckingAccount:
         bank = Bank()
         account = CheckingAccount(1, bank, balance=100)
         account.deposit(50)  # Transaction ID 1
-        account.withdraw(30)  # Transaction ID 2
 
-        trans1 = account.get_transaction(0, True)
-        trans2 = account.get_transaction(1, True)
+        trans1 = account.get_transaction(1, True)
+        trans2 = account.get_transaction(2, True)
 
         assert (str(trans1) + '\n' + str(trans2)) == account.get_all_transaction_str()
 
-        account.deposit(20)
-        trans3 = account.get_transaction(2, True)
+        account.withdraw(30)  # Transaction ID 2
+        trans3 = account.get_transaction(3, True)
 
         assert (str(trans1) + '\n' + str(trans2) + '\n' + str(trans3)) == account.get_all_transaction_str()
 

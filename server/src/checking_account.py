@@ -46,12 +46,12 @@ class CheckingAccount:
         self.balance: float = balance
         self.frozen: bool = False
         self.transactions: dict[int, Transaction] = {}
-        self.next_transaction_id = 0
+        self.next_transaction_id = 1
         self.bank = bank
 
-        if balance != 0.0:
-            self.transactions[self.next_transaction_id] = Transaction(self.bank.get_next_transaction_id(), self.next_transaction_id, self.account_id, balance)
-            self.next_transaction_id += 1
+        
+        self.transactions[self.next_transaction_id] = Transaction(self.bank.get_next_transaction_id(), self.next_transaction_id, self.account_id, balance, balance)
+        self.next_transaction_id += 1
 
  
     def withdraw(self, amount: float) -> None:
@@ -74,7 +74,7 @@ class CheckingAccount:
             raise InsufficientFundsException(amount, self.balance)
         
         self.balance -= amount
-        self.transactions[self.next_transaction_id] = Transaction(self.bank.get_next_transaction_id(), self.next_transaction_id, self.account_id, (amount * -1))
+        self.transactions[self.next_transaction_id] = Transaction(self.bank.get_next_transaction_id(), self.next_transaction_id, self.account_id, (amount * -1), self.balance)
         self.next_transaction_id += 1
 
 
@@ -95,7 +95,7 @@ class CheckingAccount:
             raise AmountInvalidException(amount)
         
         self.balance += amount
-        self.transactions[self.next_transaction_id] = Transaction(self.bank.get_next_transaction_id(), self.next_transaction_id, self.account_id, amount)
+        self.transactions[self.next_transaction_id] = Transaction(self.bank.get_next_transaction_id(), self.next_transaction_id, self.account_id, amount, self.balance)
         self.next_transaction_id += 1
 
 

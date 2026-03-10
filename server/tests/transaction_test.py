@@ -33,7 +33,7 @@ class TestTransaction:
         assert trans3.get_relative_id() == 0
         assert trans3.get_account_id() == 2
         assert trans3.get_amount() == 0.01
-        assert trans3.get_post_balance() == 0.01
+        assert trans3.get_post_balance() == 2.01
         assert trans3.get_time().date() == datetime.now(timezone.utc).date()
 
         # Test 4: Large values (Boundary case)
@@ -41,7 +41,8 @@ class TestTransaction:
         assert trans4.get_absolute_id() == 999999
         assert trans4.get_relative_id() == 500
         assert trans4.get_account_id() == 100
-        assert trans4.get_amount() == 1000000.01
+        assert trans4.get_amount() == 1000000.00
+        assert trans4.get_post_balance() == 1000000.01
         assert trans4.get_time().date() == datetime.now(timezone.utc).date()
 
     def test_str(self):
