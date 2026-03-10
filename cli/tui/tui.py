@@ -12,6 +12,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "server" / "src"))
 
 from textual.app import App
 from textual.binding import Binding
+from textual import events
+from textual.widgets import Input
 
 from token_utils import load_token, get_permissions
 
@@ -502,6 +504,54 @@ class BankApp(App):
         Binding("ctrl+c", "quit", "Quit", show=False),
         Binding("ctrl+q", "quit", "Quit"),
     ]
+
+    def _is_text_input_focused(self) -> bool:
+        focused = self.screen.focused
+        return isinstance(focused, Input)
+
+    def _dispatch_direction(self, direction: str) -> bool:
+        """Try directional action on focused widget; fallback to focus traversal."""
+        focused = self.screen.focused
+
+        if focused is not None:
+            cursor_action = getattr(focused, f"action_cursor_{direction}", None)
+            if callable(cursor_action):
+                cursor_action()
+                return True
+
+            widget_action = getattr(focused, f"action_{direction}", None)
+            if callable(widget_action):
+                widget_action()
+                return True
+
+        if direction in ("down", "right"):
+            self.screen.focus_next()
+        else:
+            self.screen.focus_previous()
+        return True
+
+    def on_key(self, event: events.Key) -> None:
+        """Enable vim-style movement alongside arrow keys across all menus."""
+        keymap = {
+            "h": "left",
+            "j": "down",
+            "k": "up",
+            "l": "right",
+            "left": "left",
+            "down": "down",
+            "up": "up",
+            "right": "right",
+        }
+
+        direction = keymap.get(event.key)
+        if direction is None:
+            return
+
+        if self._is_text_input_focused():
+            return
+
+        if self._dispatch_direction(direction):
+            event.stop()
 
     def on_mount(self) -> None:
         """Check if already logged in on startup."""
