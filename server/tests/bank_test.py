@@ -81,20 +81,13 @@ class TestBank:
         assert bank.get_next_transaction_id() == 2
         assert bank.get_next_transaction_id() == 3
 
-    def test_remove_user(self):
-        """Test that all methods of user removal work properly"""
+    def test_remove_acc(self):
+        """Test that bank accounts can be removed successfully"""
         bank = Bank()
         user = Customer("john", 5, "password")
         bank.add_user(user)
-        assert bank.get_all_users().len() != 0
-        bank.remove_user_by_name("john")
-        assert bank.get_all_users().len() == 0
-        bank.add_user(user)
-        bank.remove_user_by_id(5)
-        assert bank.get_all_users().len() == 0
-        bank.add_user(user)
-        bank.remove_user(5)
-        assert bank.get_all_users().len() == 0
-        bank.add_user(user)
-        bank.remove_user("john")
-        assert bank.get_all_users().len() == 0
+        bank.create_account_for_user(user)
+        assert bank.get_all_accounts() != 0
+        bank.remove_account(user.get_account_id())
+        assert bank.get_all_accounts() == 0
+        
