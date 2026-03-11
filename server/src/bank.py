@@ -157,6 +157,7 @@ class Bank:
         max_account_id = max((account.account_id for account in self.accounts), default=0)
         counter_account_id = int(json_data.get("counters", {}).get("accounts", 0))
         self._next_account_id = max(max_account_id, counter_account_id) + 1
+    
 
 
     def save_to_json(self) -> dict:
