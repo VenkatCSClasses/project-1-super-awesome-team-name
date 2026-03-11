@@ -179,6 +179,7 @@ class Bank:
             )
 
         accounts = []
+        transaction = []
         for account in self.accounts:
             accounts.append(
                 {
@@ -186,9 +187,13 @@ class Bank:
                     "balance": account.balance,
                     "frozen": account.is_frozen,
                     "type": "savings" if isinstance(account, SavingsAccount) else "checking",
-                    "transactions": [],
+                    "transactions": []
                 }
             )
+
+
+
+
 
         return {
             "users": users,

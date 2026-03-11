@@ -204,7 +204,7 @@ class CheckingAccount:
         Returns a list of all transactions associated with the account.
 
         Returns:
-            list[Transaction]: A list of all transactions on the account.
+            dict[int, Transaction]: A list of all transactions on the account.
         """
         return self.transactions
 
