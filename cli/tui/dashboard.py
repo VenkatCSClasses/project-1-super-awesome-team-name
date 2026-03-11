@@ -60,6 +60,14 @@ MOCK_TRANSACTIONS = [
 
 class AccountCard(Static):
     """A card widget displaying account info."""
+    can_focus = True
+    BINDINGS = [
+        Binding("up,k", "focus_prev_account", show=False),
+        Binding("down,j", "focus_next_account", show=False),
+        Binding("left,h", "focus_left_group", show=False),
+        Binding("right,l", "focus_right_group", show=False),
+        Binding("enter,space", "select_account", show=False),
+    ]
 
     def __init__(self, account: dict, **kwargs):
         super().__init__(**kwargs)
@@ -75,6 +83,25 @@ class AccountCard(Static):
             f"[bold green]${acc['balance']:,.2f}[/]  [dim]Interest: {acc['interest_rate']}%[/]",
             classes="account-info"
         )
+
+    def action_focus_prev_account(self) -> None:
+        self.screen.focus_previous_account(self)
+
+    def action_focus_next_account(self) -> None:
+        self.screen.focus_next_account(self)
+
+    def action_focus_left_group(self) -> None:
+        return
+
+    def action_focus_right_group(self) -> None:
+        self.screen.focus_transactions_table()
+
+    def action_select_account(self) -> None:
+        self.screen.set_selected_account(self)
+
+    def on_click(self, event) -> None:
+        self.focus()
+        self.action_select_account()
 
 
 class StatusBar(Static):
@@ -112,6 +139,13 @@ class StatusBar(Static):
 
 class UserInfoBox(Container):
     """User session information box."""
+    can_focus = True
+    BINDINGS = [
+        Binding("left,h", "focus_left", show=False),
+        Binding("right,l", "focus_right", show=False),
+        Binding("up,k", "focus_up", show=False),
+        Binding("down,j", "focus_down", show=False),
+    ]
 
     def __init__(self, user: dict, **kwargs):
         super().__init__(**kwargs)
@@ -138,6 +172,18 @@ class UserInfoBox(Container):
             id="user-details"
         )
         yield Static("╰────────────────────────────────────────╯", classes="box-bottom")
+
+    def action_focus_left(self) -> None:
+        return
+
+    def action_focus_right(self) -> None:
+        self.screen.focus_trend_box()
+
+    def action_focus_up(self) -> None:
+        return
+
+    def action_focus_down(self) -> None:
+        self.screen.focus_accounts_list()
 
 
 class AccountsSection(Container):
@@ -171,8 +217,48 @@ class AccountsList(Vertical):
             yield AccountCard(acc, classes="account-card")
 
 
+class TransactionsTable(DataTable):
+    """Transaction table with boundary-aware cross-widget navigation."""
+    BINDINGS = [
+        Binding("left,h", "nav_left", show=False),
+        Binding("right,l", "nav_right", show=False),
+        Binding("up,k", "nav_up", show=False),
+        Binding("down,j", "nav_down", show=False),
+    ]
+
+    def action_nav_left(self) -> None:
+        if len(self.columns) > 0 and self.cursor_coordinate.column > 0:
+            self.action_cursor_left()
+            return
+        self.screen.focus_accounts_list()
+
+    def action_nav_right(self) -> None:
+        if len(self.columns) > 0 and self.cursor_coordinate.column < len(self.columns) - 1:
+            self.action_cursor_right()
+            return
+
+    def action_nav_up(self) -> None:
+        if self.row_count > 0 and self.cursor_coordinate.row > 0:
+            self.action_cursor_up()
+            return
+        self.screen.focus_trend_box()
+
+    def action_nav_down(self) -> None:
+        if self.row_count > 0 and self.cursor_coordinate.row < self.row_count - 1:
+            self.action_cursor_down()
+            return
+        self.screen.focus_action_button(2)
+
+
 class BalanceTrendBox(Container):
     """Balance trend chart based on transaction history."""
+    can_focus = True
+    BINDINGS = [
+        Binding("left,h", "focus_left", show=False),
+        Binding("right,l", "focus_right", show=False),
+        Binding("up,k", "focus_up", show=False),
+        Binding("down,j", "focus_down", show=False),
+    ]
 
     def __init__(self, balance_history: list, **kwargs):
         super().__init__(**kwargs)
@@ -268,13 +354,25 @@ class BalanceTrendBox(Container):
     def on_resize(self, event) -> None:
         self.update_chart()
 
+    def action_focus_left(self) -> None:
+        self.screen.focus_user_box()
+
+    def action_focus_right(self) -> None:
+        return
+
+    def action_focus_up(self) -> None:
+        return
+
+    def action_focus_down(self) -> None:
+        self.screen.focus_transactions_table()
+
 
 class TransactionsBox(Container):
     """Recent transactions box with data table."""
 
     def compose(self) -> ComposeResult:
         yield Static("╭─ RECENT TRANSACTIONS ──────────────────────────────────────────────────╮", classes="box-top")
-        yield DataTable(id="transactions-table")
+        yield TransactionsTable(id="transactions-table")
         yield Static("╰───────────────────────────────────────────────────────────────────────────╯", classes="box-bottom")
 
 
@@ -334,6 +432,74 @@ class DashboardScreen(Screen):
         )
         yield ActionBar(id="action-bar")
         yield Footer()
+
+    def _action_buttons(self) -> list[Button]:
+        return list(self.query("#action-bar Button"))
+
+    def _account_cards(self) -> list[AccountCard]:
+        return list(self.query("#accounts-list AccountCard"))
+
+    def focus_user_box(self) -> None:
+        self.query_one("#user-info-box", UserInfoBox).focus()
+
+    def focus_accounts_list(self) -> None:
+        cards = self._account_cards()
+        if not cards:
+            return
+        selected = next((card for card in cards if "selected" in card.classes), cards[0])
+        selected.focus()
+
+    def focus_trend_box(self) -> None:
+        self.query_one("#trend-box", BalanceTrendBox).focus()
+
+    def focus_transactions_table(self) -> None:
+        self.query_one("#transactions-table", TransactionsTable).focus()
+
+    def focus_action_button(self, index: int = 0) -> None:
+        buttons = self._action_buttons()
+        if not buttons:
+            return
+        clamped = max(0, min(index, len(buttons) - 1))
+        buttons[clamped].focus()
+
+    def focus_previous_account(self, current: AccountCard) -> None:
+        cards = self._account_cards()
+        if not cards:
+            return
+        try:
+            index = cards.index(current)
+        except ValueError:
+            self.focus_accounts_list()
+            return
+        if index > 0:
+            cards[index - 1].focus()
+        else:
+            self.focus_user_box()
+
+    def focus_next_account(self, current: AccountCard) -> None:
+        cards = self._account_cards()
+        if not cards:
+            return
+        try:
+            index = cards.index(current)
+        except ValueError:
+            self.focus_accounts_list()
+            return
+        if index < len(cards) - 1:
+            cards[index + 1].focus()
+        else:
+            self.focus_action_button(0)
+
+    def set_selected_account(self, selected_card: AccountCard, announce: bool = True) -> None:
+        for card in self._account_cards():
+            card.remove_class("selected")
+        selected_card.add_class("selected")
+        if announce:
+            self.notify(
+                f"Selected ACC-{selected_card.account.get('id', 'unknown')}",
+                title="[ ACCOUNT ]",
+                timeout=1.2,
+            )
 
     def handle_session_expired(self) -> None:
         """Clear session token and send user to login screen."""
@@ -448,6 +614,31 @@ class DashboardScreen(Screen):
     def on_mount(self) -> None:
         transactions = self.get_transactions()
         self.generate_transaction_table(transactions)
+        cards = self._account_cards()
+        if cards:
+            self.set_selected_account(cards[0], announce=False)
+        self.call_after_refresh(self.focus_accounts_list)
+
+    def on_key(self, event) -> None:
+        """Arrow/vim movement while focused on action buttons."""
+        focused = self.app.focused
+        if not isinstance(focused, Button) or focused.parent is None or focused.parent.id != "action-bar":
+            return
+
+        buttons = self._action_buttons()
+        if not buttons:
+            return
+        index = buttons.index(focused)
+
+        if event.key in ("left", "h"):
+            self.focus_action_button(index - 1)
+            event.stop()
+        elif event.key in ("right", "l"):
+            self.focus_action_button(index + 1)
+            event.stop()
+        elif event.key in ("up", "k"):
+            self.focus_transactions_table()
+            event.stop()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""

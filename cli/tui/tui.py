@@ -266,12 +266,31 @@ class BankApp(App):
         padding: 0;
     }
 
+    #user-info-box:focus,
+    #trend-box:focus {
+        background: #111a16;
+    }
+
     .account-card {
         width: 100%;
         height: auto;
         padding: 1 2;
         margin: 0;
         background: #0d0d0d;
+    }
+
+    .account-card:focus {
+        background: #1a1a2e;
+        border: tall #00ff88;
+    }
+
+    .account-card.selected {
+        background: #10281d;
+        border: tall #00aa66;
+    }
+
+    .account-card.selected:focus {
+        border: tall #00ff88;
     }
 
     .account-card:hover {
@@ -312,6 +331,10 @@ class BankApp(App):
         height: 1fr;
         background: #0a0a0a;
         margin: 0 1;
+    }
+
+    #transactions-table:focus {
+        border: solid #00ff88;
     }
 
     DataTable {
