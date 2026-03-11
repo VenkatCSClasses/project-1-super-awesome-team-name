@@ -52,8 +52,8 @@ class Bank:
         default_path = Path(__file__).resolve().parent.parent / "database.json"
         self.storage_path = Path(storage_path or os.getenv("DATABASE_JSON_PATH", str(default_path))).resolve()
 
-        self.users: dict[int, Customer] = []
-        self.accounts: dict[int, Customer] = []
+        self.users: dict[int, Customer] = {}
+        self.accounts: dict[int, Customer] = {}
         self._next_user_id = 1
         self._next_account_id = 1
         self._next_transaction_id = 1
@@ -309,7 +309,7 @@ class Bank:
     def get_total_balance(self, user: Customer | None = None) -> float:
         if user is None:
             return sum(account.balance for account in self.accounts)
-        return sum(account.balance for account in user.get_accounts())
+        return sum(account.balance for account in user.get_accounts().values())
 
 
     def _compound_savings_interest(self) -> None:
@@ -330,14 +330,14 @@ class Bank:
     def add_user(self, user: Customer) -> None:
         if self.get_user_by_id(user.get_id()) is not None:
             raise KeyError(f"User id already exists: {user.get_id()}")
-        self.users.append(user)
+        self.users[user.get_id] = user
         self._next_user_id = max(self._next_user_id, user.get_id() + 1)
 
 
     def add_account(self, account: CheckingAccount) -> None:
         if any(existing.account_id == account.account_id for existing in self.accounts):
             raise KeyError(f"Account id already exists: {account.account_id}")
-        self.accounts.append(account)
+        self.accounts[account.get_account_id] = account
         self._next_account_id = max(self._next_account_id, account.account_id + 1)
 
     def _next_account_num(self) -> int:
@@ -393,13 +393,13 @@ class Bank:
 
 
     def get_user_by_id(self, user_id: int) -> Customer | None:
-        for user in self.users:
+        for key,user in self.users.items():
             if user.get_id() == user_id:
                 return user
         return None
     
     def get_user_by_name(self, username: str) -> Customer | None:
-        for user in self.users:
+        for user in self.users.values():
             if user.get_name() == username:
                 return user
         return None
@@ -428,22 +428,28 @@ class Bank:
         Args:
         identifier (str or int): the key used to remove the account, either id or name
         """
-        if identifier is str:
+        if isinstance(identifier, str):
             self.remove_user_by_name(identifier)
-        elif identifier is int:
+        else:
             self.remove_user_by_id(identifier)
 
     def remove_user_by_id(self, user_id: int) -> Customer:
-        self.users[user_id] = None
+        for key,cust in self.users.items():
+            if cust.get_id() == user_id:
+                del self.users[key]
+                break
 
 
     def remove_user_by_name(self, username: str) -> Customer:
-        for id in self.users:
-            if self.users[id].get_name == username:
-                self.users[id] = None
+        for key,value in self.users.items():
+            if value.get_name() == username:
+                del self.users[key]
                 break
 
 
     def remove_account(self, id: int) -> CheckingAccount:
-        self.accounts[id] = None
+        for key,acc in self.accounts.items():
+            if acc.get_account_id() == id:
+                del self.accounts[key]
+                break
 
