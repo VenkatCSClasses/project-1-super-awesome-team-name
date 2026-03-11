@@ -50,17 +50,17 @@ class CheckingAccount:
         self.next_transaction_id = 1
         self.bank = bank
 
-        
-        self.transactions[self.next_transaction_id] = Transaction(self.bank.get_next_transaction_id(), self.next_transaction_id, self.account_id, balance, balance)
-        self.next_transaction_id += 1
+        self.log_transaction(balance, TransactionType.NEW_ACCOUNT)
 
- 
-    def withdraw(self, amount: float) -> None:
+
+    def withdraw(self, amount: float, is_transfer: bool = False, transfer_account_id: int | None = None) -> None:
         """
         Withdraws a specified amount from the checking account.
 
         Args:
             amount (float): The amount to withdraw from the account.
+            is_transfer (bool): If the withdrawal is from a transfer.
+            transfer_account_id (int): Account the deposit is transferring to.
 
         Raises:
             AmountInvalidException: If the withdraw amount is non-positive or > 2 decimal places.
@@ -75,16 +75,22 @@ class CheckingAccount:
             raise InsufficientFundsException(amount, self.balance)
         
         self.balance -= amount
-        self.transactions[self.next_transaction_id] = Transaction(self.bank.get_next_transaction_id(), self.next_transaction_id, self.account_id, (amount * -1), self.balance)
-        self.next_transaction_id += 1
+
+        if is_transfer:
+            self.log_transaction((-1 * amount), TransactionType.TRANSFER_WITHDRAW, transfer_account_id)
+        else:
+            self.log_transaction((-1 * amount), TransactionType.WITHDRAW)
 
 
-    def deposit(self, amount: float) -> None:
+
+    def deposit(self, amount: float, is_transfer: bool = False, transfer_account_id: int | None = None) -> None:
         """
         Deposits a specified amount into the checking account.
 
         Args:
             amount (float): The amount to deposit into the account.
+            is_transfer (bool): If the deposit is from a transfer.
+            transfer_account_id (int): Account the deposit is transferring to.
 
         Raises:
             AmountInvalidException: If the deposit amount is non-positive or > 2 decimal places.
@@ -96,8 +102,11 @@ class CheckingAccount:
             raise AmountInvalidException(amount)
         
         self.balance += amount
-        self.transactions[self.next_transaction_id] = Transaction(self.bank.get_next_transaction_id(), self.next_transaction_id, self.account_id, amount, self.balance)
-        self.next_transaction_id += 1
+
+        if is_transfer:
+            self.log_transaction(amount, TransactionType.TRANSFER_DEPOSIT, transfer_account_id)
+        else:
+            self.log_transaction(amount, TransactionType.DEPOSIT)
 
 
     def transfer(self, amount: float, rec_account: 'CheckingAccount') -> None:
@@ -113,8 +122,8 @@ class CheckingAccount:
             InsufficientFundsException: If the withdraw amount exceeds the balance.
             AccountFrozenException: If the account is frozen.
         """
-        self.withdraw(amount)    
-        rec_account.deposit(amount) 
+        self.withdraw(amount, True, rec_account)    
+        rec_account.deposit(amount, True, self.account_id) 
 
 
     def log_transaction(self, amount: float, type: TransactionType, transfer_account_id: int | None = None) -> None:
@@ -126,6 +135,9 @@ class CheckingAccount:
             type (TransactionType): Type of transaction.
             transfer_account_id (int | None): Account being transfered with.
         """
+        transaction = Transaction(self.bank.get_next_transaction_id(), self.next_transaction_id, self.account_id, amount, self.balance, type, transfer_account_id)
+        self.transactions[self.next_transaction_id] = transaction
+        self.next_transaction_id += 1
     
         
     def is_frozen(self) -> bool:

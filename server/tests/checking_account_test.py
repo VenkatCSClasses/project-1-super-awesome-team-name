@@ -77,6 +77,7 @@ class TestCheckingAccount:
         with pytest.raises(AccountFrozenException):
             account1.deposit(30)
 
+
     def test_unfreeze_account(self):
         """Test that an unfrozen account allows withdrawals, transfers, and deposit"""
         bank = Bank()
@@ -123,15 +124,16 @@ class TestCheckingAccount:
         bank = Bank()
         account = CheckingAccount(1, bank, balance=100)
         account.log_transaction(50, TransactionType.DEPOSIT)
-        account.log_transaction(-50, TransactionType.TRANSFER_WITHDRAW, 2)
+        account.log_transaction(-50, TransactionType.TRANSFER_WITHDRAW, 3)
         transaction = account.get_transaction(2, True)
-        assert transaction.get_amount == 50
-        assert transaction.get_type == TransactionType.DEPOSIT
-        assert transaction.get_transfer_account_id is None
-        transaction = account.get_transaction(2, True)
-        assert transaction.get_amount == -50
-        assert transaction.get_type == TransactionType.TRANSFER_WITHDRAW
-        assert transaction.get_transfer_account_id == 3
+        assert transaction.get_amount() == 50
+        assert transaction.get_type() == TransactionType.DEPOSIT
+        assert transaction.get_transfer_account_id() is None
+        transaction = account.get_transaction(3, True)
+        assert transaction.get_amount() == -50
+        assert transaction.get_type() == TransactionType.TRANSFER_WITHDRAW
+        assert transaction.get_transfer_account_id() == 3
+
 
     def test_get_transaction_invalid(self):
         """
@@ -141,7 +143,6 @@ class TestCheckingAccount:
         account = CheckingAccount(1, bank, balance=100)
         with pytest.raises(KeyError):
             account.get_transaction(999)  # Should raise an exception for non-existent transaction number
-
 
 
     def test_get_all_transactions(self):
@@ -161,6 +162,7 @@ class TestCheckingAccount:
         assert history.get(2).get_post_balance() == 150
         assert history.get(3).get_post_balance() == 120
 
+
     def test_get_transaction_str(self):
         """Test that a transaction is returned correctly as a human readable string."""
         bank = Bank()
@@ -168,11 +170,11 @@ class TestCheckingAccount:
         account.deposit(50)  # Transaction ID 2
         account.withdraw(30)  # Transaction ID 3
         
-        trans1 = account.get_transaction(0, True)
-        trans2 = account.get_transaction(1, True)
+        trans1 = account.get_transaction(1, True)
+        trans2 = account.get_transaction(2, True)
 
-        assert str(trans1) == account.get_transaction_str(0, True)
-        assert str(trans2) == account.get_transaction_str(1, True)
+        assert str(trans1) == account.get_transaction_str(1, True)
+        assert str(trans2) == account.get_transaction_str(2, True)
 
 
     def test_get_all_transaction_str(self):
