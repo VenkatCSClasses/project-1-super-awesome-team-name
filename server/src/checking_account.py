@@ -2,6 +2,7 @@ import sys
 sys.path.append('./server/src')
 
 from transaction import Transaction
+from transaction_type import TransactionType
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from bank import Bank
@@ -116,6 +117,17 @@ class CheckingAccount:
         rec_account.deposit(amount) 
 
 
+    def log_transaction(self, amount: float, type: TransactionType, transfer_account_id: int | None = None) -> None:
+        """
+        Logs a transaction to this account, creating the object and saving it.
+
+        Args: 
+            amount (float): Transaction amount.
+            type (TransactionType): Type of transaction.
+            transfer_account_id (int | None): Account being transfered with.
+        """
+    
+        
     def is_frozen(self) -> bool:
         """
         Checks if the account is currently frozen.
