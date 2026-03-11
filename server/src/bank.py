@@ -369,11 +369,27 @@ class Bank:
     
 
     def get_all_users(self) -> dict[int, Customer]:
-        pass
+        """
+        returns the dict of all users in the bank
+        """
+        return self.users
 
 
     def get_all_accounts(self, only_savings: bool = False) -> dict[int, CheckingAccount]:
-        pass
+        """
+        returns a dict of all accounts (or all savings accounts)
+
+        Args:
+        only_savings (bool): if True, only savings accounts will be returned
+        """
+        if only_savings:
+            savings = {}
+            for acc in self.accounts:
+                if isinstance(self.accounts[acc], SavingsAccount):
+                    savings[acc] = self.accounts[acc]
+            return savings
+        else:
+            return self.accounts
 
 
     def get_user_by_id(self, user_id: int) -> Customer | None:
@@ -396,7 +412,13 @@ class Bank:
 
 
     def get_account(self, account_id: int) -> CheckingAccount:
-        pass
+        """
+        returns a specific account based on account id
+
+        Args:
+        account_id (int): the id of the account to return
+        """
+        return self.accounts[account_id]
 
 
     def remove_user(self, identifier) -> Customer:
