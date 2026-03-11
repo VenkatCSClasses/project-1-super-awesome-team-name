@@ -1,3 +1,6 @@
+import sys
+sys.path.append('./server/src')
+
 from datetime import datetime, timezone
 from transaction_type import TransactionType
 
@@ -8,7 +11,7 @@ class Transaction:
     Attributes: 
         absolute_transaction_id (int): ID of the transaction relative to the total bank transactions.
         relative_transaction_id (int): ID of the transaction relative to the account.
-        account_num (int): Account number where the transaction occured.
+        account_id (int): Account number where the transaction occured.
         timestamp (datetime): When the transaction occured in UTC.
         amount (float): The change in account balance of the transaction.
         balance (float): The balance of the account post-transaction.
@@ -17,15 +20,16 @@ class Transaction:
     """
     def __init__(self, absolute_transaction_id: int, relative_transaction_id: int, account_id: int, amount: float, balance: float) -> None:
         """
-        Initialize the Transaction with the transaction ids, account number, timestamp, balance, amount, type and description.
+        Initialize the Transaction with the transaction ids, account number, timestamp, balance, amount, type, description and potential transfer_account_id.
         
         Args:
             absolute_transaction_id (int): Absolute ID of the transaction.
             relative_transaction_id (int): Relative ID of the transaction.
-            account_num (int): Account number where the transaction occurred.
+            account_id (int): Account number where the transaction occurred.
             amount (float): The change in account balance of the transaction.
             balance (float): The balance of the account post-transaction.
             type (TransactionType): Type of the transaction.
+            transfer_account_id (int, optional): Account number the transfer is occuring with (if type is transfer).
         """
         self.absolute_transaction_id: int = absolute_transaction_id
         self.relative_transaction_id: int = relative_transaction_id
@@ -103,5 +107,4 @@ class Transaction:
     
         Returns:
             str: Brief description of the transaction.
-
         """

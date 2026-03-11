@@ -1,3 +1,6 @@
+import sys
+sys.path.append('./server/src')
+
 from enum import Enum
 
 class TransactionType(Enum):
