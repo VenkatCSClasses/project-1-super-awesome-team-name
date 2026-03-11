@@ -14,15 +14,46 @@ from checking_account import CheckingAccount
 
 
 class Bank:
+    """
+    A class used to represent an entire functioning bank. Can be saved and pulled to/from json file.
+
+    Attributes:
+        users (dict[int, Customer]): Dictionary of users that belong to the bank, key is user ID.
+        accounts (dict[int, CheckingAccount]): Dictionary of bank accounts that belong to the bank, key is account ID.
+        _next_user_id (int): Next absolute user ID that can be used for a new user.
+        _next_account_id (int): Next absolute account ID that can be used for a new account.
+        _next_transaction_id (int): Next absolute transaction ID that can be used for a new transaction.
+        _password_hasher (PasswordHasher): Set hash method that is used for hashing/unhashing passwords.
+        
+    Database Helpers:
+        SECRET_KEY (str): Secret key given to allow for login tokens to be created.
+        ALGORITHM (str): Hashing algorithm helping with login tokens.
+        default_path (Path): Base default path of where the json database lives.
+        storage_path (Path): Path of where the json should actually be stored at.
+    """
+
+
     SECRET_KEY = os.getenv("SECRET_KEY", "placeholder_secret_key")
     ALGORITHM = "HS256"
 
     def __init__(self, json_data: dict | None = None, storage_path: str | Path | None = None) -> None:
+        """
+        Initializes the Bank object with optional parameters to pass in already pre-existing json data.
+        Sets default and storage paths to potential json database files.
+        Loads json data into the object if file is passed in.
+        Otherwise, sets attributes to default values (either empty dicts or initial IDs of 1).
+
+        Args:
+            json_data (dict | None): Dictionary that holds json data to be loaded into the Bank object.
+                Defaults to None.
+            storage_path (str | Path | None): Path that leads to the place to store json data in.
+                Defaults to None.
+        """
         default_path = Path(__file__).resolve().parent.parent / "database.json"
         self.storage_path = Path(storage_path or os.getenv("DATABASE_JSON_PATH", str(default_path))).resolve()
 
-        self.users: list[Customer] = []
-        self.accounts: list[CheckingAccount] = []
+        self.users: dict[int, Customer] = []
+        self.accounts: dict[int, Customer] = []
         self._next_user_id = 1
         self._next_account_id = 1
         self._next_transaction_id = 1
@@ -34,6 +65,18 @@ class Bank:
 
     @classmethod
     def load_from_file(cls, storage_path: str | Path | None = None) -> "Bank":
+        """
+        Initializes generic bank status based on information in file/bank, returning a Bank object.
+        Is a generic class method, which can be called without an object, onto the whole class.
+        
+        Args:
+            storage_path (str | Path | None): Path that leads to the place to store json data in.
+                Defaults to None.
+
+        Returns:
+            Bank: New bank object that holds the information loaded in from the json file.
+        """
+
         bank = cls(storage_path=storage_path)
         if not bank.storage_path.exists():
             return bank
@@ -48,6 +91,13 @@ class Bank:
 
 
     def save_to_file(self, storage_path: str | Path | None = None) -> None:
+        """
+        Saves all data in Bank to the json file.
+
+        Args:
+            storage_path (str | Path | None): Path that leads to the place to store json data in.
+                Defaults to None.
+        """
         target = Path(storage_path).resolve() if storage_path else self.storage_path
         target.parent.mkdir(parents=True, exist_ok=True)
         temp_path = target.with_suffix(f"{target.suffix}.tmp")
@@ -56,6 +106,12 @@ class Bank:
 
 
     def _load_from_json_data(self, json_data: dict) -> None:
+        """
+        Loads data from the json file into the bank object, populating each attribute.
+        
+        Args: 
+            json_data (dict): Data of each attribute stored in a dictionary parsed from json.
+        """
         self.users = []
         self.accounts = []
 
@@ -104,6 +160,12 @@ class Bank:
 
 
     def save_to_json(self) -> dict:
+        """
+        Helper method to turn attributes into a dict for json, which can then be stored in a file.
+        
+        Returns: 
+            dict: Dictionary that holds lists of each data type stored.
+        """
         users = []
         for user in self.users:
             users.append(
@@ -117,6 +179,7 @@ class Bank:
             )
 
         accounts = []
+        transaction = []
         for account in self.accounts:
             accounts.append(
                 {
@@ -124,9 +187,13 @@ class Bank:
                     "balance": account.balance,
                     "frozen": account.is_frozen,
                     "type": "savings" if isinstance(account, SavingsAccount) else "checking",
-                    "transactions": [],
+                    "transactions": []
                 }
             )
+
+
+
+
 
         return {
             "users": users,
@@ -139,6 +206,16 @@ class Bank:
 
 
     def generate_login_token(self, user_id: int, permission: int) -> str:
+        """
+        Creates login token to match new connection with a user.
+
+        Args:
+            user_id (int): ID of the user that is requesting a connection.
+            permission (int): Permission level of the user account trying to connect.
+
+        Returns:
+            str: Login token for the new connection.
+        """
         minutes_valid = int(os.getenv("TOKEN_LIFETIME_MINUTES", "60"))
         expire = datetime.now(timezone.utc) + timedelta(minutes=minutes_valid)
         payload = {"user_id": user_id, "permission": permission, "exp": expire}
@@ -146,6 +223,16 @@ class Bank:
 
 
     def register_user(self, username: str, password: str) -> bool:
+        """
+        Creates a new user account, and adds it to the user list.
+
+        Args:
+            username (str): Name of the user account to be created.
+            password (str): Password for the user account to be created.
+
+        Returns:
+            bool: True if the user was created successfully, false if the username already exists.
+        """
         if self.get_user_by_name(username) is not None:
             return False
 
@@ -161,7 +248,18 @@ class Bank:
         return True
 
 
-    def login_user(self, username: str, password: str):
+    def login_user(self, username: str, password: str) -> bool | str:
+        """
+        Attempts a user login, checks to see if password matches, returns login token for the connection.
+
+        Args:
+            username (str): Username of the user account that is attempting to log in.
+            password (str): Given password of the user account that is attempting a log in.
+
+        Returns: 
+            bool: If user login fails, returns false.
+            str: If user login works, returns user login token.
+        """
         user = self.get_user_by_name(username)
         if user is None:
             return False
@@ -175,6 +273,12 @@ class Bank:
 
 
     def ensure_root_user(self) -> bool:
+        """
+        Creates a root user if it doesn't already exist, ensuring that one admin user exists on each new bank.
+
+        Returns:
+            bool: True if root user gets created, false if root user already exists.
+        """
         if self.get_user_by_name("root") is not None:
             return False
 
@@ -190,6 +294,15 @@ class Bank:
 
 
     def _user_permission(self, user: Customer) -> int:
+        """
+        Checks user's permissions, returning their permission value.
+
+        Args:
+            user (Customer): User to check permissions of.
+        
+        Returns: 
+            int: Permissions level of the user.
+        """
         return int(getattr(user, "permissions", 0))
 
 
