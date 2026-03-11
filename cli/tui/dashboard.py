@@ -29,27 +29,21 @@ SERVER_BASE_URL = os.getenv("SERVER_BASE_URL", "http://localhost:8000")
 MOCK_ACCOUNTS = [
     {
         "id": "1",
-        "name": "Primary Checking",
         "type": "CHECKING",
         "balance": 12847.53,
         "interest_rate": 0.01,
-        "status": "ACTIVE",
     },
     {
         "id": "2",
-        "name": "High-Yield Savings",
         "type": "SAVINGS",
         "balance": 45230.00,
         "interest_rate": 4.25,
-        "status": "ACTIVE",
     },
     {
         "id": "3",
-        "name": "Emergency Fund",
         "type": "SAVINGS",
         "balance": 3420.75,
         "interest_rate": 4.25,
-        "status": "ACTIVE",
     },
 ]
 

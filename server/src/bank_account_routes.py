@@ -11,6 +11,7 @@ bank_routes = APIRouter()
 
 @bank_routes.post("/create_bank_account", response_model=dict)
 async def create_bank_account(form_data: dict, current_user: dict = Depends(verify_token)):
+    """Create a new bank account for the current user"""
     # Only allow users with permission level 1 (teller) or higher to create bank accounts
     if current_user.get("permission", -1) < 0:
         raise HTTPException(status_code=403, detail="Must be logged in to create a bank account")
@@ -27,6 +28,7 @@ async def create_bank_account(form_data: dict, current_user: dict = Depends(veri
     
 @bank_routes.get("/view_bank_account", response_model=dict)
 async def view_bank_account(form_data: dict, current_user: dict = Depends(verify_token)):
+    """View details about a specific bank account"""
     # Only allow users with permission level 0 (customer) or higher to view bank accounts
     if current_user.get("permission", -1) < 0:
         raise HTTPException(status_code=403, detail="Must be logged in to view bank account details")
@@ -57,6 +59,7 @@ async def view_bank_account(form_data: dict, current_user: dict = Depends(verify
 
 @bank_routes.get("/delete_bank_account", response_model=dict)
 async def delete_bank_account(current_user: dict = Depends(verify_token)):
+    """Delete a bank account"""
     # Only allow users with permission level 1 (teller) or higher to delete bank accounts
     if current_user.get("permission", -1) < 0:
         raise HTTPException(status_code=403, detail="Must be logged in to delete a bank account")
@@ -67,6 +70,8 @@ async def delete_bank_account(current_user: dict = Depends(verify_token)):
 
 @bank_routes.get("/get_all_bank_accounts", response_model=dict)
 async def view_all_bank_accounts(current_user: dict = Depends(verify_token)):
+    """View all bank accounts within the bank. 
+    Only tellers and admins can view all accounts, customers can only view their own accounts"""
     # Need to be logged in. 
     if current_user.get("permission", -1) < 0:
         raise HTTPException(status_code=403, detail="Must be logged in to view bank accounts")
@@ -89,6 +94,7 @@ async def view_all_bank_accounts(current_user: dict = Depends(verify_token)):
 
 @bank_routes.post("/deposit", response_model=dict)
 async def deposit(form_data: dict, current_user: dict = Depends(verify_token)):
+    """Deposit money into a bank account"""
     # Only allow users with permission level 1 (teller) or higher to deposit into bank accounts
     if current_user.get("permission", -1) < 0:
         raise HTTPException(status_code=403, detail="Must be logged in to deposit into a bank account")
@@ -114,6 +120,7 @@ async def deposit(form_data: dict, current_user: dict = Depends(verify_token)):
 
 @bank_routes.post("/withdraw", response_model=dict)
 async def withdraw(form_data: dict, current_user: dict = Depends(verify_token)):
+    """Withdraw money from a bank account"""
     # Only allow users with permission level 1 (teller) or higher to withdraw from bank accounts
     if current_user.get("permission", -1) < 0:
         raise HTTPException(status_code=403, detail="Must be logged in to withdraw from a bank account")
@@ -139,6 +146,7 @@ async def withdraw(form_data: dict, current_user: dict = Depends(verify_token)):
 
 @bank_routes.post("/transfer", response_model=dict)
 async def transfer(form_data: dict, current_user: dict = Depends(verify_token)):
+    """Transfer money from one account to another"""
     # Only allow users with permission level 1 (teller) or higher to transfer between bank accounts
     if current_user.get("permission", -1) < 0:
         raise HTTPException(status_code=403, detail="Must be logged in to transfer between bank accounts")
@@ -164,6 +172,7 @@ async def transfer(form_data: dict, current_user: dict = Depends(verify_token)):
 
 @bank_routes.get("/view_transaction_history/{account_id}", response_model=dict)
 async def view_transaction_history(account_id: int, current_user: dict = Depends(verify_token)):
+    """View the transaction history for a specific bank account"""
     # Only allow users with permission level 0 (customer) or higher to view transaction history
     if current_user.get("permission", -1) < 0:
         raise HTTPException(status_code=403, detail="Must be logged in to view transaction history")
@@ -174,59 +183,87 @@ async def view_transaction_history(account_id: int, current_user: dict = Depends
 
 @bank_routes.get("/close_bank_account/{account_id}", response_model=dict)
 async def close_bank_account(account_id: int, current_user: dict = Depends(verify_token)):
+    """Close a bank account"""
     # Only allow users with permission level 1 (teller) or higher to close bank accounts
     if current_user.get("permission", -1) < 1:
         raise HTTPException(status_code=403, detail="Must be a teller or higher to close a bank account")
     
     # Logic to close a bank account would go here
+    try:
+        bank.get_account_by_id(account_id).close_account()
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
     return {"message": f"Bank account {account_id} closed successfully!"}
 
 
 @bank_routes.get("/account_info/{account_id}", response_model=dict)
 async def account_info(account_id: int, current_user: dict = Depends(verify_token)):
+    """Get information about a specific bank account"""
     # Only allow users with permission level 0 (customer) or higher to view account info
     if current_user.get("permission", -1) < 0:
         raise HTTPException(status_code=403, detail="Must be logged in to view account information")
     
-    # Logic to view account information would go here
-    return {"message": f"Information for account {account_id} displayed successfully!"}
+    try: 
+        account = bank.get_account_by_id(account_id)
+        account_info = {
+            "message": f"Account information for account {account_id} displayed successfully!",
+            "account_id": account.get_account_id(),
+            "account_type": account.get_account_type(),
+            "balance": account.get_balance(),
+            "is_frozen": account.is_frozen()
+        }
+        return account_info
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
 
 
 @bank_routes.get("/get-suspicious-accounts")
 async def get_suspicious_accounts(current_user: dict = Depends(verify_token)):
+    """Get a list of all accounts with suspicious activity"""
     # Only allow users with permission level 2 (admin) to view suspicious accounts
     if current_user.get("permission", -1) < 2:
         raise HTTPException(status_code=403, detail="Must be an admin to view suspicious accounts")
 
-    # Logic to get suspicious accounts would go here
-    return {"message": "List of suspicious accounts displayed successfully!"}
+    sussy_accounts = bank.get_suspicious_accounts()
+    return {
+        "message": "Suspicious accounts retrieved successfully!",
+        "suspicious_accounts": sussy_accounts
+    }
+
 
 
 @bank_routes.get("/toggle-freeze/{account_id}")
 async def toggle_freeze(account_id: int, current_user: dict = Depends(verify_token)):
+    """Freeze or unfreeze an account based on its current status"""
     # Only allow users with permission level 2 (admin) or higher to freeze/unfreeze accounts
     if current_user.get("permission", -1) < 2:
         raise HTTPException(status_code=403, detail="Must be an admin or higher to freeze/unfreeze accounts")
     
-    # Logic to toggle freeze status of a bank account would go here
-    return {"message": f"Freeze status for account {account_id} toggled successfully!"}
 
-
-@bank_routes.get("/view-frozen-accounts")
-async def view_frozen_accounts(current_user: dict = Depends(verify_token)):
-    # Only allow users with permission level 2 (admin) or higher to view frozen accounts
-    if current_user.get("permission", -1) < 2:
-        raise HTTPException(status_code=403, detail="Must be an admin or higher to view frozen accounts")
-    
-    # Logic to view frozen accounts would go here
-    return {"message": "List of frozen accounts displayed successfully!"}
+    account = bank.get_account_by_id(account_id)
+    if account is None:
+        raise HTTPException(status_code=404, detail="Account not found")
+    account.toggle_frozen()
+    return {
+        "message": f"Freeze status for account {account_id} toggled successfully!",
+        "is_frozen": account.is_frozen()
+    }
 
 
 @bank_routes.get("/isfrozen/{account_id}")
 async def is_frozen(account_id: int, current_user: dict = Depends(verify_token)):
+    """Check if an account is frozen"""
+
     # Only allow users with permission level 2 (admin) or higher to check freeze status
     if current_user.get("permission", -1) < 0:
         raise HTTPException(status_code=403, detail="Must be an loggeded in to check if an account is frozen")
 
     # Logic to check if an account is frozen would go here
-    return {"message": f"Check completed for account {account_id}!"}
+    account = bank.get_account_by_id(account_id)
+    if account is None:
+        raise HTTPException(status_code=404, detail="Account not found")
+    return {
+        "message": f"Freeze status for account {account_id} retrieved successfully!",
+        "is_frozen": account.is_frozen()
+    }
