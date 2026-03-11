@@ -11,6 +11,8 @@ class Transaction:
         timestamp (datetime): When the transaction occured in UTC.
         amount (float): The change in account balance of the transaction.
         balance (float): The balance of the account post-transaction.
+        type (TransactionType): The type of transaction.
+        description (str): The description of the transaction.
     """
     def __init__(self, absolute_transaction_id: int, relative_transaction_id: int, account_id: int, amount: float, balance: float) -> None:
         """
