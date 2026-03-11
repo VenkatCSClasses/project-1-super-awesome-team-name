@@ -26,38 +26,6 @@ load_dotenv()
 SERVER_BASE_URL = os.getenv("SERVER_BASE_URL", "http://localhost:8000")
 
 
-MOCK_ACCOUNTS = [
-    {
-        "id": "1",
-        "type": "CHECKING",
-        "balance": 12847.53,
-        "interest_rate": 0.01,
-    },
-    {
-        "id": "2",
-        "type": "SAVINGS",
-        "balance": 45230.00,
-        "interest_rate": 4.25,
-    },
-    {
-        "id": "3",
-        "type": "SAVINGS",
-        "balance": 3420.75,
-        "interest_rate": 4.25,
-    },
-]
-
-MOCK_TRANSACTIONS = [
-    {"id": "1", "date": "2026-03-06", "time": "14:32:01", "type": "WITHDRAWAL", "description": "Withdrawal", "amount": -89.99, "balance": 12847.53},
-    {"id": "2", "date": "2026-03-06", "time": "09:15:44", "type": "DEPOSIT", "description": "Deposit", "amount": 2847.00, "balance": 12937.52},
-    {"id": "3", "date": "2026-03-05", "time": "18:22:33", "type": "WITHDRAWAL", "description": "Withdrawal", "amount": -45.32, "balance": 10090.52},
-    {"id": "4", "date": "2026-03-05", "time": "12:08:19", "type": "WITHDRAWAL", "description": "Withdrawal", "amount": -127.84, "balance": 10135.84},
-    {"id": "5", "date": "2026-03-04", "time": "16:45:02", "type": "WITHDRAWAL", "description": "Withdrawal", "amount": -15.99, "balance": 10263.68},
-    {"id": "6", "date": "2026-03-04", "time": "11:30:55", "type": "TRANSFER", "description": "To ACC-001", "amount": -500.00, "balance": 10279.67},
-    {"id": "7", "date": "2026-03-03", "time": "08:00:00", "type": "WITHDRAWAL", "description": "Withdrawal", "amount": -142.30,"balance": 10779.67},
-    {"id": "8", "date": "2026-03-02", "time": "19:44:12","type": "WITHDRAWAL", "description": "Withdrawal", "amount": -34.50,"balance": 10921.97},
-]
-
 class AccountCard(Static):
     """A card widget displaying account info."""
     can_focus = True
@@ -75,12 +43,13 @@ class AccountCard(Static):
 
     def compose(self) -> ComposeResult:
         acc = self.account
-        type_icon = "█▀▀" if acc["type"] == "CHECKING" else "█▄▄"
+        account_type = acc.get("account_type", "UNKNOWN").upper()
+        type_icon = "█▀▀" if account_type == "CHECKING" else "█▄▄"
         
         yield Static(
-            f"{type_icon} [bold]{acc['type']} Account[/]\n"
-            f"[dim]ID: ACC-{acc['id']}[/]  [dim]│[/]  [dim]Type: {acc['type']}[/]\n"
-            f"[bold green]${acc['balance']:,.2f}[/]  [dim]Interest: {acc['interest_rate']}%[/]",
+            f"{type_icon} [bold]{account_type} Account[/]\n"
+            f"[dim]ID: ACC-{acc['account_id']}[/]  [dim]│[/]  [dim]Type: {account_type}[/]\n"
+            f"[bold green]${acc['balance']:,.2f}[/]  [dim]Frozen: {acc['is_frozen']}%[/]",
             classes="account-info"
         )
 
@@ -538,8 +507,24 @@ class DashboardScreen(Screen):
         raise Exception("Unable to fetch user info from server")
 
     def get_accounts(self) -> list:
-        """Fetch accounts from server"""
-        return MOCK_ACCOUNTS
+        """Fetch transactions from server"""
+        token = load_token()
+        if not token:
+            raise PermissionError("Missing auth token")
+
+        headers = {"Authorization": f"Bearer {token}"}
+        with httpx.Client(base_url=SERVER_BASE_URL, timeout=5) as client:
+            try:
+                response = client.get("/bank/get_all_bank_accounts", headers=headers)
+                if response.status_code == 200:
+                    response_data = response.json()
+                    return self._normalize_accounts(response_data.get("accounts", []))
+                if response.status_code in (401, 403):
+                    raise PermissionError("Auth token expired or invalid")
+                print(f"Failed to fetch user info: {response.status_code}")
+            except httpx.RequestError as e:
+                print(f"Error connecting to server: {e}")
+        raise Exception("Unable to fetch transaction info from server")
 
     def get_transactions(self) -> list:
         """Fetch transactions from server"""
@@ -578,6 +563,19 @@ class DashboardScreen(Screen):
             return [total]
 
         return [0]
+
+    def _normalize_accounts(self, accounts: object) -> list[dict]:
+        """Return a safe list of account dicts for dashboard rendering."""
+        if not isinstance(accounts, list):
+            return []
+        normalized: list[dict] = []
+        for account in accounts:
+            if not isinstance(account, dict):
+                continue
+            if not {"account_id", "account_type", "balance", "is_frozen"} <= account.keys():
+                continue
+            normalized.append(account)
+        return normalized
 
     def generate_transaction_table(self, transactions: list) -> None:
         """Helper to populate the transactions data table."""

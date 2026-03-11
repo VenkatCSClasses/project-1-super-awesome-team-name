@@ -21,7 +21,7 @@ async def create_bank_account(form_data: dict, current_user: dict = Depends(veri
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    account = bank.create_account_for_user(user, form_data["bank_account_type"])
+    account = bank.create_account_for_user(user, form_data["bank_account_type"], balance=form_data.get("initial_deposit", 0.00))
 
     return {"message": f"Bank account of type {form_data['bank_account_type']} created successfully!", "account_id": account.get_account_id()}
 

@@ -346,11 +346,11 @@ class Bank:
         return next_id
 
 
-    def create_account_for_user(self, user: Customer, account_type: str = "checking") -> CheckingAccount:
+    def create_account_for_user(self, user: Customer, account_type: str = "checking", balance: float = 0.00) -> CheckingAccount:
         if account_type == "savings":
-            account = SavingsAccount(self._next_account_num(), self, 0.0)
+            account = SavingsAccount(self._next_account_num(), self, balance)
         else:
-            account = CheckingAccount(self._next_account_num(), self, 0.0)
+            account = CheckingAccount(self._next_account_num(), self, balance)
 
         self.add_account(account)
         user.register_account(account)

@@ -235,6 +235,8 @@ class BankApp(App):
         width: 100%;
         height: auto;
         margin-bottom: 1;
+        border: solid #00ff88;
+        padding: 0 1;
     }
 
     #user-details {
@@ -253,6 +255,8 @@ class BankApp(App):
     #accounts-section {
         width: 100%;
         height: auto;
+        border: solid #00ff88;
+        padding: 0 1;
     }
 
     #total-balance {
@@ -328,6 +332,8 @@ class BankApp(App):
         width: 100%;
         height: 14;
         margin-bottom: 1;
+        border: solid #00ff88;
+        padding: 0 1;
     }
 
     #balance-line-chart {
@@ -346,6 +352,8 @@ class BankApp(App):
     #transactions-box {
         width: 100%;
         height: 1fr;
+        border: solid #00ff88;
+        padding: 0 1;
     }
 
     #transactions-table {
@@ -389,7 +397,7 @@ class BankApp(App):
         margin-bottom: 1;
         background: #0d0d0d;
         align: center middle;
-        border-top: solid #333333;
+        border: solid #00ff88;
     }
 
     #action-bar Button {
