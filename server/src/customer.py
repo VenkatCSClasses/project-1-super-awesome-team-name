@@ -7,12 +7,12 @@ if TYPE_CHECKING:
 
 class Customer():
     
-    def __init__(self, name, id, passwd, bank):
+    def __init__(self, name, id, passwd, bank, permissions=0):
         self.name = name
         self.id = id
         self.passwd = passwd
-        self.permissions = 0
-        self.accounts: dict[int, CheckingAccount] = {}
+        self.permissions = permissions
+        self.accounts = {}
         self.bank = bank
 
 
