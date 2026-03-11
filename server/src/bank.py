@@ -133,7 +133,7 @@ class Bank:
                 account = CheckingAccount(account_id, self, balance)
 
             account.is_frozen = bool(account_record.get("frozen"))
-            self.accounts.append(account)
+            self.accounts[account_id] = account
             accounts_by_id[account_id] = account
 
             # Transactions - TODO
@@ -186,7 +186,7 @@ class Bank:
                     "username": user.get_name(),
                     "hashed_password": user.get_passwd(),
                     "permission": self._user_permission(user),
-                    "bank_account_ids": [account.get_account_id() for account in user.get_accounts()],
+                    "bank_account_ids": [account.get_account_id() for account in user.get_accounts().values()],
                 }
             )
 
@@ -194,7 +194,7 @@ class Bank:
         for account in self.accounts.values():
 
             transactions: list[Transaction] = []
-            for transaction in self.account.get_all_transactions().values():
+            for transaction in account.get_all_transactions().values():
                 transactions.append(
                     {
                         "absolute_transaction_id": transaction.get_absolute_id(),
@@ -370,7 +370,7 @@ class Bank:
         """
         if self.get_user_by_id(user.get_id()) is not None:
             raise KeyError(f"User id already exists: {user.get_id()}")
-        self.users[user.get_id] = user
+        self.users[user.get_id()] = user
         self._next_user_id = max(self._next_user_id, user.get_id() + 1)
 
 
