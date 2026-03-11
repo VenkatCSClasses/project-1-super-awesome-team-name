@@ -13,3 +13,4 @@ class TransactionType(Enum):
     TRANSFER_WITHDRAW = 3
     TRANSFER_DEPOSIT = 4
     NEW_ACCOUNT = 5
+    INTEREST = 6

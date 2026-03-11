@@ -54,7 +54,8 @@ class Transaction:
                 self.description = f"Transfer from ACC-{self.transfer_account_id} of ${abs(self.amount):.2f}"
             case 5:
                 self.description = f"New account created with balance ${abs(self.amount):.2f}"
-
+            case 6:
+                self.description = f"Collected interest amount of ${abs(self.amount):.2f}"
 
     def get_absolute_id(self) -> int:
         """
