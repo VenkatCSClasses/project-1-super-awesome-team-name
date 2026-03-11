@@ -97,7 +97,7 @@ class StatusBar(Static):
         server_status = True
         if self.time_since_last_ping == 30:
             self.time_since_last_ping = 0
-        if self.time_since_last_ping > 0:
+        if self.time_since_last_ping > 30:
             if server_running():
                 server_status = True
             else:
@@ -709,5 +709,7 @@ class DashboardScreen(Screen):
         transactions = self.get_transactions()
         if transactions is None:
             return
+        
+        
         self.generate_transaction_table(transactions)
         self.notify("Data refreshed.", title="[ REFRESH ]", severity="information")
