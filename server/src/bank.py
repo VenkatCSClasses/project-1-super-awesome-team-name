@@ -10,6 +10,7 @@ from argon2.exceptions import VerifyMismatchError
 from customer import Customer
 from savings_account import SavingsAccount
 from transaction import Transaction 
+from transaction_type import TransactionType
 from checking_account import CheckingAccount
 
 
@@ -52,8 +53,8 @@ class Bank:
         default_path = Path(__file__).resolve().parent.parent / "database.json"
         self.storage_path = Path(storage_path or os.getenv("DATABASE_JSON_PATH", str(default_path))).resolve()
 
-        self.users: dict[int, Customer] = []
-        self.accounts: dict[int, Customer] = []
+        self.users: dict[int, Customer] = {}
+        self.accounts: dict[int, Customer] = {}
         self._next_user_id = 1
         self._next_account_id = 1
         self._next_transaction_id = 1
@@ -167,7 +168,7 @@ class Bank:
             dict: Dictionary that holds lists of each data type stored.
         """
         users = []
-        for user in self.users:
+        for user in self.users.values():
             users.append(
                 {
                     "id": user.get_id(),
@@ -179,28 +180,41 @@ class Bank:
             )
 
         accounts = []
-        transaction = []
-        for account in self.accounts:
+        for account in self.accounts.values():
+
+            transactions = []
+
+            for transaction in self.account.get_all_transactions().values():
+                transactions.append(
+                    {
+                        "absolute_transaction_id": transaction.get_absolute_id(),
+                        "relative_transaction_id": transaction.get_relative_id(),
+                        "account_id": transaction.get_account_id(),
+                        "amount": transaction.get_amount(),
+                        "balance": transaction.get_post_balance(),
+                        "type": transaction.get_type().value,
+                        "transfer_account_id": transaction.get_transfer_account_id(),
+                        "datetime_str": transaction.get_time().isoformat()
+                    }
+                )
+
             accounts.append(
                 {
-                    "id": account.account_id,
-                    "balance": account.balance,
-                    "frozen": account.is_frozen,
+                    "id": account.get_account_id(),
+                    "balance": account.check_balance(),
+                    "frozen": account.is_frozen(),
                     "type": "savings" if isinstance(account, SavingsAccount) else "checking",
-                    "transactions": []
+                    "transactions": transaction
                 }
             )
-
-
-
-
-
+            
         return {
             "users": users,
             "accounts": accounts,
             "counters": {
                 "users": self._next_user_id - 1,
                 "accounts": self._next_account_id - 1,
+                "transactions": self._next_transaction_id - 1,
             },
         }
 
