@@ -1,4 +1,5 @@
 import sys
+import datetime
 sys.path.append('./server/src')
 
 from typing import TYPE_CHECKING
@@ -14,7 +15,6 @@ class Customer():
         self.permissions = permissions
         self.accounts = {}
         self.bank = bank
-
 
     def get_name(self):
         return self.name

@@ -59,7 +59,8 @@ async def whoami(current_user: dict = Depends(verify_token)):
 
     return {
         "user_id": user.get_id(),
-        "username": user.get_name()
+        "username": user.get_name(),
+        "permission": user.get_permissions()
     } 
 
 def main():
