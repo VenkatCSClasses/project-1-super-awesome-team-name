@@ -19,11 +19,12 @@ class TestTransaction:
         assert trans1.get_time().date() == datetime.now(timezone.utc).date()
 
         assert trans1.get_type() == TransactionType.NEW_ACCOUNT
-        assert trans1.get_type() == "New account created with balance $50"
+        assert trans1.get_description() == "New account created with balance $50.00"
+        assert trans1.get_transfer_account_id() is None
 
 
         # Test 2: Negative amount
-        trans2 = Transaction(1, 1, 1, -50, TransactionType.WITHDRAW)
+        trans2 = Transaction(1, 1, 1, -50, 0, TransactionType.WITHDRAW)
         assert trans2.get_absolute_id() == 1
         assert trans2.get_relative_id() == 1
         assert trans2.get_account_id() == 1
@@ -31,8 +32,9 @@ class TestTransaction:
         assert trans2.get_post_balance() == 0
         assert trans2.get_time().date() == datetime.now(timezone.utc).date()
 
-        assert trans1.get_type() == TransactionType.WITHDRAW
-        assert trans1.get_type() == "Withdrawal of $50"
+        assert trans2.get_type() == TransactionType.WITHDRAW
+        assert trans2.get_description() == "Withdrawal of $50.00"
+        assert trans2.get_transfer_account_id() is None
 
 
         # Test 3: Zero amount (Boundary case)
@@ -44,8 +46,9 @@ class TestTransaction:
         assert trans3.get_post_balance() == 2.01
         assert trans3.get_time().date() == datetime.now(timezone.utc).date()
 
-        assert trans1.get_type() == TransactionType.TRANSFER_DEPOSIT
-        assert trans1.get_type() == "Transfer from ACC-3 of $0.01"
+        assert trans3.get_type() == TransactionType.TRANSFER_DEPOSIT
+        assert trans3.get_description() == "Transfer from ACC-3 of $0.01"
+        assert trans3.get_transfer_account_id() == 3
 
 
         # Test 4: Large values (Boundary case)
@@ -58,5 +61,6 @@ class TestTransaction:
         assert trans4.get_time().date() == datetime.now(timezone.utc).date()
 
 
-        assert trans1.get_type() == TransactionType.DEPOSIT
-        assert trans1.get_type() == "Deposit of $1000000"
+        assert trans4.get_type() == TransactionType.DEPOSIT
+        assert trans4.get_description() == "Deposit of $1000000.00"
+        assert trans4.get_transfer_account_id() is None
