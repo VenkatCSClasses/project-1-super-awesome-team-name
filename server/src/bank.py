@@ -8,8 +8,11 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 
 from customer import Customer
+from teller import Teller
+from admin import Admin
 from savings_account import SavingsAccount
 from transaction import Transaction 
+from transaction_type import TransactionType
 from checking_account import CheckingAccount
 
 
@@ -112,52 +115,60 @@ class Bank:
         Args: 
             json_data (dict): Data of each attribute stored in a dictionary parsed from json.
         """
-        self.users = []
-        self.accounts = []
+        self.users = {}
+        self.accounts = {}
 
-        for user_record in json_data.get("users", []):
-            username = user_record.get("username", user_record.get("name"))
-            user_id = user_record.get("id")
-            if username is None or user_id is None:
-                continue
-
-            hashed_password = user_record.get(
-                "hashed_password",
-                user_record.get("password", user_record.get("passwd", "")),
-            )
-            permission = user_record.get("permission", user_record.get("permissions", 0))
-            self.users.append(Customer(username, user_id, hashed_password, self, permission))
-
+        # Accounts - TODO
         accounts_by_id: dict[int, CheckingAccount] = {}
         for account_record in json_data.get("accounts", {}):
             account_id = account_record.get("id")
             if account_id is None:
                 continue
 
-            balance = float(account_record.get("balance", 0.0))
+            balance = float(account_record.get("balance"))
             account_type = account_record.get("type", "checking")
             if account_type == "savings":
                 account = SavingsAccount(account_id, self, balance)
             else:
                 account = CheckingAccount(account_id, self, balance)
 
-            account.is_frozen = bool(account_record.get("frozen", False))
-            self.accounts.append(account)
+            account.is_frozen = bool(account_record.get("frozen"))
+            self.accounts[account_id] = account
             accounts_by_id[account_id] = account
 
-        for user, user_record in zip(self.users, json_data.get("users", {})):
-            for account_id in user_record.get("bank_account_ids", {}):
-                account = accounts_by_id.get(account_id)
-                if account:
-                    user.register_account(account)
+            # Transactions - TODO
 
-        max_user_id = max((user.get_id() for user in self.users), default=0)
-        counter_user_id = int(json_data.get("counters", {}).get("users", 0))
-        self._next_user_id = max(max_user_id, counter_user_id) + 1
-        max_account_id = max((account.account_id for account in self.accounts), default=0)
-        counter_account_id = int(json_data.get("counters", {}).get("accounts", 0))
-        self._next_account_id = max(max_account_id, counter_account_id) + 1
-    
+
+        # Users - TODO
+        for user_record in json_data.get("users", []):
+            username = user_record.get("username")
+            user_id = user_record.get("id")
+
+            hashed_password = user_record.get(
+                "hashed_password",
+                user_record.get("password", user_record.get("passwd", "")),
+            )
+
+            permission = user_record.get("permission", user_record.get("permissions"))
+            match permission:
+                case 0:
+                    user = (Customer(username, user_id, hashed_password, self, permission))
+                case 1:
+                    user = (Teller(username, user_id, hashed_password, self, permission))
+                case 2:
+                    user = (Admin(username, user_id, hashed_password, self, permission))
+            
+            # Connecting Accs to Users - TODO
+            for account_id in user_record.get("bank_account_ids", []):
+
+
+
+                self[user_id] = user
+
+        # Counters
+        self._next_user_id = json_data.get("counters").get("users")
+        self._next_account_id = json_data.get("counters").get("accounts")
+        self._next_transaction_id = json_data.get("counters").get("transactions")
 
 
     def save_to_json(self) -> dict:
@@ -168,40 +179,52 @@ class Bank:
             dict: Dictionary that holds lists of each data type stored.
         """
         users = []
-        for user in self.users:
+        for user in self.users.values():
             users.append(
                 {
                     "id": user.get_id(),
                     "username": user.get_name(),
                     "hashed_password": user.get_passwd(),
                     "permission": self._user_permission(user),
-                    "bank_account_ids": [account.account_id for account in user.get_accounts()],
+                    "bank_account_ids": [account.get_account_id() for account in user.get_accounts().values()],
                 }
             )
 
         accounts = []
-        transaction = []
-        for account in self.accounts:
+        for account in self.accounts.values():
+
+            transactions: list[Transaction] = []
+            for transaction in account.get_all_transactions().values():
+                transactions.append(
+                    {
+                        "absolute_transaction_id": transaction.get_absolute_id(),
+                        "relative_transaction_id": transaction.get_relative_id(),
+                        "account_id": transaction.get_account_id(),
+                        "amount": transaction.get_amount(),
+                        "balance": transaction.get_post_balance(),
+                        "type": transaction.get_type().value,
+                        "transfer_account_id": transaction.get_transfer_account_id(),
+                        "datetime_str": transaction.get_time().isoformat()
+                    }
+                )
+
             accounts.append(
                 {
-                    "id": account.account_id,
-                    "balance": account.balance,
-                    "frozen": account.is_frozen,
+                    "id": account.get_account_id(),
+                    "balance": account.check_balance(),
+                    "frozen": account.is_frozen(),
                     "type": "savings" if isinstance(account, SavingsAccount) else "checking",
-                    "transactions": []
+                    "transactions": transactions
                 }
             )
-
-
-
-
-
+            
         return {
             "users": users,
             "accounts": accounts,
             "counters": {
                 "users": self._next_user_id - 1,
                 "accounts": self._next_account_id - 1,
+                "transactions": self._next_transaction_id - 1,
             },
         }
 
@@ -317,7 +340,7 @@ class Bank:
         user (Customer): optional -- the user to sum account balances for
         """
         if user is None:
-            return sum(account.balance for account in self.accounts)
+            return sum(account.balance for account in self.accounts.values())
         return sum(account.balance for account in user.get_accounts().values())
 
 
@@ -348,7 +371,7 @@ class Bank:
         """
         if self.get_user_by_id(user.get_id()) is not None:
             raise KeyError(f"User id already exists: {user.get_id()}")
-        self.users[user.get_id] = user
+        self.users[user.get_id()] = user
         self._next_user_id = max(self._next_user_id, user.get_id() + 1)
 
 
@@ -359,9 +382,9 @@ class Bank:
         Args:
         account (CheckingAccount): the bank account to add
         """
-        if any(existing.account_id == account.account_id for existing in self.accounts):
+        if any(existing.account_id == account.account_id for existing in self.accounts.values()):
             raise KeyError(f"Account id already exists: {account.account_id}")
-        self.accounts[account.get_account_id] = account
+        self.accounts[account.get_account_id()] = account
         self._next_account_id = max(self._next_account_id, account.account_id + 1)
 
     def _next_account_num(self) -> int:
@@ -371,7 +394,7 @@ class Bank:
         return next_id
 
 
-    def create_account_for_user(self, user: Customer, account_type: str = "checking", balance: float = 0.0) -> CheckingAccount:
+    def create_account_for_user(self, user: Customer, account_type: str = "CHECKING") -> CheckingAccount:
         """
         creates a bank account for a given user and adds it to the bank
 
@@ -379,10 +402,10 @@ class Bank:
         user (Customer): the customer to add the new accoun to
         account_type (str): the type of account, either checking or savings
         """
-        if account_type == "savings":
-            account = SavingsAccount(self._next_account_num(), self, balance)
+        if account_type == "SAVINGS":
+            account = SavingsAccount(self._next_account_num(), self)
         else:
-            account = CheckingAccount(self._next_account_num(), self, balance)
+            account = CheckingAccount(self._next_account_num(), self)
 
         self.add_account(account)
         user.register_account(account)
@@ -406,7 +429,7 @@ class Bank:
         Args:
         account_id (int): the id of the account to search for
         """
-        for account in self.accounts:
+        for account in self.accounts.values():
             if account.account_id == account_id:
                 return account
         return None

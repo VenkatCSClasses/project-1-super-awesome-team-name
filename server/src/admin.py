@@ -41,7 +41,7 @@ class Admin(Teller):
         Args:
             acc - the account to check for suspicious activity
         """
-        for transact in acc.get_all_transactions():
+        for transact in acc.get_all_transactions().values():
             if transact.get_amount() <= -10000:
                 return True
         return False
@@ -51,7 +51,7 @@ class Admin(Teller):
         returns a list of all accounts within the bank that have a suspicious transaction
         """
         sus_accounts = []
-        for acc in self.accounts:
+        for acc in self.accounts.values():
             if self.check_sus_activity(acc):
                 sus_accounts.append(acc)
         return sus_accounts

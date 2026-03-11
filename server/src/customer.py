@@ -62,7 +62,7 @@ class Customer():
     """
     def get_total_transact_hist(self):
         result = ""
-        for acc in self.accounts:
-            result.append(acc.get_all_transaction_str())
-            result.append("\n")
+        for acc in self.accounts.values():
+            result += acc.get_all_transaction_str()
+            result += "\n"
         return result

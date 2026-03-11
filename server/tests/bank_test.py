@@ -5,7 +5,6 @@ from customer import Customer
 from checking_account import CheckingAccount
 from bank import Bank
 
-
 class TestBank:
     
     def test_add_user(self):

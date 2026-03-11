@@ -14,7 +14,6 @@ class Teller(Customer):
         id (int): The unique ID of the account
         passwd (str): The password of the account
         permissions (int): The permission level of the account
-        accounts (dict): All accounts within the bank
         bank (Bank): The bank the teller belongs to
     """
     def __init__(self, name, id, passwd, bank):
@@ -22,7 +21,6 @@ class Teller(Customer):
         self.id = id
         self.passwd = passwd
         self.permissions = 1
-        self.accounts = bank.get_all_accounts()
         self.bank = bank
 
 
@@ -35,7 +33,7 @@ class Teller(Customer):
 
 
     
-    def create_account(self, owner: Customer, isChecking : bool):
+    def create_account(self, owner: Customer, isChecking: bool):
         """
         adds a checking or savings account to a given customer's account list
 
@@ -44,26 +42,21 @@ class Teller(Customer):
             isChecking - determines what type of account to add
         """
         if (isChecking):
-            self.accounts.create_account_for_user(owner, "checking")
+            self.bank.create_account_for_user(owner, "CHECKING")
         else:
-            self.accounts.create_account_for_user(owner, "savings")
+            self.bank.create_account_for_user(owner, "SAVINGS")
 
     
-    def close_account(self, owner : Customer, acc : CheckingAccount):
+    def close_account(self, owner: Customer, account: CheckingAccount):
         """
         removes a checking or savings account from a given customer's account list
 
         Args:
             owner - the customer to remove the acc from
-            acc - the account to remove
+            account - the account to remove
         """
-        for account in owner.getAccounts():
-            if acc.get_acct_num() == account.get_acct_num():
-                owner.get_accounts.remove(account)
-                break
-
-        for account in self.accounts():
-            if acc.get_acct_num() == account.get_acct_num():
-                self.accounts.remove(account)
-                break
+        owner.get_accounts().pop(account.get_account_id())
         
+    def get_accounts(self):
+        """Gets all accounts from bank attribute. Used to mitigate superclass get_accounts() as accounts is not a parameter of teller."""
+        return self.bank.get_all_accounts()
