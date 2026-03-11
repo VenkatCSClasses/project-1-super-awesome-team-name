@@ -75,10 +75,8 @@ class AccountCard(Static):
     def compose(self) -> ComposeResult:
         acc = self.account
         type_icon = "█▀▀" if acc["type"] == "CHECKING" else "█▄▄"
-        status_indicator = "[green]●[/]" if acc["status"] == "ACTIVE" else "[red]●[/]"
         
         yield Static(
-            f"{status_indicator} {type_icon} [bold cyan]{acc['name']}[/]\n"
             f"[dim]ID: ACC-{acc['id']}[/]  [dim]│[/]  [dim]Type: {acc['type']}[/]\n"
             f"[bold green]${acc['balance']:,.2f}[/]  [dim]Interest: {acc['interest_rate']}%[/]",
             classes="account-info"
