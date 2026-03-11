@@ -266,6 +266,28 @@ class BankApp(App):
         padding: 0;
     }
 
+    #accounts-new-account-btn {
+        width: 100%;
+        margin: 0;
+        background: #0d4d2e;
+        border: tall #00aa66;
+        color: #00ff88;
+        text-style: bold;
+    }
+
+    #accounts-new-account-btn:hover {
+        background: #1a1a2e;
+        border: tall #4d7cff;
+        color: #cfd9ff;
+    }
+
+    #accounts-new-account-btn:focus {
+        background: #1a1a2e;
+        border: tall #4d7cff;
+        color: #cfd9ff;
+        text-style: bold;
+    }
+
     #user-info-box:focus,
     #trend-box:focus {
         background: #111a16;
@@ -362,8 +384,9 @@ class BankApp(App):
     /* Action bar */
     #action-bar {
         width: 100%;
-        height: 3;
+        height: 6;
         padding: 0 1;
+        margin-bottom: 1;
         background: #0d0d0d;
         align: center middle;
         border-top: solid #333333;
@@ -373,6 +396,7 @@ class BankApp(App):
         min-width: 14;
         height: 3;
         margin: 0 1;
+        content-align: center middle;
     }
 
     ModalScreen {

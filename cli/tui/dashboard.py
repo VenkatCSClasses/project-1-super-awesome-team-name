@@ -202,6 +202,8 @@ class AccountsSection(Container):
         )
         yield Static("├──────────────────────────────────────────────────────────────┤", classes="box-divider")
         yield AccountsList(self.accounts, id="accounts-list")
+        yield Static("├──────────────────────────────────────────────────────────────┤", classes="box-divider")
+        yield Button("CREATE NEW ACCOUNT", id="accounts-new-account-btn", variant="success")
         yield Static("╰──────────────────────────────────────────────────────────────╯", classes="box-bottom")
 
 
@@ -380,12 +382,12 @@ class ActionBar(Horizontal):
     """Bottom action bar with buttons."""
 
     def compose(self) -> ComposeResult:
-        yield Button("[ NEW ACCOUNT ]", id="new-account-btn", variant="success")
-        yield Button("[ TRANSFER ]", id="transfer-btn", variant="primary")
-        yield Button("[ DEPOSIT ]", id="deposit-btn", variant="primary")
-        yield Button("[ WITHDRAW ]", id="withdraw-btn", variant="warning")
-        yield Button("[ FREEZE ACCOUNTS ]", id="freeze-accounts-btn", variant="error")
-        yield Button("[ LOGOUT ]", id="logout-btn", variant="error")
+        yield Button("NEW ACCOUNT", id="new-account-btn", variant="success")
+        yield Button("TRANSFER", id="transfer-btn", variant="primary")
+        yield Button("DEPOSIT", id="deposit-btn", variant="primary")
+        yield Button("WITHDRAW", id="withdraw-btn", variant="warning")
+        yield Button("FREEZE ACCOUNTS", id="freeze-accounts-btn", variant="error")
+        yield Button("LOGOUT", id="logout-btn", variant="error")
 
 
 
@@ -462,6 +464,9 @@ class DashboardScreen(Screen):
         clamped = max(0, min(index, len(buttons) - 1))
         buttons[clamped].focus()
 
+    def focus_accounts_new_account_button(self) -> None:
+        self.query_one("#accounts-new-account-btn", Button).focus()
+
     def focus_previous_account(self, current: AccountCard) -> None:
         cards = self._account_cards()
         if not cards:
@@ -488,7 +493,7 @@ class DashboardScreen(Screen):
         if index < len(cards) - 1:
             cards[index + 1].focus()
         else:
-            self.focus_action_button(0)
+            self.focus_accounts_new_account_button()
 
     def set_selected_account(self, selected_card: AccountCard, announce: bool = True) -> None:
         for card in self._account_cards():
@@ -620,8 +625,22 @@ class DashboardScreen(Screen):
         self.call_after_refresh(self.focus_accounts_list)
 
     def on_key(self, event) -> None:
-        """Arrow/vim movement while focused on action buttons."""
+        """Arrow/vim movement while focused on button groups."""
         focused = self.app.focused
+        if isinstance(focused, Button) and focused.id == "accounts-new-account-btn":
+            if event.key in ("up", "k"):
+                cards = self._account_cards()
+                if cards:
+                    cards[-1].focus()
+                event.stop()
+            elif event.key in ("right", "l"):
+                self.focus_transactions_table()
+                event.stop()
+            elif event.key in ("down", "j"):
+                self.focus_action_button(0)
+                event.stop()
+            return
+
         if not isinstance(focused, Button) or focused.parent is None or focused.parent.id != "action-bar":
             return
 
@@ -645,6 +664,8 @@ class DashboardScreen(Screen):
         if event.button.id == "logout-btn":
             self.action_logout()
         elif event.button.id == "new-account-btn":
+            self.app.push_screen(CreateBankAccountModal())
+        elif event.button.id == "accounts-new-account-btn":
             self.app.push_screen(CreateBankAccountModal())
         elif event.button.id == "transfer-btn":
             self.notify("Transfer feature coming soon!", title="[ TRANSFER ]", severity="information")
