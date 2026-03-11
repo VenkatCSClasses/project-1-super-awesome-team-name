@@ -118,26 +118,7 @@ class Bank:
         self.users = {}
         self.accounts = {}
 
-        # Users
-        for user_record in json_data.get("users", []):
-            username = user_record.get("username")
-            user_id = user_record.get("id")
-
-            hashed_password = user_record.get(
-                "hashed_password",
-                user_record.get("password", user_record.get("passwd", "")),
-            )
-
-            permission = user_record.get("permission", user_record.get("permissions"))
-            match permission:
-                case 0:
-                    self.users[user_id] = (Customer(username, user_id, hashed_password, self, permission))
-                case 1:
-                    self.users[user_id] = (Teller(username, user_id, hashed_password, self, permission))
-                case 2:
-                    self.users[user_id] = (Teller(username, user_id, hashed_password, self, permission))
-
-        # Accounts
+        # Accounts - TODO
         accounts_by_id: dict[int, CheckingAccount] = {}
         for account_record in json_data.get("accounts", []):
             account_id = account_record.get("id")
@@ -155,12 +136,32 @@ class Bank:
             self.accounts.append(account)
             accounts_by_id[account_id] = account
 
-        # Connecting Users to Accounts
-        for user, user_record in zip(self.users, json_data.get("users", [])):
-            for account_id in user_record.get("bank_account_ids", []):
-                account = accounts_by_id.get(account_id)
-                if account:
-                    user.register_account(account)
+            # Transactions - TODO
+
+
+        # Users - TODO
+        for user_record in json_data.get("users", []):
+            username = user_record.get("username")
+            user_id = user_record.get("id")
+
+            hashed_password = user_record.get(
+                "hashed_password",
+                user_record.get("password", user_record.get("passwd", "")),
+            )
+
+            permission = user_record.get("permission", user_record.get("permissions"))
+            match permission:
+                case 0:
+                    user = (Customer(username, user_id, hashed_password, self, permission))
+                case 1:
+                    user = (Teller(username, user_id, hashed_password, self, permission))
+                case 2:
+                    user = (Admin(username, user_id, hashed_password, self, permission))
+            
+            # Connecting Accs to Users - TODO
+            for account_id in account
+
+            self[user_id] = user
 
         # Counters
         self._next_user_id = json_data.get("counters").get("users")
@@ -183,14 +184,14 @@ class Bank:
                     "username": user.get_name(),
                     "hashed_password": user.get_passwd(),
                     "permission": self._user_permission(user),
-                    "bank_account_ids": [account.account_id for account in user.get_accounts()],
+                    "bank_account_ids": [account.get_account_id() for account in user.get_accounts()],
                 }
             )
 
         accounts = []
         for account in self.accounts.values():
 
-            transactions = []
+            transactions: list[Transaction] = []
             for transaction in self.account.get_all_transactions().values():
                 transactions.append(
                     {
