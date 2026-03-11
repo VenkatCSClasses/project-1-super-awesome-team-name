@@ -159,9 +159,11 @@ class Bank:
                     user = (Admin(username, user_id, hashed_password, self, permission))
             
             # Connecting Accs to Users - TODO
-            for account_id in account
+            for account_id in user_record.get("bank_account_ids", []):
 
-            self[user_id] = user
+
+
+                self[user_id] = user
 
         # Counters
         self._next_user_id = json_data.get("counters").get("users")
@@ -337,7 +339,7 @@ class Bank:
         user (Customer): optional -- the user to sum account balances for
         """
         if user is None:
-            return sum(account.balance for account in self.accounts)
+            return sum(account.balance for account in self.accounts.values())
         return sum(account.balance for account in user.get_accounts().values())
 
 
@@ -379,9 +381,9 @@ class Bank:
         Args:
         account (CheckingAccount): the bank account to add
         """
-        if any(existing.account_id == account.account_id for existing in self.accounts):
+        if any(existing.account_id == account.account_id for existing in self.accounts.values()):
             raise KeyError(f"Account id already exists: {account.account_id}")
-        self.accounts[account.get_account_id] = account
+        self.accounts[account.get_account_id()] = account
         self._next_account_id = max(self._next_account_id, account.account_id + 1)
 
     def _next_account_num(self) -> int:
@@ -391,7 +393,7 @@ class Bank:
         return next_id
 
 
-    def create_account_for_user(self, user: Customer, account_type: str = "checking") -> CheckingAccount:
+    def create_account_for_user(self, user: Customer, account_type: str = "CHECKING") -> CheckingAccount:
         """
         creates a bank account for a given user and adds it to the bank
 
@@ -399,10 +401,10 @@ class Bank:
         user (Customer): the customer to add the new accoun to
         account_type (str): the type of account, either checking or savings
         """
-        if account_type == "savings":
-            account = SavingsAccount(self._next_account_num(), self, balance)
+        if account_type == "SAVINGS":
+            account = SavingsAccount(self._next_account_num(), self)
         else:
-            account = CheckingAccount(self._next_account_num(), self, balance)
+            account = CheckingAccount(self._next_account_num(), self)
 
         self.add_account(account)
         user.register_account(account)
@@ -426,7 +428,7 @@ class Bank:
         Args:
         account_id (int): the id of the account to search for
         """
-        for account in self.accounts:
+        for account in self.accounts.values():
             if account.account_id == account_id:
                 return account
         return None
