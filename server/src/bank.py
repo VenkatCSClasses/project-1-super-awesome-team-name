@@ -307,27 +307,43 @@ class Bank:
 
 
     def get_total_balance(self, user: Customer | None = None) -> float:
+        """
+        returns the total balance of all of a user's bank accounts, or the
+        entire bank if no user is given
+
+        Args:
+        user (Customer): optional -- the user to sum account balances for
+        """
         if user is None:
             return sum(account.balance for account in self.accounts)
         return sum(account.balance for account in user.get_accounts().values())
 
 
     def _compound_savings_interest(self) -> None:
+        """compounds the interest of all accounts in the bank"""
         for account in self.get_all_accounts(only_savings=True):
             account.compound_interest()
 
 
     def _reset_withdraw_limits(self) -> None:
+        """resets the withdraw limits of all bank accounts in the bank"""
         for account in self.get_all_accounts(only_savings=True):
             account.reset_withdraw_limit()
 
 
     def daily_changes(self) -> None:
+        """performs the daily changes for compound interest and resetting withdraw limits"""
         self._compound_savings_interest()
         self._reset_withdraw_limits()
 
 
     def add_user(self, user: Customer) -> None:
+        """
+        adds a given customer to the bank
+
+        Args:
+        user (Customer): the user to add
+        """
         if self.get_user_by_id(user.get_id()) is not None:
             raise KeyError(f"User id already exists: {user.get_id()}")
         self.users[user.get_id] = user
@@ -335,18 +351,32 @@ class Bank:
 
 
     def add_account(self, account: CheckingAccount) -> None:
+        """
+        adds a given bank account to the bank
+
+        Args:
+        account (CheckingAccount): the bank account to add
+        """
         if any(existing.account_id == account.account_id for existing in self.accounts):
             raise KeyError(f"Account id already exists: {account.account_id}")
         self.accounts[account.get_account_id] = account
         self._next_account_id = max(self._next_account_id, account.account_id + 1)
 
     def _next_account_num(self) -> int:
+        """returns and increments the global account_num value for id purposes"""
         next_id = self._next_account_id
         self._next_account_id += 1
         return next_id
 
 
     def create_account_for_user(self, user: Customer, account_type: str = "checking") -> CheckingAccount:
+        """
+        creates a bank account for a given user and adds it to the bank
+
+        Args:
+        user (Customer): the customer to add the new accoun to
+        account_type (str): the type of account, either checking or savings
+        """
         if account_type == "savings":
             account = SavingsAccount(self._next_account_num(), self, 0.0)
         else:
@@ -358,10 +388,22 @@ class Bank:
 
     
     def get_accounts_for_user(self, user: Customer) -> dict[int, CheckingAccount]:
+        """
+        returns all bank accounts of a given user
+        
+        Args:
+        user (Customer): the customer to find all accounts of
+        """
         return user.get_accounts()
 
 
     def get_account_by_id(self, account_id: int) -> CheckingAccount | None:
+        """
+        returns a bank account by id search, none if not found
+
+        Args:
+        account_id (int): the id of the account to search for
+        """
         for account in self.accounts:
             if account.account_id == account_id:
                 return account
@@ -393,12 +435,24 @@ class Bank:
 
 
     def get_user_by_id(self, user_id: int) -> Customer | None:
+        """
+        returns a given user found by id, none if not found
+
+        Args:
+        id (int): the id to search for
+        """
         for key,user in self.users.items():
             if user.get_id() == user_id:
                 return user
         return None
     
     def get_user_by_name(self, username: str) -> Customer | None:
+        """
+        returns a given user found by name, none if not found
+
+        Args:
+        username (str): the username to search for
+        """
         for user in self.users.values():
             if user.get_name() == username:
                 return user
@@ -434,6 +488,12 @@ class Bank:
             self.remove_user_by_id(identifier)
 
     def remove_user_by_id(self, user_id: int) -> Customer:
+        """
+        removes a user account from the bank via id
+
+        Args:
+        id (int): the id of the user to be removed
+        """
         for key,cust in self.users.items():
             if cust.get_id() == user_id:
                 del self.users[key]
@@ -441,6 +501,12 @@ class Bank:
 
 
     def remove_user_by_name(self, username: str) -> Customer:
+        """
+        removes a user account from the bank via username
+
+        Args:
+        username (str): the name of the user to be removed
+        """
         for key,value in self.users.items():
             if value.get_name() == username:
                 del self.users[key]
@@ -448,6 +514,12 @@ class Bank:
 
 
     def remove_account(self, id: int) -> CheckingAccount:
+        """
+        removes a bank account from the bank via account_id
+
+        Args:
+        id (int): the account_id of the account to be removed
+        """
         for key,acc in self.accounts.items():
             if acc.get_account_id() == id:
                 del self.accounts[key]
