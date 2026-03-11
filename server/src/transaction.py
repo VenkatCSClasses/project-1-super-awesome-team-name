@@ -18,7 +18,7 @@ class Transaction:
         type (TransactionType): The type of transaction.
         description (str): The description of the transaction.
     """
-    def __init__(self, absolute_transaction_id: int, relative_transaction_id: int, account_id: int, amount: float, balance: float, type: TransactionType, transfer_account_id: int | None = None) -> None:
+    def __init__(self, absolute_transaction_id: int, relative_transaction_id: int, account_id: int, amount: float, balance: float, type: TransactionType, transfer_account_id: int | None = None, datetime_str: str | None = None) -> None:
         """
         Initialize the Transaction with the transaction ids, account number, timestamp, balance, amount, type, description and potential transfer_account_id.
         
@@ -30,6 +30,7 @@ class Transaction:
             balance (float): The balance of the account post-transaction.
             type (TransactionType): Type of the transaction.
             transfer_account_id (int, optional): Account number the transfer is occuring with (if type is transfer).
+            datetime_str (str, optional): Passes in datetime of transaction for loading from database (optional).
         """
         self.absolute_transaction_id: int = absolute_transaction_id
         self.relative_transaction_id: int = relative_transaction_id
@@ -37,9 +38,10 @@ class Transaction:
         self.amount: float = amount
         self.balance: float = balance
         self.type: TransactionType = type
-        self.transfer_account_id = transfer_account_id
+        self.transfer_account_id: int | None = transfer_account_id
 
-        self.timestamp: datetime = datetime.now(timezone.utc)
+        if datetime_str is None:
+            self.timestamp: datetime = datetime.now(timezone.utc)
 
         match type.value:
             case 1:
