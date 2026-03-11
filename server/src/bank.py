@@ -370,7 +370,7 @@ class Bank:
         return next_id
 
 
-    def create_account_for_user(self, user: Customer, account_type: str = "checking") -> CheckingAccount:
+    def create_account_for_user(self, user: Customer, account_type: str = "checking", balance: float = 0.0) -> CheckingAccount:
         """
         creates a bank account for a given user and adds it to the bank
 

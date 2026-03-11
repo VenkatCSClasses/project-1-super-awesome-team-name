@@ -378,15 +378,12 @@ class DashboardScreen(Screen):
             user = self.get_user_info()
         except Exception:
             self.app.notify("Unable to load user info.", title="[ ERROR ]", severity="error")
-            return
+            user = None
         if user is None:
-            return
-        accounts = self.get_accounts()
-        if accounts is None:
-            return
-        transactions = self.get_transactions()
-        if transactions is None:
-            return
+            user = {"username": "unknown", "user_id": "unknown", "permission": -1}
+
+        accounts = self.get_accounts() or []
+        transactions = self.get_transactions() or []
         balance_history = self.build_balance_history(accounts, transactions)
 
         yield Header()
@@ -419,6 +416,7 @@ class DashboardScreen(Screen):
     def focus_accounts_list(self) -> None:
         cards = self._account_cards()
         if not cards:
+            self.focus_accounts_new_account_button()
             return
         selected = next((card for card in cards if "selected" in card.classes), cards[0])
         selected.focus()
@@ -588,7 +586,9 @@ class DashboardScreen(Screen):
 
     def generate_transaction_table(self, transactions: list) -> None:
         """Helper to populate the transactions data table."""
-        table = self.query_one("#transactions-table", DataTable)
+        table = self.query("#transactions-table").first()
+        if not isinstance(table, DataTable):
+            return
 
         # Rebuild columns on refresh to avoid duplicate column definitions.
         table.clear(columns=True)
@@ -623,7 +623,7 @@ class DashboardScreen(Screen):
                 f"${txn['balance']:,.2f}",
             )
 
-    def on_mount(self) -> None:
+    def _populate_dashboard(self) -> None:
         transactions = self.get_transactions()
         if transactions is None:
             return
@@ -631,7 +631,10 @@ class DashboardScreen(Screen):
         cards = self._account_cards()
         if cards:
             self.set_selected_account(cards[0], announce=False)
-        self.call_after_refresh(self.focus_accounts_list)
+        self.focus_accounts_list()
+
+    def on_mount(self) -> None:
+        self.call_after_refresh(self._populate_dashboard)
 
     def on_key(self, event) -> None:
         """Arrow/vim movement while focused on button groups."""
