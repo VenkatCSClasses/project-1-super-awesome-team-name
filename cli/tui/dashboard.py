@@ -15,7 +15,7 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical, Horizontal
 from textual.screen import Screen
-from textual.widgets import Button, Footer, Header, Static, DataTable, Sparkline
+from textual.widgets import Button, Footer, Header, Static, DataTable
 from rich.text import Text
 from dotenv import load_dotenv
 from create_bank_account_modal import CreateBankAccountModal
@@ -58,13 +58,6 @@ MOCK_TRANSACTIONS = [
     {"id": "8", "date": "2026-03-02", "time": "19:44:12","type": "WITHDRAWAL", "description": "Withdrawal", "amount": -34.50,"balance": 10921.97},
 ]
 
-MOCK_BALANCE_HISTORY = [
-    8500, 8450, 8600, 8580, 9200, 9180, 9150, 9300, 9280, 9500,
-    9480, 9700, 9650, 10200, 10180, 10500, 10480, 10450, 10800, 10750,
-    10900, 10850, 11200, 11500, 11480, 12000, 12200, 12500, 12900, 12847,
-]
-
-
 class AccountCard(Static):
     """A card widget displaying account info."""
 
@@ -77,6 +70,7 @@ class AccountCard(Static):
         type_icon = "█▀▀" if acc["type"] == "CHECKING" else "█▄▄"
         
         yield Static(
+            f"{type_icon} [bold]{acc['type']} Account[/]\n"
             f"[dim]ID: ACC-{acc['id']}[/]  [dim]│[/]  [dim]Type: {acc['type']}[/]\n"
             f"[bold green]${acc['balance']:,.2f}[/]  [dim]Interest: {acc['interest_rate']}%[/]",
             classes="account-info"
@@ -178,25 +172,101 @@ class AccountsList(Vertical):
 
 
 class BalanceTrendBox(Container):
-    """30-day balance trend chart."""
+    """Balance trend chart based on transaction history."""
 
     def __init__(self, balance_history: list, **kwargs):
         super().__init__(**kwargs)
         self.balance_history = balance_history
 
+    @staticmethod
+    def _resample(values: list[float], target_count: int) -> list[float]:
+        """Linearly resample values to a fixed number of points."""
+        if not values:
+            return [0.0]
+        if len(values) == 1 or target_count <= 1:
+            return [values[0]] * max(target_count, 1)
+
+        result = []
+        max_index = len(values) - 1
+        for i in range(target_count):
+            pos = (i / (target_count - 1)) * max_index
+            left = int(pos)
+            right = min(left + 1, max_index)
+            weight = pos - left
+            point = values[left] * (1 - weight) + values[right] * weight
+            result.append(point)
+        return result
+
+    def render_line_chart(self, width: int = 64, height: int = 6) -> str:
+        """Render a multiline line chart so the trend box uses vertical space."""
+        samples = self._resample(self.balance_history, width)
+        low = min(samples)
+        high = max(samples)
+        if high == low:
+            return "\n".join((" " * width) for _ in range(height - 1)) + f"\n{'─' * width}"
+
+        rows = [[" " for _ in range(width)] for _ in range(height)]
+
+        def y_for(value: float) -> int:
+            normalized = (value - low) / (high - low)
+            return (height - 1) - round(normalized * (height - 1))
+
+        y_points = [y_for(value) for value in samples]
+
+        for x in range(width):
+            y = y_points[x]
+            rows[y][x] = "●"
+            if x == 0:
+                continue
+            prev_y = y_points[x - 1]
+            step = 1 if y > prev_y else -1
+            for mid_y in range(prev_y + step, y, step):
+                rows[mid_y][x] = "│"
+            if prev_y < y:
+                rows[prev_y][x] = "╮"
+                rows[y][x] = "╰"
+            elif prev_y > y:
+                rows[prev_y][x] = "╯"
+                rows[y][x] = "╭"
+            else:
+                rows[y][x] = "─"
+
+        return "\n".join("".join(row) for row in rows)
+
+    def update_chart(self) -> None:
+        """Render chart content to fill the available chart widget space."""
+        chart_widget = self.query_one("#balance-line-chart", Static)
+        width = chart_widget.size.width
+        height = chart_widget.size.height
+        if width <= 0:
+            width = 68
+        if height <= 0:
+            height = 6
+        chart_widget.update(f"[green]{self.render_line_chart(width=width, height=height)}[/]")
+
     def compose(self) -> ComposeResult:
-        yield Static("╭─ 30-DAY BALANCE TREND ─────────────────────────────────────────────────╮", classes="box-top")
-        yield Sparkline(self.balance_history, summary_function=max, id="balance-sparkline")
+        yield Static("╭─ TRANSACTION BALANCE TREND ─────────────────────────────────────────────╮", classes="box-top")
+        yield Static("", id="balance-line-chart")
         min_bal = min(self.balance_history)
         max_bal = max(self.balance_history)
-        change_pct = ((max_bal - min_bal) / min_bal) * 100
+        start_bal = self.balance_history[0]
+        end_bal = self.balance_history[-1]
+        change = end_bal - start_bal
+        change_pct = (change / start_bal) * 100 if start_bal else 0
+        change_color = "green" if change >= 0 else "red"
         yield Static(
             f"  [dim]MIN:[/] [red]${min_bal:,.0f}[/]  [dim]│[/]  "
             f"[dim]MAX:[/] [green]${max_bal:,.0f}[/]  [dim]│[/]  "
-            f"[dim]CHANGE:[/] [green]+{max_bal - min_bal:,.0f} (+{change_pct:.1f}%)[/]",
+            f"[dim]CHANGE:[/] [{change_color}]{change:+,.0f} ({change_pct:+.1f}%)[/]",
             classes="trend-stats"
         )
         yield Static("╰───────────────────────────────────────────────────────────────────────────╯", classes="box-bottom")
+
+    def on_mount(self) -> None:
+        self.call_after_refresh(self.update_chart)
+
+    def on_resize(self, event) -> None:
+        self.update_chart()
 
 
 class TransactionsBox(Container):
@@ -302,12 +372,35 @@ class DashboardScreen(Screen):
 
     def get_transactions(self) -> list:
         """Fetch transactions from server"""
-        return MOCK_TRANSACTIONS
+        token = load_token()
+        if not token:
+            raise PermissionError("Missing auth token")
+
+        headers = {"Authorization": f"Bearer {token}"}
+        with httpx.Client(base_url=SERVER_BASE_URL, timeout=5) as client:
+            try:
+                response = client.get("/bank/view_my_transaction_history/", headers=headers)
+                if response.status_code == 200:
+                    response_data = response.json()
+                    return response_data.get("transactions", [])
+                if response.status_code in (401, 403):
+                    raise PermissionError("Auth token expired or invalid")
+                print(f"Failed to fetch user info: {response.status_code}")
+            except httpx.RequestError as e:
+                print(f"Error connecting to server: {e}")
+        raise Exception("Unable to fetch transaction info from server")
+        
 
     def build_balance_history(self, accounts: list, transactions: list) -> list[float]:
-        """Build trend data from loaded account and transaction data."""
+        """Build balance history from transactions in chronological order."""
         if transactions:
-            return [txn["balance"] for txn in transactions][-30:]
+            ordered_transactions = sorted(
+                transactions,
+                key=lambda txn: f"{txn.get('date', '')} {txn.get('time', '')}"
+            )
+            history = [txn["balance"] for txn in ordered_transactions if "balance" in txn]
+            if history:
+                return history
 
         if accounts:
             total = sum(acc["balance"] for acc in accounts)

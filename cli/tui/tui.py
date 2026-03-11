@@ -285,13 +285,13 @@ class BankApp(App):
     /* Trend box */
     #trend-box {
         width: 100%;
-        height: 12;
+        height: 14;
         margin-bottom: 1;
     }
 
-    #balance-sparkline {
+    #balance-line-chart {
         width: 100%;
-        height: 5;
+        height: 6;
         padding: 0 2;
         color: #00ff88;
     }
