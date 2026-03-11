@@ -243,7 +243,14 @@ class DashboardScreen(Screen):
     ]
 
     def compose(self) -> ComposeResult:
-        user = self.get_user_info()
+        try:
+            user = self.get_user_info()
+        except PermissionError:
+            self.handle_session_expired()
+            return
+        except Exception:
+            self.app.notify("Unable to load user info.", title="[ ERROR ]", severity="error")
+            return
         accounts = self.get_accounts()
         transactions = self.get_transactions()
         balance_history = self.build_balance_history(accounts, transactions)
@@ -266,11 +273,18 @@ class DashboardScreen(Screen):
         yield ActionBar(id="action-bar")
         yield Footer()
 
+    def handle_session_expired(self) -> None:
+        """Clear session token and send user to login screen."""
+        delete_token()
+        self.app.notify("Session expired. Please log in again.", title="[ AUTH ]", severity="error")
+        from login_screen import LoginScreen
+        self.app.push_screen(LoginScreen())
+
     def get_user_info(self) -> dict:
         """Fetch user info from server"""
         token = load_token()
         if not token:
-            self.app.push_screen(LoginScreen())
+            raise PermissionError("Missing auth token")
 
         headers = {"Authorization": f"Bearer {token}"}
         with httpx.Client(base_url=SERVER_BASE_URL, timeout=5) as client:
@@ -283,6 +297,8 @@ class DashboardScreen(Screen):
                         "user_id": str(response_data.get("user_id", "unknown")),
                         "permission": response_data.get("permission", -1),
                     }
+                if response.status_code in (401, 403):
+                    raise PermissionError("Auth token expired or invalid")
                 print(f"Failed to fetch user info: {response.status_code}")
             except httpx.RequestError as e:
                 print(f"Error connecting to server: {e}")
