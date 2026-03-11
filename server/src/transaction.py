@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from transaction_type import TransactionType
 
 class Transaction:
     """
@@ -16,7 +17,7 @@ class Transaction:
     """
     def __init__(self, absolute_transaction_id: int, relative_transaction_id: int, account_id: int, amount: float, balance: float) -> None:
         """
-        Initialize the Transaction with the transaction ids, account number, timestamp, and amount.
+        Initialize the Transaction with the transaction ids, account number, timestamp, balance, amount, type and description.
         
         Args:
             absolute_transaction_id (int): Absolute ID of the transaction.
@@ -24,6 +25,7 @@ class Transaction:
             account_num (int): Account number where the transaction occurred.
             amount (float): The change in account balance of the transaction.
             balance (float): The balance of the account post-transaction.
+            type (TransactionType): Type of the transaction.
         """
         self.absolute_transaction_id: int = absolute_transaction_id
         self.relative_transaction_id: int = relative_transaction_id
@@ -86,17 +88,20 @@ class Transaction:
             int: The amount number that the transaction belongs to.
         """
         return self.account_id
-
-    def __str__(self) -> str:
+    
+    def get_type(self) -> TransactionType:
         """
-        toString method to turn the transaction into a human-readable string.
-        Format: Transaction (Absolute ID: {abs_id}, Relative ID: {rel_id}) of account {acc_num} 
-                occured on {timestamp} of {amount}, with the new balance being {balance}.
-                Timestamp format is ("%A, %B %d, %Y, %H:%M")
-        
+        Returns the type of transaction this transaction is.
+
         Returns:
-            str: Human-readable string showing information about the transaction.
+            TransactionType: The type of transaction this transaction is.
         """
-        time_readable: str = self.timestamp.strftime("%A, %B %d, %Y, %H:%M")
 
-        return f"Transaction (Absolute ID: {self.absolute_transaction_id}, Relative ID: {self.relative_transaction_id}) of account {self.account_id} occured on {time_readable} of {self.amount}, with the new balance being {self.balance}."
+    def get_description(self) -> str:
+        """
+        Returns a brief description of the transaction.
+    
+        Returns:
+            str: Brief description of the transaction.
+
+        """

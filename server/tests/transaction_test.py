@@ -44,20 +44,3 @@ class TestTransaction:
         assert trans4.get_amount() == 1000000.00
         assert trans4.get_post_balance() == 1000000.01
         assert trans4.get_time().date() == datetime.now(timezone.utc).date()
-
-    def test_str(self):
-        """Test the human-readable string return."""
-        abs_id = 5
-        rel_id = 2
-        acc_num = 123
-        amount = 75.0
-        balance = 75.0
-        
-        trans = Transaction(abs_id, rel_id, acc_num, amount, balance)
-        
-        # Get the timestamp from the object since it is set on init
-        timestamp = trans.get_time().strftime("%A, %B %d, %Y, %H:%M")
-        
-        expected_str = f"Transaction (Absolute ID: {abs_id}, Relative ID: {rel_id}) of account {acc_num} occured on {timestamp} of {amount}, with the new balance being {balance}."
-        
-        assert str(trans) == expected_str
