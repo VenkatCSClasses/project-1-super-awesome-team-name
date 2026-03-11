@@ -376,14 +376,17 @@ class DashboardScreen(Screen):
     def compose(self) -> ComposeResult:
         try:
             user = self.get_user_info()
-        except PermissionError:
-            self.handle_session_expired()
-            return
         except Exception:
             self.app.notify("Unable to load user info.", title="[ ERROR ]", severity="error")
             return
+        if user is None:
+            return
         accounts = self.get_accounts()
+        if accounts is None:
+            return
         transactions = self.get_transactions()
+        if transactions is None:
+            return
         balance_history = self.build_balance_history(accounts, transactions)
 
         yield Header()
@@ -486,7 +489,8 @@ class DashboardScreen(Screen):
         """Fetch user info from server"""
         token = load_token()
         if not token:
-            raise PermissionError("Missing auth token")
+            self.handle_session_expired()
+            return None
 
         headers = {"Authorization": f"Bearer {token}"}
         with httpx.Client(base_url=SERVER_BASE_URL, timeout=5) as client:
@@ -500,7 +504,8 @@ class DashboardScreen(Screen):
                         "permission": response_data.get("permission", -1),
                     }
                 if response.status_code in (401, 403):
-                    raise PermissionError("Auth token expired or invalid")
+                    self.handle_session_expired()
+                    return None
                 print(f"Failed to fetch user info: {response.status_code}")
             except httpx.RequestError as e:
                 print(f"Error connecting to server: {e}")
@@ -510,7 +515,8 @@ class DashboardScreen(Screen):
         """Fetch transactions from server"""
         token = load_token()
         if not token:
-            raise PermissionError("Missing auth token")
+            self.handle_session_expired()
+            return None
 
         headers = {"Authorization": f"Bearer {token}"}
         with httpx.Client(base_url=SERVER_BASE_URL, timeout=5) as client:
@@ -520,7 +526,8 @@ class DashboardScreen(Screen):
                     response_data = response.json()
                     return self._normalize_accounts(response_data.get("accounts", []))
                 if response.status_code in (401, 403):
-                    raise PermissionError("Auth token expired or invalid")
+                    self.handle_session_expired()
+                    return None
                 print(f"Failed to fetch user info: {response.status_code}")
             except httpx.RequestError as e:
                 print(f"Error connecting to server: {e}")
@@ -530,7 +537,8 @@ class DashboardScreen(Screen):
         """Fetch transactions from server"""
         token = load_token()
         if not token:
-            raise PermissionError("Missing auth token")
+            self.handle_session_expired()
+            return None
 
         headers = {"Authorization": f"Bearer {token}"}
         with httpx.Client(base_url=SERVER_BASE_URL, timeout=5) as client:
@@ -540,7 +548,8 @@ class DashboardScreen(Screen):
                     response_data = response.json()
                     return response_data.get("transactions", [])
                 if response.status_code in (401, 403):
-                    raise PermissionError("Auth token expired or invalid")
+                    self.handle_session_expired()
+                    return None
                 print(f"Failed to fetch user info: {response.status_code}")
             except httpx.RequestError as e:
                 print(f"Error connecting to server: {e}")
@@ -616,6 +625,8 @@ class DashboardScreen(Screen):
 
     def on_mount(self) -> None:
         transactions = self.get_transactions()
+        if transactions is None:
+            return
         self.generate_transaction_table(transactions)
         cards = self._account_cards()
         if cards:
@@ -693,5 +704,7 @@ class DashboardScreen(Screen):
     def action_refresh(self) -> None:
         """Refresh dashboard data."""
         transactions = self.get_transactions()
+        if transactions is None:
+            return
         self.generate_transaction_table(transactions)
         self.notify("Data refreshed.", title="[ REFRESH ]", severity="information")

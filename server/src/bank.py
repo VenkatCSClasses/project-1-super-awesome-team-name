@@ -126,10 +126,10 @@ class Bank:
                 user_record.get("password", user_record.get("passwd", "")),
             )
             permission = user_record.get("permission", user_record.get("permissions", 0))
-            self.users.append(Customer(username, user_id, hashed_password, permission))
+            self.users.append(Customer(username, user_id, hashed_password, self, permission))
 
         accounts_by_id: dict[int, CheckingAccount] = {}
-        for account_record in json_data.get("accounts", []):
+        for account_record in json_data.get("accounts", {}):
             account_id = account_record.get("id")
             if account_id is None:
                 continue
@@ -145,8 +145,8 @@ class Bank:
             self.accounts.append(account)
             accounts_by_id[account_id] = account
 
-        for user, user_record in zip(self.users, json_data.get("users", [])):
-            for account_id in user_record.get("bank_account_ids", []):
+        for user, user_record in zip(self.users, json_data.get("users", {})):
+            for account_id in user_record.get("bank_account_ids", {}):
                 account = accounts_by_id.get(account_id)
                 if account:
                     user.register_account(account)
@@ -286,6 +286,7 @@ class Bank:
             "root",
             self._next_user_id,
             self._password_hasher.hash(os.getenv("ROOT_PASSWORD", "root")),
+            self,
             permissions=2,
         )
         self._next_user_id += 1
@@ -453,6 +454,7 @@ class Bank:
         Args:
         username (str): the username to search for
         """
+
         for user in self.users.values():
             if user.get_name() == username:
                 return user

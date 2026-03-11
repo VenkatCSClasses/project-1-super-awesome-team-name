@@ -12,15 +12,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "server" / "src"))
 
 from textual.app import App
 from textual.binding import Binding
+from dashboard import DashboardScreen
 
 from token_utils import load_token, get_permissions
 
 from login_screen import LoginScreen
-from register import RegisterScreen
-import requests
 from dotenv import load_dotenv
 import os
-from dashboard import DashboardScreen
 
 
 class BankApp(App):
@@ -44,8 +42,9 @@ class BankApp(App):
         align: center middle;
     }
 
-    RegisterScreen {
-        align: center middle;
+    #auth-shell {
+        width: 60;
+        height: auto;
     }
 
     #login-container {
@@ -54,6 +53,32 @@ class BankApp(App):
         padding: 1 2;
         background: #0d0d0d;
         border: heavy #00ff88;
+    }
+
+    #auth-switch-tabs {
+        width: 100%;
+        height: auto;
+        padding: 0;
+        margin: 0 0 -1 0;
+    }
+
+    #auth-switch-tabs Button {
+        width: 1fr;
+        min-width: 0;
+        margin: 0;
+        border: heavy #00ff88;
+        border-bottom: none;
+        background: #10171a;
+    }
+
+    #auth-switch-tabs Button.-primary {
+        background: #0d4d2e;
+        color: #00ff88;
+    }
+
+    #auth-switcher {
+        width: 100%;
+        height: auto;
     }
 
     #bank-logo {
@@ -86,19 +111,19 @@ class BankApp(App):
         padding: 1;
     }
 
-    #form, #menu {
+    .auth-form, #menu {
         width: 100%;
         height: auto;
         padding: 0 1;
     }
 
-    #form Label {
+    .auth-form Label {
         padding-top: 1;
         padding-bottom: 0;
         color: #888888;
     }
 
-    #form Input {
+    .auth-form Input {
         width: 100%;
         margin-bottom: 0;
         background: #1a1a1a;
@@ -106,11 +131,11 @@ class BankApp(App):
         color: #00ff88;
     }
 
-    #form Input:focus {
+    .auth-form Input:focus {
         border: tall #00ff88;
     }
 
-    #error-message {
+    #login-error-message, #register-error-message {
         width: 100%;
         height: auto;
         min-height: 0;
@@ -120,12 +145,12 @@ class BankApp(App):
         margin: 0;
     }
 
-    #error-message.visible {
+    #login-error-message.visible, #register-error-message.visible {
         min-height: 2;
         padding: 1 0;
     }
 
-    #loading {
+    #login-loading, #register-loading {
         width: 100%;
         height: 3;
         content-align: center middle;
