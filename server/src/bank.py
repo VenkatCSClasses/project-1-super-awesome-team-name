@@ -378,9 +378,9 @@ class Bank:
         account_type (str): the type of account, either checking or savings
         """
         if account_type == "savings":
-            account = SavingsAccount(self._next_account_num(), self, 0.0)
+            account = SavingsAccount(self._next_account_num(), self, balance)
         else:
-            account = CheckingAccount(self._next_account_num(), self, 0.0)
+            account = CheckingAccount(self._next_account_num(), self, balance)
 
         self.add_account(account)
         user.register_account(account)

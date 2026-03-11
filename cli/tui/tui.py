@@ -235,6 +235,8 @@ class BankApp(App):
         width: 100%;
         height: auto;
         margin-bottom: 1;
+        border: solid #00ff88;
+        padding: 0 1;
     }
 
     #user-details {
@@ -253,6 +255,8 @@ class BankApp(App):
     #accounts-section {
         width: 100%;
         height: auto;
+        border: solid #00ff88;
+        padding: 0 1;
     }
 
     #total-balance {
@@ -266,12 +270,53 @@ class BankApp(App):
         padding: 0;
     }
 
+    #accounts-new-account-btn {
+        width: 100%;
+        margin: 0;
+        background: #0d4d2e;
+        border: tall #00aa66;
+        color: #00ff88;
+        text-style: bold;
+    }
+
+    #accounts-new-account-btn:hover {
+        background: #1a1a2e;
+        border: tall #4d7cff;
+        color: #cfd9ff;
+    }
+
+    #accounts-new-account-btn:focus {
+        background: #1a1a2e;
+        border: tall #4d7cff;
+        color: #cfd9ff;
+        text-style: bold;
+    }
+
+    #user-info-box:focus,
+    #trend-box:focus {
+        background: #111a16;
+    }
+
     .account-card {
         width: 100%;
         height: auto;
         padding: 1 2;
         margin: 0;
         background: #0d0d0d;
+    }
+
+    .account-card:focus {
+        background: #1a1a2e;
+        border: tall #00ff88;
+    }
+
+    .account-card.selected {
+        background: #10281d;
+        border: tall #00aa66;
+    }
+
+    .account-card.selected:focus {
+        border: tall #00ff88;
     }
 
     .account-card:hover {
@@ -285,13 +330,15 @@ class BankApp(App):
     /* Trend box */
     #trend-box {
         width: 100%;
-        height: 12;
+        height: 14;
         margin-bottom: 1;
+        border: solid #00ff88;
+        padding: 0 1;
     }
 
-    #balance-sparkline {
+    #balance-line-chart {
         width: 100%;
-        height: 5;
+        height: 6;
         padding: 0 2;
         color: #00ff88;
     }
@@ -305,6 +352,8 @@ class BankApp(App):
     #transactions-box {
         width: 100%;
         height: 1fr;
+        border: solid #00ff88;
+        padding: 0 1;
     }
 
     #transactions-table {
@@ -312,6 +361,10 @@ class BankApp(App):
         height: 1fr;
         background: #0a0a0a;
         margin: 0 1;
+    }
+
+    #transactions-table:focus {
+        border: solid #00ff88;
     }
 
     DataTable {
@@ -339,17 +392,19 @@ class BankApp(App):
     /* Action bar */
     #action-bar {
         width: 100%;
-        height: 3;
+        height: 6;
         padding: 0 1;
+        margin-bottom: 1;
         background: #0d0d0d;
         align: center middle;
-        border-top: solid #333333;
+        border: solid #00ff88;
     }
 
     #action-bar Button {
         min-width: 14;
         height: 3;
         margin: 0 1;
+        content-align: center middle;
     }
 
     ModalScreen {
