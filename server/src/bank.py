@@ -120,7 +120,7 @@ class Bank:
 
         # Accounts - TODO
         accounts_by_id: dict[int, CheckingAccount] = {}
-        for account_record in json_data.get("accounts", []):
+        for account_record in json_data.get("accounts", {}):
             account_id = account_record.get("id")
             if account_id is None:
                 continue
@@ -310,6 +310,7 @@ class Bank:
             "root",
             self._next_user_id,
             self._password_hasher.hash(os.getenv("ROOT_PASSWORD", "root")),
+            self,
             permissions=2,
         )
         self._next_user_id += 1
@@ -477,6 +478,7 @@ class Bank:
         Args:
         username (str): the username to search for
         """
+
         for user in self.users.values():
             if user.get_name() == username:
                 return user
