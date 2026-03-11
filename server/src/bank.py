@@ -8,6 +8,8 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 
 from customer import Customer
+from teller import Teller
+from admin import Admin
 from savings_account import SavingsAccount
 from transaction import Transaction 
 from transaction_type import TransactionType
@@ -113,51 +115,57 @@ class Bank:
         Args: 
             json_data (dict): Data of each attribute stored in a dictionary parsed from json.
         """
-        self.users = []
-        self.accounts = []
+        self.users = {}
+        self.accounts = {}
 
+        # Users
         for user_record in json_data.get("users", []):
-            username = user_record.get("username", user_record.get("name"))
+            username = user_record.get("username")
             user_id = user_record.get("id")
-            if username is None or user_id is None:
-                continue
 
             hashed_password = user_record.get(
                 "hashed_password",
                 user_record.get("password", user_record.get("passwd", "")),
             )
-            permission = user_record.get("permission", user_record.get("permissions", 0))
-            self.users.append(Customer(username, user_id, hashed_password, permission))
 
+            permission = user_record.get("permission", user_record.get("permissions"))
+            match permission:
+                case 0:
+                    self.users[user_id] = (Customer(username, user_id, hashed_password, self, permission))
+                case 1:
+                    self.users[user_id] = (Teller(username, user_id, hashed_password, self, permission))
+                case 2:
+                    self.users[user_id] = (Teller(username, user_id, hashed_password, self, permission))
+
+        # Accounts
         accounts_by_id: dict[int, CheckingAccount] = {}
         for account_record in json_data.get("accounts", []):
             account_id = account_record.get("id")
             if account_id is None:
                 continue
 
-            balance = float(account_record.get("balance", 0.0))
+            balance = float(account_record.get("balance"))
             account_type = account_record.get("type", "checking")
             if account_type == "savings":
                 account = SavingsAccount(account_id, self, balance)
             else:
                 account = CheckingAccount(account_id, self, balance)
 
-            account.is_frozen = bool(account_record.get("frozen", False))
+            account.is_frozen = bool(account_record.get("frozen"))
             self.accounts.append(account)
             accounts_by_id[account_id] = account
 
+        # Connecting Users to Accounts
         for user, user_record in zip(self.users, json_data.get("users", [])):
             for account_id in user_record.get("bank_account_ids", []):
                 account = accounts_by_id.get(account_id)
                 if account:
                     user.register_account(account)
 
-        max_user_id = max((user.get_id() for user in self.users), default=0)
-        counter_user_id = int(json_data.get("counters", {}).get("users", 0))
-        self._next_user_id = max(max_user_id, counter_user_id) + 1
-        max_account_id = max((account.account_id for account in self.accounts), default=0)
-        counter_account_id = int(json_data.get("counters", {}).get("accounts", 0))
-        self._next_account_id = max(max_account_id, counter_account_id) + 1
+        # Counters
+        self._next_user_id = json_data.get("counters").get("users")
+        self._next_account_id = json_data.get("counters").get("accounts")
+        self._next_transaction_id = json_data.get("counters").get("transactions")
 
 
     def save_to_json(self) -> dict:
@@ -183,7 +191,6 @@ class Bank:
         for account in self.accounts.values():
 
             transactions = []
-
             for transaction in self.account.get_all_transactions().values():
                 transactions.append(
                     {
@@ -204,7 +211,7 @@ class Bank:
                     "balance": account.check_balance(),
                     "frozen": account.is_frozen(),
                     "type": "savings" if isinstance(account, SavingsAccount) else "checking",
-                    "transactions": transaction
+                    "transactions": transactions
                 }
             )
             
