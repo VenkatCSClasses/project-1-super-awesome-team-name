@@ -422,17 +422,28 @@ class Bank:
 
 
     def remove_user(self, identifier) -> Customer:
-        pass
+        """
+        removes a user account based on either id or name
 
+        Args:
+        identifier (str or int): the key used to remove the account, either id or name
+        """
+        if identifier is str:
+            self.remove_user_by_name(identifier)
+        elif identifier is int:
+            self.remove_user_by_id(identifier)
 
     def remove_user_by_id(self, user_id: int) -> Customer:
-        pass
+        self.users[user_id] = None
 
 
     def remove_user_by_name(self, username: str) -> Customer:
-        pass
+        for id in self.users:
+            if self.users[id].get_name == username:
+                self.users[id] = None
+                break
 
 
     def remove_account(self, id: int) -> CheckingAccount:
-        pass
+        self.accounts[id] = None
 
