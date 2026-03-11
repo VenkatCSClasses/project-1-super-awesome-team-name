@@ -19,7 +19,7 @@ class CheckingAccount:
         account_id (int): The account number of the checking account.
         balance (float): The current balance of the checking account.
         frozen (bool): Whether the account is frozen or not.
-        transactions (dict[int, Transaction]): The list of transactions associated with this account, key is relative ID.
+        transactions (dict[int, Transaction]): The dictionary of transactions associated with this account, key is relative ID.
         next_transaction_num (int): Next relative ID of transaction.
     """
 
@@ -204,7 +204,7 @@ class CheckingAccount:
         Returns a list of all transactions associated with the account.
 
         Returns:
-            list[Transaction]: A list of all transactions on the account.
+            dict[int, Transaction]: A list of all transactions on the account.
         """
         return self.transactions
 
