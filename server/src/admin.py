@@ -4,7 +4,7 @@ sys.path.append('./server/src')
 from teller import Teller
 from checking_account import CheckingAccount
 from transaction import Transaction
-from transaction_test import TransactionType
+from transaction_type import TransactionType
 
 class Admin(Teller):
     """
