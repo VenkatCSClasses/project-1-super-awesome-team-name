@@ -8,23 +8,28 @@ from bank import Bank
 class TestCustomer:
     
     def test_get_name(self):
-        test = Customer("john", 5, "password")
+        bank = Bank()
+        test = Customer("john", 5, "password", bank)
         assert test.get_name() == "john"
     
     def test_get_id(self):
-        test = Customer("john", 5, "password")
+        bank = Bank()
+        test = Customer("john", 5, "password", bank)
         assert test.get_id() == 5
 
     def test_get_password(self):
-        test = Customer("john", 5, "password")
+        bank = Bank()
+        test = Customer("john", 5, "password", bank)
         assert test.get_passwd() == "password"
 
     def test_get_acc_type(self):
-        test = Customer("john", 5, "password")
+        bank = Bank()
+        test = Customer("john", 5, "password", bank)
         assert test.get_permissions() == 0
 
     def test_get_user_acc_details(self):
-        test = Customer("john", 5, "password")
+        bank = Bank()
+        test = Customer("john", 5, "password", bank)
         assert test.get_user_acc_details() == ('Name:', 'john' , '\nID:', 5 , '\naccType: Customer')
 
     def test_get_total_transact_hist(self):
