@@ -140,7 +140,7 @@ class Bank:
 
 
         # Users - TODO
-        for user_record in json_data.get("users", []):
+        for user_record in json_data.get("users", {}):
             username = user_record.get("username")
             user_id = user_record.get("id")
 
@@ -159,11 +159,8 @@ class Bank:
                     user = (Admin(username, user_id, hashed_password, self, permission))
             
             # Connecting Accs to Users - TODO
-            for account_id in user_record.get("bank_account_ids", []):
-
-
-
-                self[user_id] = user
+            for account_id in user_record.get("bank_account_ids", {}):
+                None
 
         # Counters
         self._next_user_id = json_data.get("counters").get("users")
