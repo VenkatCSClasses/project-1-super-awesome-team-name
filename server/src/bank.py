@@ -234,9 +234,9 @@ class Bank:
             "users": users,
             "accounts": accounts,
             "counters": {
-                "users": self._next_user_id - 1,
-                "accounts": self._next_account_id - 1,
-                "transactions": self._next_transaction_id - 1,
+                "users": self._next_user_id,
+                "accounts": self._next_account_id,
+                "transactions": self._next_transaction_id
             },
         }
 
