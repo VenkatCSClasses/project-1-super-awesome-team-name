@@ -233,47 +233,6 @@ class CheckingAccount:
         return self.transactions
 
 
-    def get_transaction_str(self, transaction_num: int, is_relative: bool = False) -> str:
-        """
-        Retrieves a specific transaction by its number as a human-readable string.
-
-        Args:
-            transaction_num (int): The transaction number to retrieve.
-            is_relative (bool, optional): Whether or not the transaction ID is relative (account) or absolute (bank).
-                Defaults to False.
-
-        Raises:
-            IndexError: If transaction_num is negative.
-            KeyError: Transaction number not found in list of transactions.
-
-        Returns:
-            str: The human-readable string showing information about the transaction.
-        """
-        if (transaction_num < 0):
-            raise IndexError("Transaction number must be non-negative.")
-        
-        # If is_relative = false, search by absolute id. If is_relative = true, search by relative id.
-        if (is_relative):
-            for transaction in self.transactions.values():
-                if (transaction.get_relative_id() == transaction_num):
-                    return str(transaction)
-        else:
-            for transaction in self.transactions.values():
-                if (transaction.get_absolute_id() == transaction_num):
-                    return str(transaction)
-                
-        raise KeyError(f"Transaction with number {transaction_num} not found in list of transactions for {self.account_id}.")
-
-    def get_all_transaction_str(self) -> str:
-        """
-        Retrieves all transactions as one human-readable string.
-
-        Returns:
-            str: The human-readable string showing information about all transactions, with a new line between each one.
-        """
-        return '\n'.join(str(transaction) for transaction in self.transactions.values())
-
-
     @staticmethod
     def _is_amount_valid(amount: float) -> bool:
         """
