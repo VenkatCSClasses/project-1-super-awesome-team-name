@@ -34,13 +34,13 @@ class TestCustomer:
 
         acc1 = CheckingAccount(1, bank, 500.00)
         acc2 = CheckingAccount(2, bank, 500.00)
-        test.get_accounts().append(acc1)
-        print("hello")
-        test.get_accounts().append(acc2)
+        test.register_account(acc1)
+        test.register_account(acc2)
   
         acc1.deposit(50)
         acc1.withdraw(20)
         
+        print("Hello")
         assert test.get_total_transact_hist() == acc1.get_all_transaction_str()
         
         acc2.deposit(2)
