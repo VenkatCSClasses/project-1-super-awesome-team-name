@@ -16,11 +16,11 @@ class Teller(Customer):
         permissions (int): The permission level of the account
         bank (Bank): The bank the teller belongs to
     """
-    def __init__(self, name, id, passwd, bank):
+    def __init__(self, name, id, passwd, bank, permissions = 1):
         self.name = name
         self.id = id
         self.passwd = passwd
-        self.permissions = 1
+        self.permissions = permissions
         self.bank = bank
 
 

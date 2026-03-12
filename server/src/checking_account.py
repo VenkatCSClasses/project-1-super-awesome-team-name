@@ -259,3 +259,13 @@ class CheckingAccount:
             str: The type of the account.
         """
         return "checking"
+    
+    def add_transaction(self, transaction: Transaction):
+        """
+        Adds the transaction to the transactions dict of the account.
+
+        Args:
+            transaction (Transaction): Transaction to add.
+        """
+        self.transactions[transaction.get_absolute_id] = transaction
+    

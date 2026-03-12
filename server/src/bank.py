@@ -118,7 +118,7 @@ class Bank:
         self.users = {}
         self.accounts = {}
 
-        # Accounts - TODO
+        # Accounts
         accounts_by_id: dict[int, CheckingAccount] = {}
         for account_record in json_data.get("accounts", {}):
             account_id = account_record.get("id")
@@ -136,10 +136,23 @@ class Bank:
             self.accounts[account_id] = account
             accounts_by_id[account_id] = account
 
-            # Transactions - TODO
+            # Transactions
+            for transaction_record in account_record.get("transactions"):
+                absolute_transaction_id = transaction_record.get("absolute_transaction_id"),
+                relative_transaction_id = transaction_record.get("relative_transaction_id"),
+                transaction_id = transaction_record.get("account_id"),
+                amount = transaction_record.get("amount"),
+                transaction_balance = transaction_record.get("balance"),
+                type = TransactionType(transaction_record.get("type")),
+                transfer_account_id = transaction_record.get("transfer_account_id")
+                datetime_str = transaction_record.get("datetime_str")
+
+                transaction = Transaction(absolute_transaction_id, relative_transaction_id, transaction_id, amount, transaction_balance, type, transfer_account_id, datetime_str)
+
+                account.add_transaction(transaction)
 
 
-        # Users - TODO
+        # Users
         for user_record in json_data.get("users", {}):
             username = user_record.get("username")
             user_id = user_record.get("id")
@@ -152,15 +165,17 @@ class Bank:
             permission = user_record.get("permission", user_record.get("permissions"))
             match permission:
                 case 0:
-                    user = (Customer(username, user_id, hashed_password, self, permission))
+                    user = Customer(username, user_id, hashed_password, self, permission)
                 case 1:
-                    user = (Teller(username, user_id, hashed_password, self, permission))
+                    user = Teller(username, user_id, hashed_password, self, permission)
                 case 2:
-                    user = (Admin(username, user_id, hashed_password, self, permission))
+                    user = Admin(username, user_id, hashed_password, self, permission)
             
-            # Connecting Accs to Users - TODO
+            # Connecting Accs to Users
             for account_id in user_record.get("bank_account_ids", {}):
-                None
+                user.register_account(self.get_account_by_id(account_id))
+            
+            self.users[user_id] = user
 
         # Counters
         self._next_user_id = json_data.get("counters").get("users")
@@ -196,7 +211,7 @@ class Bank:
                     {
                         "absolute_transaction_id": transaction.get_absolute_id(),
                         "relative_transaction_id": transaction.get_relative_id(),
-                        "account_id": transaction.get_account_id(),
+                        "transaction_id": transaction.get_account_id(),
                         "amount": transaction.get_amount(),
                         "balance": transaction.get_post_balance(),
                         "type": transaction.get_type().value,
@@ -219,9 +234,9 @@ class Bank:
             "users": users,
             "accounts": accounts,
             "counters": {
-                "users": self._next_user_id - 1,
-                "accounts": self._next_account_id - 1,
-                "transactions": self._next_transaction_id - 1,
+                "users": self._next_user_id,
+                "accounts": self._next_account_id,
+                "transactions": self._next_transaction_id
             },
         }
 
@@ -427,7 +442,7 @@ class Bank:
         account_id (int): the id of the account to search for
         """
         for account in self.accounts.values():
-            if account.account_id == account_id:
+            if account.get_account_id() == account_id:
                 return account
         return None
     
