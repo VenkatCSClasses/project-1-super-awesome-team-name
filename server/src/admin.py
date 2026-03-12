@@ -4,7 +4,7 @@ sys.path.append('./server/src')
 from teller import Teller
 from checking_account import CheckingAccount
 from transaction import Transaction
-from transaction_test import TransactionType
+from transaction_type import TransactionType
 
 class Admin(Teller):
     """
@@ -18,11 +18,11 @@ class Admin(Teller):
         accounts (dict): All accounts within the bank
         bank (Bank): The bank the teller belongs to
     """
-    def __init__(self, name, id, passwd, bank):
+    def __init__(self, name, id, passwd, bank, permissions = 2):
         self.name = name
         self.id = id
         self.passwd = passwd
-        self.permissions = 2
+        self.permissions = permissions
         self.bank = bank
     
     

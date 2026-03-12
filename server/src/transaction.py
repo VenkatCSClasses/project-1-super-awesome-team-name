@@ -42,6 +42,8 @@ class Transaction:
 
         if datetime_str is None:
             self.timestamp: datetime = datetime.now(timezone.utc)
+        else: 
+            self.timestamp: datetime = datetime.fromisoformat(datetime_str)
 
         match type.value:
             case 1:
