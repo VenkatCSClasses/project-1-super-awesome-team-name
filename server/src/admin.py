@@ -4,6 +4,7 @@ sys.path.append('./server/src')
 from teller import Teller
 from checking_account import CheckingAccount
 from transaction import Transaction
+from transaction_test import TransactionType
 
 class Admin(Teller):
     """
@@ -22,7 +23,6 @@ class Admin(Teller):
         self.id = id
         self.passwd = passwd
         self.permissions = 2
-        self.accounts = bank.get_all_accounts()
         self.bank = bank
     
     
@@ -42,18 +42,18 @@ class Admin(Teller):
             acc - the account to check for suspicious activity
         """
         for transact in acc.get_all_transactions().values():
-            if transact.get_amount() <= -10000:
+            if transact.get_amount() <= 10000 and (transact.get_type() == TransactionType.WITHDRAW or transact.get_type() == TransactionType.TRANSFER_WITHDRAW):
                 return True
         return False
 
     def check_all_sus_activity(self):
         """
-        returns a list of all accounts within the bank that have a suspicious transaction
+        returns a dict of all accounts within the bank that have a suspicious transaction
         """
-        sus_accounts = []
+        sus_accounts: dict[int, CheckingAccount] = {}
         for acc in self.accounts.values():
             if self.check_sus_activity(acc):
-                sus_accounts.append(acc)
+                sus_accounts[acc.get_account_id()] = acc
         return sus_accounts
 
     def toggle_frozen(self, acc):

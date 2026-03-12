@@ -1,6 +1,6 @@
 class AccountFrozenException(Exception):
     """
-    Exception raised when an account has been frozen but a transaction was attempted.
+    Exception raised when an account has been frozen but a transaction (not interest transaction) was attempted.
     """
 
     def __init__(self, account_number: int):
