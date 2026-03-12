@@ -25,7 +25,7 @@ class CheckingAccount:
     """
 
 
-    def __init__(self, account_id: int, bank: "Bank", balance: float = 0.0) -> None:
+    def __init__(self, account_id: int, bank: Bank, balance: float = 0.0) -> None:
         """
         Initialize the CheckingAccount with the params account number and optional balance.
         Also initalizes the attributes is_frozen to false and transactions to an empty list of transactions.
