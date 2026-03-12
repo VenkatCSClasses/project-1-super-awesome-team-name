@@ -406,18 +406,20 @@ class Bank:
         return next_id
 
 
-    def create_account_for_user(self, user: Customer, account_type: str = "CHECKING") -> CheckingAccount:
+    def create_account_for_user(self, user: Customer, account_type: str = "CHECKING", balance: float = 0.0) -> CheckingAccount:
         """
         creates a bank account for a given user and adds it to the bank
 
         Args:
         user (Customer): the customer to add the new accoun to
         account_type (str): the type of account, either checking or savings
+        balance (float, optional): the initial balance to create the account with
+            defaults to 0.0
         """
         if account_type == "SAVINGS":
-            account = SavingsAccount(self._next_account_num(), self)
+            account = SavingsAccount(self._next_account_num(), self, balance)
         else:
-            account = CheckingAccount(self._next_account_num(), self)
+            account = CheckingAccount(self._next_account_num(), self, balance)
 
         self.add_account(account)
         user.register_account(account)
