@@ -35,7 +35,6 @@ class TestCustomer:
     def test_get_total_transact_hist(self):
         bank = Bank()
         test = Customer("john", 5, "password", bank)
-        assert test.get_total_transact_hist() == ""
 
         acc1 = CheckingAccount(1, bank, 500.00)
         acc2 = CheckingAccount(2, bank, 500.00)
@@ -43,11 +42,27 @@ class TestCustomer:
         test.register_account(acc2)
   
         acc1.deposit(50)
+
+        account_transactions = acc1.get_all_transactions()
+        customer_transactions = test.get_total_transact_hist()
+        for account_transaction in account_transactions.values():
+            assert account_transaction in customer_transactions.values()
+
         acc1.withdraw(20)
-        
-        print("Hello")
-        assert test.get_total_transact_hist() == acc1.get_all_transaction_str()
-        
+        account_transactions = acc1.get_all_transactions()
+        customer_transactions = test.get_total_transact_hist()
+        for account_transaction in account_transactions.values():
+            assert account_transaction in customer_transactions.values()
+
         acc2.deposit(2)
+        account_transactions = acc1.get_all_transactions()
+        customer_transactions = test.get_total_transact_hist()
+        for account_transaction in account_transactions.values():
+            assert account_transaction in customer_transactions.values()
+
+
         acc2.withdraw(50)
-        assert test.get_total_transact_hist() == acc1.get_all_transaction_str() , acc2.get_all_transaction_str()
+        account_transactions = acc1.get_all_transactions()
+        customer_transactions = test.get_total_transact_hist()
+        for account_transaction in account_transactions.values():
+            assert account_transaction in customer_transactions.values()

@@ -61,8 +61,10 @@ class Customer():
     returns a formatted string containing all transactions in an accounts history
     """
     def get_total_transact_hist(self):
-        result = ""
+        total_hist = {} 
+
         for acc in self.accounts.values():
-            result += acc.get_all_transaction_str()
-            result += "\n"
-        return result
+            for transaction in acc.get_all_transactions().values():
+                total_hist[transaction.get_absolute_id()] = transaction
+            
+        return total_hist
