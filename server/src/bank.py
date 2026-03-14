@@ -128,9 +128,9 @@ class Bank:
             balance = float(account_record.get("balance"))
             account_type = account_record.get("type", "checking")
             if account_type == "savings":
-                account = SavingsAccount(account_id, self, balance)
+                account = SavingsAccount(account_id, self, balance, False)
             else:
-                account = CheckingAccount(account_id, self, balance)
+                account = CheckingAccount(account_id, self, balance, False)
 
             account.frozen = bool(account_record.get("frozen"))
             self.accounts[account_id] = account
