@@ -122,7 +122,7 @@ class UserInfoBox(Container):
         self.user = user
 
     def compose(self) -> ComposeResult:
-        yield Static("╭─ USER SESSION ─────────────────────────╮", classes="box-top")
+        yield Static("USER SESSION", classes="box-top")
 
         permission = self.user.get("permission", 0)
         match permission:
@@ -141,7 +141,6 @@ class UserInfoBox(Container):
             f"  [dim]Access Level:[/] [{color}]{access_level}[/]",
             id="user-details"
         )
-        yield Static("╰────────────────────────────────────────╯", classes="box-bottom")
 
     def action_focus_left(self) -> None:
         return
@@ -164,17 +163,14 @@ class AccountsSection(Container):
         self.accounts = accounts
 
     def compose(self) -> ComposeResult:
-        yield Static("╭─ ACCOUNTS ──────────────────────────────────────────────────╮", classes="box-top")
+        yield Static("ACCOUNTS", classes="box-top")
         total = sum(acc["balance"] for acc in self.accounts)
         yield Static(
             f"  [bold]TOTAL BALANCE:[/] [bold green]${total:,.2f}[/]  [dim]│[/]  [dim]{len(self.accounts)} accounts[/]",
             id="total-balance"
         )
-        yield Static("├──────────────────────────────────────────────────────────────┤", classes="box-divider")
         yield AccountsList(self.accounts, id="accounts-list")
-        yield Static("├──────────────────────────────────────────────────────────────┤", classes="box-divider")
         yield Button("CREATE NEW ACCOUNT", id="accounts-new-account-btn", variant="success")
-        yield Static("╰──────────────────────────────────────────────────────────────╯", classes="box-bottom")
 
 
 class AccountsList(Vertical):
@@ -184,15 +180,23 @@ class AccountsList(Vertical):
         super().__init__(**kwargs)
         self.accounts = accounts
 
-    def compose(self) -> ComposeResult:
+    def _build_children(self) -> list[Static]:
         if not self.accounts:
-            yield Static(
-                "  [dim]You have no accounts yet. Create one to get started.[/]",
-                id="accounts-empty-state",
-            )
-            return
-        for acc in self.accounts:
-            yield AccountCard(acc, classes="account-card")
+            return [
+                Static(
+                    "  [dim]You have no accounts yet. Create one to get started.[/]",
+                )
+            ]
+        return [AccountCard(acc, classes="account-card") for acc in self.accounts]
+
+    def compose(self) -> ComposeResult:
+        yield from self._build_children()
+
+    def refresh_accounts(self, accounts: list) -> None:
+        """Rebuild the rendered account cards without replacing the list widget."""
+        self.accounts = accounts
+        self.remove_children()
+        self.mount(*self._build_children())
 
 
 class TransactionsTable(DataTable):
@@ -366,10 +370,9 @@ class TransactionsBox(Container):
     """Recent transactions box with data table."""
 
     def compose(self) -> ComposeResult:
-        yield Static("╭─ RECENT TRANSACTIONS ──────────────────────────────────────────────────╮", classes="box-top")
+        yield Static("RECENT TRANSACTIONS", classes="box-top")
         yield Static("", id="transactions-status")
         yield TransactionsTable(id="transactions-table")
-        yield Static("╰───────────────────────────────────────────────────────────────────────────╯", classes="box-bottom")
 
 
 class ActionBar(Horizontal):
@@ -402,6 +405,7 @@ class DashboardScreen(Screen):
         super().__init__(**kwargs)
         self.accounts_data: list[dict] = []
         self.selected_account_id: int | None = None
+        self.preferred_selected_account_id: int | None = None
         self.transactions_error_message = ""
 
     def compose(self) -> ComposeResult:
@@ -415,7 +419,14 @@ class DashboardScreen(Screen):
 
         accounts = self.get_accounts() or []
         self.accounts_data = accounts
-        selected_account = accounts[0] if accounts else None
+        selected_account = next(
+            (
+                account
+                for account in accounts
+                if account["account_id"] == self.preferred_selected_account_id
+            ),
+            accounts[0] if accounts else None,
+        )
         self.selected_account_id = selected_account["account_id"] if selected_account else None
         transactions = self.get_transactions(self.selected_account_id) or []
         balance_history = self.build_balance_history(selected_account, transactions)
@@ -504,6 +515,7 @@ class DashboardScreen(Screen):
             card.remove_class("selected")
         selected_card.add_class("selected")
         self.selected_account_id = selected_card.account.get("account_id")
+        self.preferred_selected_account_id = self.selected_account_id
         self.refresh_selected_account_data()
         if announce:
             self.notify(
@@ -811,10 +823,19 @@ class DashboardScreen(Screen):
     def _populate_dashboard(self) -> None:
         cards = self._account_cards()
         if cards:
-            for card in cards[1:]:
+            selected_card = next(
+                (
+                    card
+                    for card in cards
+                    if card.account.get("account_id") == self.selected_account_id
+                ),
+                cards[0],
+            )
+            for card in cards:
                 card.remove_class("selected")
-            cards[0].add_class("selected")
-            self.selected_account_id = cards[0].account.get("account_id")
+            selected_card.add_class("selected")
+            self.selected_account_id = selected_card.account.get("account_id")
+            self.preferred_selected_account_id = self.selected_account_id
             self.refresh_selected_account_data()
             self.focus_accounts_list()
             return
@@ -898,29 +919,47 @@ class DashboardScreen(Screen):
         if result is None:
             return
 
+        if isinstance(result, dict):
+            self.preferred_selected_account_id = (
+                result.get("account_id")
+                or result.get("from_account_id")
+                or self.selected_account_id
+            )
+        else:
+            self.preferred_selected_account_id = self.selected_account_id
+        self._refresh_dashboard_view()
+
+    def _rebuild_accounts_section(self) -> None:
+        """Refresh the mounted accounts pane so cards and totals reflect current data."""
+        accounts_section = self.query_one("#accounts-section", AccountsSection)
+        accounts_section.accounts = self.accounts_data
+        total_balance = sum(account["balance"] for account in self.accounts_data)
+        self.query_one("#total-balance", Static).update(
+            f"  [bold]TOTAL BALANCE:[/] [bold green]${total_balance:,.2f}[/]  "
+            f"[dim]│[/]  [dim]{len(self.accounts_data)} accounts[/]"
+        )
+        existing_list = self.query_one("#accounts-list", AccountsList)
+        existing_list.refresh_accounts(self.accounts_data)
+
+    def _refresh_dashboard_view(self, notify: bool = False) -> None:
+        """Refresh mounted dashboard widgets from current server state."""
         self.accounts_data = self.get_accounts() or []
         account_ids = {account["account_id"] for account in self.accounts_data}
 
         if not self.accounts_data:
             self.selected_account_id = None
+        elif self.preferred_selected_account_id in account_ids:
+            self.selected_account_id = self.preferred_selected_account_id
         elif self.selected_account_id in account_ids:
-            pass
+            self.selected_account_id = self.selected_account_id
         else:
-            preferred_account_id = result.get("account_id") if isinstance(result, dict) else None
-            if preferred_account_id in account_ids:
-                self.selected_account_id = preferred_account_id
-            else:
-                self.selected_account_id = self.accounts_data[0]["account_id"]
+            self.selected_account_id = self.accounts_data[0]["account_id"]
 
-        self.refresh_selected_account_data()
+        self._rebuild_accounts_section()
+        self.call_after_refresh(self._populate_dashboard)
+        if notify:
+            self.notify("Data refreshed.", title="[ REFRESH ]", severity="information")
 
     def action_refresh(self) -> None:
         """Refresh dashboard data."""
-        self.accounts_data = self.get_accounts() or []
-        if not self.accounts_data:
-            self.selected_account_id = None
-        elif self.selected_account_id not in {account["account_id"] for account in self.accounts_data}:
-            self.selected_account_id = self.accounts_data[0]["account_id"]
-
-        self.refresh_selected_account_data()
-        self.notify("Data refreshed.", title="[ REFRESH ]", severity="information")
+        self._refresh_dashboard_view(notify=True)
