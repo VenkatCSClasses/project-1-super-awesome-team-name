@@ -25,7 +25,7 @@ class CheckingAccount:
     """
 
 
-    def __init__(self, account_id: int, bank: Bank, balance: float = 0.0) -> None:
+    def __init__(self, account_id: int, bank: Bank, balance: float = 0.0, transaction_needed: bool = True, next_transaction_id: int = 1) -> None:
         """
         Initialize the CheckingAccount with the params account number and optional balance.
         Also initalizes the attributes is_frozen to false and transactions to an empty list of transactions.
@@ -35,6 +35,10 @@ class CheckingAccount:
             bank (Bank): The bank the account belongs to.
             balance (float, optional): The initial balance of the checking account.
                 Defaults to 0.0.
+            transaction_needed (bool, optional): Whether or not to log the transaction of creating an account.
+                Defaults to True.
+            next_transaction_id (int, optional): What the next transaction ID should be
+                Defaults to 1.
 
         Raises:
             AmountInvalidException: If the inputted balance is invalid.
@@ -47,10 +51,11 @@ class CheckingAccount:
         self.balance: float = balance
         self.frozen: bool = False
         self.transactions: dict[int, Transaction] = {}
-        self.next_transaction_id = 1
+        self.next_transaction_id = next_transaction_id
         self.bank = bank
 
-        self.log_transaction(balance, TransactionType.NEW_ACCOUNT)
+        if transaction_needed:
+            self.log_transaction(balance, TransactionType.NEW_ACCOUNT)
 
 
     def withdraw(self, amount: float, is_transfer: bool = False, transfer_account_id: int | None = None) -> None:
@@ -232,6 +237,14 @@ class CheckingAccount:
         """
         return self.transactions
 
+    def get_next_transaction_id(self) -> int:
+        """
+        Returns the next transaction ID associated with this account.
+
+        Returns:
+            int: The next transaction ID.
+        """
+        return self.next_transaction_id
 
     @staticmethod
     def _is_amount_valid(amount: float) -> bool:
