@@ -383,7 +383,6 @@ class ActionBar(Horizontal):
         yield Button("TRANSFER", id="transfer-btn", variant="primary")
         yield Button("DEPOSIT", id="deposit-btn", variant="primary")
         yield Button("WITHDRAW", id="withdraw-btn", variant="warning")
-        yield Button("FREEZE ACCOUNTS", id="freeze-accounts-btn", variant="error")
         yield Button("LOGOUT", id="logout-btn", variant="error")
 
 
@@ -529,7 +528,8 @@ class DashboardScreen(Screen):
         delete_token()
         self.app.notify("Session expired. Please log in again.", title="[ AUTH ]", severity="error")
         from login_screen import LoginScreen
-        self.app.switch_screen(LoginScreen())
+        self.app.pop_screen()
+        self.app.push_screen(LoginScreen())
 
     def get_user_info(self) -> dict:
         """Fetch user info from server"""
