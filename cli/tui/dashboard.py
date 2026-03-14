@@ -4,6 +4,7 @@ from pathlib import Path
 from server_ping_utils import server_running
 from login_screen import LoginScreen
 from deposit_modal import DepositModal
+from transfer_modal import TransferModal
 from withdraw_modal import WithdrawModal
 from freeze_accounts_modal import FreezeAccountsModal
 
@@ -516,7 +517,7 @@ class DashboardScreen(Screen):
         delete_token()
         self.app.notify("Session expired. Please log in again.", title="[ AUTH ]", severity="error")
         from login_screen import LoginScreen
-        self.app.push_screen(LoginScreen())
+        self.app.switch_screen(LoginScreen())
 
     def get_user_info(self) -> dict:
         """Fetch user info from server"""
@@ -536,7 +537,7 @@ class DashboardScreen(Screen):
                         "user_id": str(response_data.get("user_id", "unknown")),
                         "permission": response_data.get("permission", -1),
                     }
-                if response.status_code in (401, 403):
+                if response.status_code in (401, 403, 404):
                     self.handle_session_expired()
                     return None
                 print(f"Failed to fetch user info: {response.status_code}")
@@ -558,7 +559,7 @@ class DashboardScreen(Screen):
                 if response.status_code == 200:
                     response_data = response.json()
                     return self._normalize_accounts(response_data.get("accounts", []))
-                if response.status_code in (401, 403):
+                if response.status_code in (401, 403, 404):
                     self.handle_session_expired()
                     return None
                 print(f"Failed to fetch user info: {response.status_code}")
@@ -584,7 +585,7 @@ class DashboardScreen(Screen):
                     self.transactions_error_message = ""
                     response_data = response.json()
                     return self._normalize_transactions(response_data.get("transactions", []))
-                if response.status_code in (401, 403):
+                if response.status_code in (401, 403, 404):
                     self.handle_session_expired()
                     return None
                 self.transactions_error_message = (
@@ -864,15 +865,15 @@ class DashboardScreen(Screen):
         if event.button.id == "logout-btn":
             self.action_logout()
         elif event.button.id == "new-account-btn":
-            self.app.push_screen(CreateBankAccountModal())
+            self.app.push_screen(CreateBankAccountModal(), self._handle_account_change)
         elif event.button.id == "accounts-new-account-btn":
-            self.app.push_screen(CreateBankAccountModal())
+            self.app.push_screen(CreateBankAccountModal(), self._handle_account_change)
         elif event.button.id == "transfer-btn":
-            self.notify("Transfer feature coming soon!", title="[ TRANSFER ]", severity="information")
+            self.app.push_screen(TransferModal(), self._handle_account_change)
         elif event.button.id == "deposit-btn":
-            self.app.push_screen(DepositModal())
+            self.app.push_screen(DepositModal(), self._handle_account_change)
         elif event.button.id == "withdraw-btn":
-            self.app.push_screen(WithdrawModal())
+            self.app.push_screen(WithdrawModal(), self._handle_account_change)
         elif event.button.id == "freeze-accounts-btn":
             self.app.push_screen(FreezeAccountsModal())
 
@@ -886,11 +887,32 @@ class DashboardScreen(Screen):
 
     def action_new_account(self) -> None:
         """Create new account."""
-        self.app.push_screen(CreateBankAccountModal())
+        self.app.push_screen(CreateBankAccountModal(), self._handle_account_change)
 
     def action_transfer(self) -> None:
         """Transfer funds."""
-        self.notify("Transfer feature coming soon!", title="[ TRANSFER ]")
+        self.app.push_screen(TransferModal(), self._handle_account_change)
+
+    def _handle_account_change(self, result) -> None:
+        """Refresh dashboard state after a successful account action."""
+        if result is None:
+            return
+
+        self.accounts_data = self.get_accounts() or []
+        account_ids = {account["account_id"] for account in self.accounts_data}
+
+        if not self.accounts_data:
+            self.selected_account_id = None
+        elif self.selected_account_id in account_ids:
+            pass
+        else:
+            preferred_account_id = result.get("account_id") if isinstance(result, dict) else None
+            if preferred_account_id in account_ids:
+                self.selected_account_id = preferred_account_id
+            else:
+                self.selected_account_id = self.accounts_data[0]["account_id"]
+
+        self.refresh_selected_account_data()
 
     def action_refresh(self) -> None:
         """Refresh dashboard data."""

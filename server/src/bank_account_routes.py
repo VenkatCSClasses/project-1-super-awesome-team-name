@@ -81,6 +81,20 @@ async def view_all_bank_accounts(current_user: dict = Depends(verify_token)):
     return {"message": "All bank accounts displayed successfully!", "accounts": accounts}
 
 
+@bank_routes.get("/get_all_bank_account_ids", response_model=dict)
+async def get_all_bank_account_ids(current_user: dict = Depends(verify_token)):
+    """Return all account ids so users can choose transfer destinations."""
+    if current_user.get("permission", -1) < 0:
+        raise HTTPException(status_code=403, detail="Must be logged in to view bank account ids")
+
+    user = bank.get_user_by_id(current_user["user_id"])
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    account_ids = [account.get_account_id() for account in bank.get_all_accounts().values()]
+    return {"message": "All bank account ids displayed successfully!", "account_ids": account_ids}
+
+
 @bank_routes.post("/deposit", response_model=dict)
 async def deposit(form_data: dict, current_user: dict = Depends(verify_token)):
     """Deposit money into a bank account"""
@@ -144,6 +158,8 @@ async def transfer(form_data: dict, current_user: dict = Depends(verify_token)):
     accounts = bank.get_accounts_for_user(user)
     if form_data["from_account_id"] not in [account.get_account_id() for account in accounts.values()] and current_user.get("permission", -1) == 0:
         raise HTTPException(status_code=403, detail="Customers can only transfer from their own accounts")
+    if form_data["from_account_id"] == form_data["to_account_id"]:
+        raise HTTPException(status_code=400, detail="Cannot transfer to the same account")
     
     from_account = bank.get_account_by_id(form_data["from_account_id"])
     to_account = bank.get_account_by_id(form_data["to_account_id"])

@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "server" / "src"))
 from textual.app import App
 from textual.binding import Binding
 from dashboard import DashboardScreen
+import httpx
 
 from token_utils import load_token, get_permissions
 
@@ -583,12 +584,26 @@ class BankApp(App):
         Binding("ctrl+q", "quit", "Quit"),
     ]
 
+    def _token_points_to_live_user(self, token: str) -> bool:
+        """Validate that the saved token still resolves to a real user."""
+        headers = {"Authorization": f"Bearer {token}"}
+        server_base_url = os.getenv("SERVER_BASE_URL", "http://localhost:8000")
+        try:
+            with httpx.Client(base_url=server_base_url, timeout=5) as client:
+                response = client.get("/whoami", headers=headers)
+        except httpx.RequestError:
+            return True
+        return response.status_code == 200
+
     def on_mount(self) -> None:
         """Check if already logged in on startup."""
         token = load_token()
-        if token and get_permissions() >= 0:
+        if token and get_permissions() >= 0 and self._token_points_to_live_user(token):
             self.push_screen(DashboardScreen())
         else:
+            if token:
+                from token_utils import delete_token
+                delete_token()
             self.push_screen(LoginScreen())
 
 
