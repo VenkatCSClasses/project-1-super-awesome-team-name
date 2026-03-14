@@ -18,7 +18,7 @@ class Transaction:
         type (TransactionType): The type of transaction.
         description (str): The description of the transaction.
     """
-    def __init__(self, absolute_transaction_id: int, relative_transaction_id: int, account_id: int, amount: float, balance: float, type: TransactionType, transfer_account_id: int | None = None, datetime_str: str | None = None) -> None:
+    def __init__(self, absolute_transaction_id: int, relative_transaction_id: int, account_id: int, amount: float, balance: float, transaction_type: TransactionType, transfer_account_id: int | None = None, datetime_str: str | None = None) -> None:
         """
         Initialize the Transaction with the transaction ids, account number, timestamp, balance, amount, type, description and potential transfer_account_id.
         
@@ -37,7 +37,7 @@ class Transaction:
         self.account_id: int = account_id
         self.amount: float = amount
         self.balance: float = balance
-        self.type: TransactionType = type
+        self.transaction_type: TransactionType = transaction_type
         self.transfer_account_id: int | None = transfer_account_id
 
         if datetime_str is None:
@@ -45,7 +45,7 @@ class Transaction:
         else: 
             self.timestamp: datetime = datetime.fromisoformat(datetime_str)
 
-        match type.value:
+        match self.transaction_type.value:
             case 1:
                 self.description = f"Withdrawal of ${abs(self.amount):.2f}"
             case 2:
@@ -120,7 +120,7 @@ class Transaction:
         Returns:
             TransactionType: The type of transaction this transaction is.
         """
-        return self.type
+        return self.transaction_type
 
     def get_description(self) -> str:
         """

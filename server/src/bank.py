@@ -132,18 +132,18 @@ class Bank:
             else:
                 account = CheckingAccount(account_id, self, balance)
 
-            account.is_frozen = bool(account_record.get("frozen"))
+            account.frozen = bool(account_record.get("frozen"))
             self.accounts[account_id] = account
             accounts_by_id[account_id] = account
 
             # Transactions
             for transaction_record in account_record.get("transactions"):
-                absolute_transaction_id = transaction_record.get("absolute_transaction_id"),
-                relative_transaction_id = transaction_record.get("relative_transaction_id"),
-                transaction_id = transaction_record.get("account_id"),
-                amount = transaction_record.get("amount"),
-                transaction_balance = transaction_record.get("balance"),
-                type = TransactionType(transaction_record.get("type")),
+                absolute_transaction_id = transaction_record.get("absolute_transaction_id")
+                relative_transaction_id = transaction_record.get("relative_transaction_id")
+                transaction_id = transaction_record.get("transaction_id")
+                amount = transaction_record.get("amount")
+                transaction_balance = transaction_record.get("balance")
+                type = TransactionType(transaction_record.get("type"))
                 transfer_account_id = transaction_record.get("transfer_account_id")
                 datetime_str = transaction_record.get("datetime_str")
 
@@ -564,4 +564,3 @@ class Bank:
             if acc.get_account_id() == id:
                 del self.accounts[key]
                 break
-

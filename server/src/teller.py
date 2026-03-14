@@ -17,11 +17,7 @@ class Teller(Customer):
         bank (Bank): The bank the teller belongs to
     """
     def __init__(self, name, id, passwd, bank, permissions = 1):
-        self.name = name
-        self.id = id
-        self.passwd = passwd
-        self.permissions = permissions
-        self.bank = bank
+        super().__init__(name, id, passwd, bank, permissions)
 
 
     

@@ -19,11 +19,7 @@ class Admin(Teller):
         bank (Bank): The bank the teller belongs to
     """
     def __init__(self, name, id, passwd, bank, permissions = 2):
-        self.name = name
-        self.id = id
-        self.passwd = passwd
-        self.permissions = permissions
-        self.bank = bank
+        super().__init__(name, id, passwd, bank, permissions)
     
     
     def get_user_acc_details(self):
@@ -51,7 +47,7 @@ class Admin(Teller):
         returns a dict of all accounts within the bank that have a suspicious transaction
         """
         sus_accounts: dict[int, CheckingAccount] = {}
-        for acc in self.accounts.values():
+        for acc in self.get_accounts().values():
             if self.check_sus_activity(acc):
                 sus_accounts[acc.get_account_id()] = acc
         return sus_accounts

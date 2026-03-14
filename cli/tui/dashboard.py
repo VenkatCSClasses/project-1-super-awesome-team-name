@@ -302,7 +302,7 @@ class BalanceTrendBox(Container):
         chart_widget.update(f"[green]{self.render_line_chart(width=width, height=height)}[/]")
 
     def compose(self) -> ComposeResult:
-        yield Static("╭─ TRANSACTION BALANCE TREND ─────────────────────────────────────────────╮", classes="box-top")
+        yield Static("TRANSACTION BALANCE TREND", classes="box-top")
         yield Static("", id="balance-line-chart")
         min_bal = min(self.balance_history)
         max_bal = max(self.balance_history)
@@ -317,7 +317,6 @@ class BalanceTrendBox(Container):
             f"[dim]CHANGE:[/] [{change_color}]{change:+,.0f} ({change_pct:+.1f}%)[/]",
             classes="trend-stats"
         )
-        yield Static("╰───────────────────────────────────────────────────────────────────────────╯", classes="box-bottom")
 
     def on_mount(self) -> None:
         self.call_after_refresh(self.update_chart)
