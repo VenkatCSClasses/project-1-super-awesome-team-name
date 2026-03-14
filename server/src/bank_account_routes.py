@@ -57,17 +57,6 @@ async def view_bank_account(form_data: dict, current_user: dict = Depends(verify
     return {"message": "Bank account details displayed successfully!"}
 
 
-@bank_routes.get("/delete_bank_account", response_model=dict)
-async def delete_bank_account(current_user: dict = Depends(verify_token)):
-    """Delete a bank account"""
-    # Only allow users with permission level 1 (teller) or higher to delete bank accounts
-    if current_user.get("permission", -1) < 0:
-        raise HTTPException(status_code=403, detail="Must be logged in to delete a bank account")
-    
-    # Logic to delete a bank account would go here
-    return {"message": "Bank account deleted successfully!"}
-
-
 @bank_routes.get("/get_all_bank_accounts", response_model=dict)
 async def view_all_bank_accounts(current_user: dict = Depends(verify_token)):
     """View all bank accounts within the bank. 
@@ -177,98 +166,36 @@ async def view_transaction_history(account_id: int, current_user: dict = Depends
     if current_user.get("permission", -1) < 0:
         raise HTTPException(status_code=403, detail="Must be logged in to view transaction history")
     
+    if current_user.get("permission", -1) == 0:
+        # If the user is a customer, only allow them to view their own accounts
+        user = bank.get_user_by_id(current_user["user_id"])
+        accounts = bank.get_accounts_for_user(user)
+        if account_id not in [account.get_account_id() for account in accounts.values()]:
+            raise HTTPException(status_code=403, detail="Customers can only view transaction history for their own accounts")
+    # If the user is a teller or admin, they can view transaction history for any account
+    account = bank.get_account_by_id(account_id)
+    if account is None:
+        raise HTTPException(status_code=404, detail="Account not found")
 
-    # if current_user.get("permission", -1) == 0:
-    #     # If the user is a customer, only allow them to view their own accounts
-    #     user = bank.get_user_by_id(current_user["user_id"])
-    #     accounts = bank.get_accounts_for_user(user)
-    #     if account_id not in [account.get_account_id() for account in accounts.values()]:
-    #         raise HTTPException(status_code=403, detail="Customers can only view transaction history for their own accounts")
-    # # If the user is a teller or admin, they can view transaction history for any account
-    # account = bank.get_account_by_id(account_id)
-    # if account is None:
-    #     raise HTTPException(status_code=404, detail="Account not found")
+    transactions = []
+    for transaction in account.get_all_transactions().values():
+        transactions.append(
+            {
+                "absolute_transaction_id": transaction.get_absolute_id(),
+                "relative_transaction_id": transaction.get_relative_id(),
+                "account_id": transaction.get_account_id(),
+                "amount": transaction.get_amount(),
+                "balance": transaction.get_post_balance(),
+                "type": transaction.get_type().name,
+                "description": transaction.get_description(),
+                "transfer_account_id": transaction.get_transfer_account_id(),
+                "datetime_str": transaction.get_time().isoformat(),
+            }
+        )
 
-    # transactions = account.get_all_transactions()
-
-    mock_transaction_history = [
-        {
-            "id": 1,
-            "amount": 100.00,
-            "date": "2024-01-01",
-            "time": "12:00",
-            "description": "Deposited $100.00",
-            "type": "DEPOSIT",
-            "balance": 10000
-        },
-        {
-            "id": 2,
-            "amount": -20.00,
-            "date": "2024-01-02",
-            "time": "12:00",
-            "description": "Withdrew $20.00",
-            "type": "WITHDRAWAL",
-            "balance": 10000
-        },
-        {
-            "id": 3,
-            "amount": -50.00,
-            "time": "12:00",
-            "date": "2024-01-03",
-            "description": "Transferred $50.00 to account 123456",
-            "type": "WITHDRAWAL",
-            "balance": 10000
-        }
-    ]
     return {
         "message": f"Transaction history for account {account_id} displayed successfully!",
-        "transactions": mock_transaction_history
-    }
-
-@bank_routes.get("/view_my_transaction_history/", response_model=dict)
-async def view_my_transaction_history(current_user: dict = Depends(verify_token)):
-    """View the transaction history for all accounts belonging to a specific user"""
-    # Only allow users with permission level 1 (teller) or higher to view user transaction history
-    if current_user.get("permission", -1) < 0:
-        raise HTTPException(status_code=403, detail="Must be a teller or higher to view user transaction history")
-    
-    # Logic to view user transaction history would go here
-
-    mock_transaction_history = [
-        {
-            "id": 1,
-            "amount": 100.00,
-            "date": "2024-01-01",
-            "time": "12:00",
-            "description": "Deposited $100.00",
-            "type": "DEPOSIT",
-            "balance": 10000,
-            "account_id": 123456
-        },
-        {
-            "id": 2,
-            "amount": -20.00,
-            "date": "2024-01-02",
-            "time": "12:00",
-            "description": "Withdrew $20.00",
-            "type": "WITHDRAWAL",
-            "balance": 10000,
-            "account_id": 123456
-        },
-        {
-            "id": 3,
-            "amount": -50.00,
-            "time": "12:00",
-            "date": "2024-01-03",
-            "description": "Transferred $50.00 to account 123456",
-            "type": "WITHDRAWAL",
-            "balance": 10000,
-            "account_id": 654321
-        }
-    ]
-    return {
-        "message": "Transaction history displayed successfully!",
-        "transactions": mock_transaction_history
+        "transactions": transactions
     }
 
 
