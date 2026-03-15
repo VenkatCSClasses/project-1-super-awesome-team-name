@@ -16,17 +16,18 @@ The three use cases that are going to be implemented are:
 - Withdraw
 
 ## Work Distribution
-- Abe: CLI and Login Implementation, database setup and api endpoints, bank class
-- Andrew: checking_account class; savings_account and transaction classes/tests; custom exceptions
-- Dylan: customer, teller, user classes & tests; bank tests
-- Cameron: checking_account tests
+- Abe: TUI and Login Implementation, database setup and api endpoints, bank class
+- Andrew: checking_account class; savings_account and transaction classes/tests; custom exceptions; json saving/reading
+- Dylan: customer, teller, user classes & tests; bank tests; 
+- Cameron: checking_account tests; finalized state & class diagrams
 
 ## Coding Agent Usage
 The areas where coding agents were utilized in this project were:
 - Generating docstrings from method/class stubs in the src folder
 - Assisting in writing in-depth tests in certain test classes
     - Helping with equivalence classes/boundary cases
-
+- Speeding up development of the terminal user interface
+- General debugging assistance
 
 # Setup & Running
 
