@@ -2,7 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from server_utils import verify_token
 from dotenv import load_dotenv
 from app_state import bank
+from transaction_type import TransactionType
 load_dotenv()
+
+_SUSPICIOUS_TRANSACTION_TYPES = {
+    TransactionType.DEPOSIT,
+    TransactionType.WITHDRAW,
+    TransactionType.TRANSFER_DEPOSIT,
+    TransactionType.TRANSFER_WITHDRAW,
+}
 
 # Everything starts at "/bank" for these routes, 
 # so the full path for creating a bank account would be "/bank/create_bank_account"
@@ -222,11 +230,20 @@ async def close_bank_account(account_id: int, current_user: dict = Depends(verif
     if current_user.get("permission", -1) < 1:
         raise HTTPException(status_code=403, detail="Must be a teller or higher to close a bank account")
     
-    # Logic to close a bank account would go here
-    try:
-        bank.get_account_by_id(account_id).close_account()
-    except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    account = bank.get_account_by_id(account_id)
+    if account is None:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    owner = None
+    for user in bank.get_all_users().values():
+        if account_id in user.get_owned_accounts():
+            owner = user
+            break
+    if owner is None:
+        raise HTTPException(status_code=404, detail="Account owner not found")
+
+    owner.get_owned_accounts().pop(account_id, None)
+    bank.remove_account(account_id)
     return {"message": f"Bank account {account_id} closed successfully!"}
 
 
@@ -259,10 +276,42 @@ async def get_suspicious_accounts(current_user: dict = Depends(verify_token)):
     if current_user.get("permission", -1) < 2:
         raise HTTPException(status_code=403, detail="Must be an admin to view suspicious accounts")
 
-    sussy_accounts = bank.get_suspicious_accounts()
+    suspicious_accounts = []
+    for account in bank.get_all_accounts().values():
+        matching_transaction = None
+        for transaction in account.get_all_transactions().values():
+            if transaction.get_type() not in _SUSPICIOUS_TRANSACTION_TYPES:
+                continue
+            if abs(float(transaction.get_amount())) >= 10000:
+                matching_transaction = transaction
+                break
+        if matching_transaction is None:
+            continue
+
+        owner = None
+        for user in bank.get_all_users().values():
+            if account.get_account_id() in user.get_owned_accounts():
+                owner = user
+                break
+
+        transactions = list(account.get_all_transactions().values())
+        suspicious_accounts.append(
+            {
+                "account_id": account.get_account_id(),
+                "user_id": owner.get_id() if owner is not None else None,
+                "owner": owner.get_name() if owner is not None else "unknown",
+                "account_type": account.get_account_type().upper(),
+                "balance": account.get_balance(),
+                "status": "FROZEN" if account.is_frozen() else "ACTIVE",
+                "is_frozen": account.is_frozen(),
+                "is_suspicious": True,
+                "suspicious_reason": matching_transaction.get_description(),
+                "last_activity": max(transactions, key=lambda tx: tx.get_time()).get_time().strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        )
     return {
         "message": "Suspicious accounts retrieved successfully!",
-        "suspicious_accounts": sussy_accounts
+        "suspicious_accounts": suspicious_accounts
     }
 
 

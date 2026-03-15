@@ -1,87 +1,21 @@
 from __future__ import annotations
 
-import jwt
-from dataclasses import dataclass
+import os
 
+import httpx
+import jwt
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
+from textual.events import Key
 from textual.screen import ModalScreen, Screen
 from textual.widgets import Button, ContentSwitcher, DataTable, Footer, Header, Input, Label, Select, Static
+from dotenv import load_dotenv
 
 from token_utils import delete_token, load_token
 
-
-@dataclass
-class MockBankStore:
-    users: list[dict]
-    accounts: list[dict]
-    next_user_id: int
-    next_account_id: int
-
-
-_MOCK_BANK_STORE = MockBankStore(
-    users=[
-        {"user_id": 1001, "username": "maria", "permission": 0, "status": "ACTIVE", "account_count": 2},
-        {"user_id": 1002, "username": "owen", "permission": 0, "status": "ACTIVE", "account_count": 1},
-        {"user_id": 1003, "username": "teller.jules", "permission": 1, "status": "ACTIVE", "account_count": 0},
-        {"user_id": 1004, "username": "admin.lee", "permission": 2, "status": "ACTIVE", "account_count": 0},
-        {"user_id": 1005, "username": "rina", "permission": 0, "status": "ACTIVE", "account_count": 1},
-        {"user_id": 1006, "username": "noah", "permission": 0, "status": "ACTIVE", "account_count": 0},
-    ],
-    accounts=[
-        {
-            "account_id": 41001,
-            "user_id": 1001,
-            "owner": "maria",
-            "account_type": "CHECKING",
-            "balance": 4821.11,
-            "status": "ACTIVE",
-            "is_frozen": False,
-            "is_suspicious": False,
-            "suspicious_reason": "",
-            "last_activity": "2026-03-14 08:11:02",
-        },
-        {
-            "account_id": 41002,
-            "user_id": 1001,
-            "owner": "maria",
-            "account_type": "SAVINGS",
-            "balance": 21340.55,
-            "status": "ACTIVE",
-            "is_frozen": False,
-            "is_suspicious": True,
-            "suspicious_reason": "6 large transfers posted inside 9 minutes",
-            "last_activity": "2026-03-14 09:42:18",
-        },
-        {
-            "account_id": 41003,
-            "user_id": 1002,
-            "owner": "owen",
-            "account_type": "CHECKING",
-            "balance": 91.48,
-            "status": "ACTIVE",
-            "is_frozen": False,
-            "is_suspicious": False,
-            "suspicious_reason": "",
-            "last_activity": "2026-03-13 17:02:41",
-        },
-        {
-            "account_id": 41004,
-            "user_id": 1005,
-            "owner": "rina",
-            "account_type": "SAVINGS",
-            "balance": 76002.10,
-            "status": "FROZEN",
-            "is_frozen": True,
-            "is_suspicious": True,
-            "suspicious_reason": "Known mule-account pattern plus geo mismatch",
-            "last_activity": "2026-03-14 07:54:07",
-        },
-    ],
-    next_user_id=1007,
-    next_account_id=41005,
-)
+load_dotenv()
+SERVER_BASE_URL = os.getenv("SERVER_BASE_URL", "http://localhost:8000")
 
 
 def _permission_label(permission: int) -> str:
@@ -92,7 +26,7 @@ def _permission_color(permission: int) -> str:
     return {0: "yellow", 1: "cyan", 2: "red"}.get(permission, "white")
 
 
-def _decode_current_token() -> dict:
+def _fallback_current_token() -> dict:
     token = load_token()
     if not token:
         return {"username": "unknown", "user_id": "unknown", "permission": -1}
@@ -104,96 +38,25 @@ def _decode_current_token() -> dict:
     }
 
 
-def mock_get_staff_user_info() -> dict:
-    return _decode_current_token()
+class StaffApiError(Exception):
+    def __init__(self, message: str, *, session_expired: bool = False) -> None:
+        super().__init__(message)
+        self.session_expired = session_expired
 
 
-def mock_get_all_users() -> list[dict]:
-    return [user.copy() for user in _MOCK_BANK_STORE.users]
-
-
-def mock_get_managed_accounts() -> list[dict]:
-    return [account.copy() for account in _MOCK_BANK_STORE.accounts]
-
-
-def mock_get_bank_total_balance() -> float:
-    return sum(account["balance"] for account in _MOCK_BANK_STORE.accounts)
-
-
-def mock_get_accounts_for_user(user_id: int) -> list[dict]:
-    return [account.copy() for account in _MOCK_BANK_STORE.accounts if account["user_id"] == user_id]
-
-
-def mock_get_suspicious_accounts() -> list[dict]:
-    return [account.copy() for account in _MOCK_BANK_STORE.accounts if account["is_suspicious"]]
-
-
-def mock_create_user(username: str, permission: int) -> dict:
-    if any(user["username"] == username for user in _MOCK_BANK_STORE.users):
-        raise ValueError(f"User @{username} already exists")
-    user = {
-        "user_id": _MOCK_BANK_STORE.next_user_id,
-        "username": username,
-        "permission": permission,
-        "status": "ACTIVE",
-        "account_count": 0,
-    }
-    _MOCK_BANK_STORE.next_user_id += 1
-    _MOCK_BANK_STORE.users.append(user)
-    return user.copy()
-
-
-def mock_delete_user(user_id: int) -> dict:
-    for index, user in enumerate(_MOCK_BANK_STORE.users):
-        if user["user_id"] != user_id:
-            continue
-        if any(account["user_id"] == user_id for account in _MOCK_BANK_STORE.accounts):
-            raise ValueError("Delete or close this user's accounts first")
-        return _MOCK_BANK_STORE.users.pop(index).copy()
-    raise ValueError(f"User USER-{user_id} does not exist")
-
-
-def mock_create_account(username: str, account_type: str, opening_balance: float) -> dict:
-    owner = next((user for user in _MOCK_BANK_STORE.users if user["username"] == username), None)
-    if owner is None:
-        raise ValueError(f"User @{username} does not exist")
-    account = {
-        "account_id": _MOCK_BANK_STORE.next_account_id,
-        "user_id": owner["user_id"],
-        "owner": owner["username"],
-        "account_type": account_type.upper(),
-        "balance": opening_balance,
-        "status": "ACTIVE",
-        "is_frozen": False,
-        "is_suspicious": opening_balance >= 50000,
-        "suspicious_reason": "High opening balance threshold exceeded" if opening_balance >= 50000 else "",
-        "last_activity": "2026-03-14 10:15:00",
-    }
-    _MOCK_BANK_STORE.next_account_id += 1
-    _MOCK_BANK_STORE.accounts.append(account)
-    owner["account_count"] += 1
-    return account.copy()
-
-
-def mock_close_account(account_id: int) -> dict:
-    for index, account in enumerate(_MOCK_BANK_STORE.accounts):
-        if account["account_id"] != account_id:
-            continue
-        removed = _MOCK_BANK_STORE.accounts.pop(index)
-        owner = next((user for user in _MOCK_BANK_STORE.users if user["user_id"] == removed["user_id"]), None)
-        if owner and owner["account_count"] > 0:
-            owner["account_count"] -= 1
-        return removed.copy()
-    raise ValueError(f"Account ACC-{account_id} does not exist")
-
-
-def mock_toggle_account_freeze(account_id: int) -> dict:
-    for account in _MOCK_BANK_STORE.accounts:
-        if account["account_id"] == account_id:
-            account["is_frozen"] = not account["is_frozen"]
-            account["status"] = "FROZEN" if account["is_frozen"] else "ACTIVE"
-            return account.copy()
-    raise ValueError(f"Account ACC-{account_id} does not exist")
+def _response_error_message(response: httpx.Response, fallback: str) -> str:
+    try:
+        payload = response.json()
+    except ValueError:
+        return fallback
+    if isinstance(payload, dict):
+        detail = payload.get("detail")
+        if isinstance(detail, str) and detail:
+            return detail
+        message = payload.get("message")
+        if isinstance(message, str) and message:
+            return message
+    return fallback
 
 
 class StaffActionModal(ModalScreen):
@@ -227,6 +90,7 @@ class StaffActionModal(ModalScreen):
                         placeholder=field.get("placeholder", ""),
                         id=field["id"],
                         value=field.get("value", ""),
+                        password=bool(field.get("password", False)),
                     )
                 )
         children.extend(
@@ -313,17 +177,19 @@ class StaffDashboardScreen(Screen):
         Binding("s", "show_suspicious_page", "Suspicious"),
         Binding("n", "create_user", "Create User"),
         Binding("a", "create_account", "Create Account"),
+        Binding("space", "toggle_selected_account_freeze", "Freeze / Unfreeze", show=False),
     ]
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.user = mock_get_staff_user_info()
+        self.user = _fallback_current_token()
         self.permission = self.user.get("permission", -1)
         self.current_page = "users-page"
         self.user_search = ""
         self.users_data: list[dict] = []
         self.filtered_users: list[dict] = []
         self.accounts_data: list[dict] = []
+        self.suspicious_accounts_data: list[dict] = []
         self.selected_user_id: int | None = None
         self.selected_user_account_id: int | None = None
         self.selected_suspicious_account_id: int | None = None
@@ -356,6 +222,7 @@ class StaffDashboardScreen(Screen):
                     Button("DELETE USER", id="staff-delete-user-btn", variant="error", disabled=self.permission < 2),
                     Button("CREATE ACCOUNT", id="staff-create-account-btn", variant="success"),
                     Button("CLOSE ACCOUNT", id="staff-close-account-btn", variant="warning"),
+                    Button("FREEZE / UNFREEZE", id="staff-user-freeze-account-btn", variant="warning", disabled=self.permission < 2),
                     Button("REFRESH", id="staff-users-refresh-btn", variant="primary"),
                     id="staff-users-actions",
                 ),
@@ -407,9 +274,64 @@ class StaffDashboardScreen(Screen):
     def on_mount(self) -> None:
         self._refresh_dashboard_view()
 
+    def _handle_session_expired(self) -> None:
+        delete_token()
+        self.notify("Session expired. Please log in again.", title="[ AUTH ]", severity="error")
+        self.app.pop_screen()
+        from login_screen import LoginScreen
+        self.app.push_screen(LoginScreen())
+
+    def _request(self, method: str, path: str, *, json: dict | None = None) -> dict:
+        token = load_token()
+        if not token:
+            raise StaffApiError("Session expired. Please log in again.", session_expired=True)
+
+        headers = {"Authorization": f"Bearer {token}"}
+        with httpx.Client(base_url=SERVER_BASE_URL, timeout=5) as client:
+            try:
+                response = client.request(method, path, headers=headers, json=json)
+            except httpx.RequestError:
+                raise StaffApiError("Unable to reach the server")
+
+        if response.status_code == 200:
+            try:
+                payload = response.json()
+            except ValueError:
+                return {}
+            if isinstance(payload, dict):
+                return payload
+            raise StaffApiError("Server returned an unexpected response")
+
+        if response.status_code == 401:
+            raise StaffApiError(
+                _response_error_message(response, "Session expired. Please log in again."),
+                session_expired=True,
+            )
+        if response.status_code == 403:
+            raise StaffApiError(_response_error_message(response, "You do not have permission to perform this action"))
+
+        raise StaffApiError(_response_error_message(response, "Request failed"))
+
+    def _accounts_for_user(self, user_id: int | None) -> list[dict]:
+        if user_id is None:
+            return []
+        return [account for account in self.accounts_data if account.get("user_id") == user_id]
+
+    def _suspicious_accounts(self) -> list[dict]:
+        return list(self.suspicious_accounts_data)
+
+    def _bank_total_balance(self) -> float:
+        return sum(float(account.get("balance", 0.0)) for account in self.accounts_data)
+
     def _load_data(self) -> None:
-        self.users_data = mock_get_all_users()
-        self.accounts_data = mock_get_managed_accounts()
+        self.user = self._request("GET", "/whoami")
+        self.permission = int(self.user.get("permission", -1))
+        self.users_data = self._request("GET", "/admin/users").get("users", [])
+        self.accounts_data = self._request("GET", "/admin/accounts").get("accounts", [])
+        if self.permission >= 2:
+            self.suspicious_accounts_data = self._request("GET", "/bank/get-suspicious-accounts").get("suspicious_accounts", [])
+        else:
+            self.suspicious_accounts_data = []
 
     def _apply_user_filter(self) -> list[dict]:
         query = self.user_search.strip().lower()
@@ -426,24 +348,37 @@ class StaffDashboardScreen(Screen):
         return filtered
 
     def _refresh_dashboard_view(self, notify: bool = False) -> None:
-        self._load_data()
+        try:
+            self._load_data()
+        except StaffApiError as error:
+            if error.session_expired:
+                self._handle_session_expired()
+                return
+            self.notify(str(error), title="[ ERROR ]", severity="error")
+            return
         self.filtered_users = self._apply_user_filter()
         user_ids = {user["user_id"] for user in self.filtered_users}
-        all_account_ids = {account["account_id"] for account in self.accounts_data}
-        suspicious_ids = {account["account_id"] for account in mock_get_suspicious_accounts()}
+        suspicious_ids = {account["account_id"] for account in self._suspicious_accounts()}
 
         if self.selected_user_id not in user_ids:
             self.selected_user_id = self.filtered_users[0]["user_id"] if self.filtered_users else None
 
-        user_accounts = mock_get_accounts_for_user(self.selected_user_id) if self.selected_user_id is not None else []
+        user_accounts = self._accounts_for_user(self.selected_user_id)
         user_account_ids = {account["account_id"] for account in user_accounts}
         if self.selected_user_account_id not in user_account_ids:
             self.selected_user_account_id = user_accounts[0]["account_id"] if user_accounts else None
 
         if self.selected_suspicious_account_id not in suspicious_ids:
-            suspicious_accounts = mock_get_suspicious_accounts()
+            suspicious_accounts = self._suspicious_accounts()
             self.selected_suspicious_account_id = suspicious_accounts[0]["account_id"] if suspicious_accounts else None
 
+        color = _permission_color(self.permission)
+        access = _permission_label(self.permission)
+        self.query_one("#user-details", Static).update(
+            f"  [dim]Username:[/] [bold {color}]@{self.user['username']}[/]\n"
+            f"  [dim]ID:[/] USER-{self.user['user_id']}\n"
+            f"  [dim]Access Level:[/] [{color}]{access}[/]"
+        )
         self._render_summary()
         self._render_user_table()
         self._render_selected_user()
@@ -455,7 +390,7 @@ class StaffDashboardScreen(Screen):
             self.notify("Management view refreshed.", title="[ REFRESH ]", severity="information")
 
     def _render_summary(self) -> None:
-        suspicious_count = len(mock_get_suspicious_accounts())
+        suspicious_count = len(self._suspicious_accounts())
         frozen_count = sum(1 for account in self.accounts_data if account["is_frozen"])
         summary_lines = [
             f"  [dim]Users:[/] [bold]{len(self.users_data)}[/]",
@@ -466,7 +401,7 @@ class StaffDashboardScreen(Screen):
         if self.permission >= 2:
             summary_lines.insert(
                 0,
-                f"  [dim]Bank Total:[/] [bold green]${mock_get_bank_total_balance():,.2f}[/]",
+                f"  [dim]Bank Total:[/] [bold green]${self._bank_total_balance():,.2f}[/]",
             )
         else:
             summary_lines.append("  [dim]Scope:[/] [cyan]Teller management view[/]")
@@ -507,8 +442,7 @@ class StaffDashboardScreen(Screen):
             self.query_one("#staff-user-preview", Static).update("No user selected.")
             return
 
-        related_accounts = mock_get_accounts_for_user(selected["user_id"])
-        flagged_accounts = sum(1 for account in related_accounts if account["is_suspicious"])
+        related_accounts = self._accounts_for_user(selected["user_id"])
         self.query_one("#staff-user-preview", Static).update(
             "\n".join(
                 [
@@ -517,7 +451,6 @@ class StaffDashboardScreen(Screen):
                     f"[bold]Role:[/] {_permission_label(selected['permission'])}",
                     f"[bold]Status:[/] {selected['status']}",
                     f"[bold]Accounts:[/] {len(related_accounts)}",
-                    f"[bold]Flagged:[/] [yellow]{flagged_accounts}[/]",
                     "",
                     "[dim]Create accounts, close the selected account, or delete the user if they have no accounts.[/]",
                 ]
@@ -533,20 +466,18 @@ class StaffDashboardScreen(Screen):
         table.add_column("TYPE", width=10)
         table.add_column("BALANCE", width=14)
         table.add_column("STATUS", width=10)
-        table.add_column("FLAG", width=12)
 
         if self.selected_user_id is None:
             self.query_one("#staff-user-accounts-status", Static).update("  [dim]Select a user to view accounts.[/]")
             return
 
-        user_accounts = mock_get_accounts_for_user(self.selected_user_id)
+        user_accounts = self._accounts_for_user(self.selected_user_id)
         for index, account in enumerate(user_accounts):
             table.add_row(
                 f"ACC-{account['account_id']}",
                 account["account_type"],
                 f"${account['balance']:,.2f}",
                 account["status"],
-                "SUSPICIOUS" if account["is_suspicious"] else "CLEAR",
             )
             if account["account_id"] == self.selected_user_account_id:
                 table.move_cursor(row=index, column=0)
@@ -571,7 +502,7 @@ class StaffDashboardScreen(Screen):
         table.add_column("STATUS", width=10)
         table.add_column("LAST ACTIVITY", width=20)
 
-        suspicious_accounts = mock_get_suspicious_accounts()
+        suspicious_accounts = self._suspicious_accounts()
         for index, account in enumerate(suspicious_accounts):
             table.add_row(
                 f"ACC-{account['account_id']}",
@@ -586,7 +517,7 @@ class StaffDashboardScreen(Screen):
         status_text = (
             f"  [dim]{len(suspicious_accounts)} suspicious account(s) in the queue.[/]"
             if suspicious_accounts
-            else "  [dim]No suspicious accounts in mock data.[/]"
+            else "  [dim]No suspicious accounts in the queue.[/]"
         )
         self.query_one("#staff-suspicious-status", Static).update(status_text)
 
@@ -597,7 +528,7 @@ class StaffDashboardScreen(Screen):
             )
             return
 
-        suspicious_accounts = mock_get_suspicious_accounts()
+        suspicious_accounts = self._suspicious_accounts()
         selected = next(
             (account for account in suspicious_accounts if account["account_id"] == self.selected_suspicious_account_id),
             None,
@@ -638,7 +569,7 @@ class StaffDashboardScreen(Screen):
         return next(
             (
                 account
-                for account in mock_get_accounts_for_user(self.selected_user_id)
+                for account in self._accounts_for_user(self.selected_user_id)
                 if account["account_id"] == self.selected_user_account_id
             ),
             None,
@@ -648,7 +579,7 @@ class StaffDashboardScreen(Screen):
         return next(
             (
                 account
-                for account in mock_get_suspicious_accounts()
+                for account in self._suspicious_accounts()
                 if account["account_id"] == self.selected_suspicious_account_id
             ),
             None,
@@ -661,9 +592,10 @@ class StaffDashboardScreen(Screen):
         self.app.push_screen(
             StaffActionModal(
                 "CREATE USER",
-                "Mock form only. Replace this handler with your API call later.",
+                "Create a new customer, teller, or admin user.",
                 [
                     {"id": "new-username", "label": "Username", "kind": "input", "placeholder": "new.user"},
+                    {"id": "new-password", "label": "Password", "kind": "input", "placeholder": "temporary password", "password": True},
                     {
                         "id": "new-permission",
                         "label": "Permission",
@@ -678,21 +610,24 @@ class StaffDashboardScreen(Screen):
 
     def _open_create_account_modal(self) -> None:
         selected_user = self._selected_user()
+        if not self.users_data:
+            self.notify("No users are available for account creation.", title="[ ACCOUNT ]", severity="warning")
+            return
         user_options = [
-            (f"@{user['username']} ({_permission_label(user['permission'])})", user["username"])
+            (f"@{user['username']} ({_permission_label(user['permission'])})", user["user_id"])
             for user in self.users_data
         ]
         self.app.push_screen(
             StaffActionModal(
                 "CREATE ACCOUNT",
-                "Creates a mock account for the selected user.",
+                "Create a real bank account for the selected user.",
                 [
                     {
-                        "id": "account-owner",
+                        "id": "account-user-id",
                         "label": "Owner",
                         "kind": "select",
                         "options": user_options,
-                        "value": selected_user["username"] if selected_user else (user_options[0][1] if user_options else None),
+                        "value": selected_user["user_id"] if selected_user else (user_options[0][1] if user_options else None),
                     },
                     {
                         "id": "account-type",
@@ -711,33 +646,50 @@ class StaffDashboardScreen(Screen):
         if result is None:
             return
         try:
-            created = mock_create_user(str(result["new-username"]), int(result["new-permission"]))
-        except ValueError as error:
+            created = self._request(
+                "POST",
+                "/admin/users",
+                json={
+                    "username": str(result["new-username"]).strip(),
+                    "password": str(result["new-password"]).strip(),
+                    "permission": int(result["new-permission"]),
+                },
+            )["user"]
+        except (KeyError, ValueError, StaffApiError) as error:
+            if isinstance(error, StaffApiError) and error.session_expired:
+                self._handle_session_expired()
+                return
             self.notify(str(error), title="[ ERROR ]", severity="error")
             return
         self.selected_user_id = created["user_id"]
         self.current_page = "users-page"
         self._refresh_dashboard_view()
-        self.notify(f"Created @{created['username']} with {_permission_label(created['permission'])} access (mock).", title="[ USER ]")
+        self.notify(f"Created @{created['username']} with {_permission_label(created['permission'])} access.", title="[ USER ]")
 
     def _handle_create_account(self, result: dict | None) -> None:
         if result is None:
             return
         try:
-            created = mock_create_account(
-                str(result["account-owner"]),
-                str(result["account-type"]),
-                float(str(result["opening-balance"]) or "0"),
-            )
-        except ValueError as error:
+            created = self._request(
+                "POST",
+                "/admin/accounts",
+                json={
+                    "user_id": int(result["account-user-id"]),
+                    "account_type": str(result["account-type"]),
+                    "opening_balance": float(str(result["opening-balance"]) or "0"),
+                },
+            )["account"]
+        except (KeyError, ValueError, StaffApiError) as error:
+            if isinstance(error, StaffApiError) and error.session_expired:
+                self._handle_session_expired()
+                return
             self.notify(str(error), title="[ ERROR ]", severity="error")
             return
         self.selected_user_id = created["user_id"]
         self.selected_user_account_id = created["account_id"]
-        self.selected_suspicious_account_id = created["account_id"] if created["is_suspicious"] else self.selected_suspicious_account_id
         self.current_page = "users-page"
         self._refresh_dashboard_view()
-        self.notify(f"Created ACC-{created['account_id']} for @{created['owner']} (mock).", title="[ ACCOUNT ]")
+        self.notify(f"Created ACC-{created['account_id']} for @{created['owner']}.", title="[ ACCOUNT ]")
 
     def _delete_selected_user(self) -> None:
         if self.permission < 2:
@@ -748,14 +700,17 @@ class StaffDashboardScreen(Screen):
             self.notify("Select a user first.", title="[ USER ]", severity="warning")
             return
         try:
-            deleted = mock_delete_user(selected["user_id"])
-        except ValueError as error:
+            deleted = self._request("DELETE", f"/admin/users/{selected['user_id']}")["user"]
+        except (KeyError, StaffApiError) as error:
+            if isinstance(error, StaffApiError) and error.session_expired:
+                self._handle_session_expired()
+                return
             self.notify(str(error), title="[ ERROR ]", severity="error")
             return
         self.selected_user_id = None
         self.selected_user_account_id = None
         self._refresh_dashboard_view()
-        self.notify(f"Deleted @{deleted['username']} (mock).", title="[ USER ]")
+        self.notify(f"Deleted @{deleted['username']}.", title="[ USER ]")
 
     def _close_selected_account(self) -> None:
         selected = self._selected_user_account()
@@ -763,33 +718,74 @@ class StaffDashboardScreen(Screen):
             self.notify("Select an account first.", title="[ ACCOUNT ]", severity="warning")
             return
         try:
-            closed = mock_close_account(selected["account_id"])
-        except ValueError as error:
+            closed = self._request("DELETE", f"/admin/accounts/{selected['account_id']}")["account"]
+        except (KeyError, StaffApiError) as error:
+            if isinstance(error, StaffApiError) and error.session_expired:
+                self._handle_session_expired()
+                return
             self.notify(str(error), title="[ ERROR ]", severity="error")
             return
         self.selected_user_account_id = None
         if self.selected_suspicious_account_id == closed["account_id"]:
             self.selected_suspicious_account_id = None
         self._refresh_dashboard_view()
-        self.notify(f"Closed ACC-{closed['account_id']} (mock).", title="[ ACCOUNT ]")
+        self.notify(f"Closed ACC-{closed['account_id']}.", title="[ ACCOUNT ]")
 
-    def _toggle_selected_account_freeze(self) -> None:
+    def _toggle_account_freeze(self, account_id: int | None = None) -> None:
         if self.permission < 2:
             self.notify("Only admins can freeze accounts.", title="[ ACCOUNT ]", severity="warning")
             return
-        selected = self._selected_suspicious_account()
+
+        if account_id is None:
+            selected = self._selected_suspicious_account()
+            if selected is None:
+                self.notify("Select an account first.", title="[ ACCOUNT ]", severity="warning")
+                return
+            account_id = selected["account_id"]
+
+        selected = next((account for account in self.accounts_data if account["account_id"] == account_id), None)
         if selected is None:
-            self.notify("Select a suspicious account first.", title="[ ACCOUNT ]", severity="warning")
+            self.notify("Select an account first.", title="[ ACCOUNT ]", severity="warning")
             return
         try:
-            updated = mock_toggle_account_freeze(selected["account_id"])
-        except ValueError as error:
+            freeze_result = self._request("GET", f"/bank/toggle-freeze/{account_id}")
+        except (KeyError, StaffApiError) as error:
+            if isinstance(error, StaffApiError) and error.session_expired:
+                self._handle_session_expired()
+                return
             self.notify(str(error), title="[ ERROR ]", severity="error")
             return
-        self.selected_suspicious_account_id = updated["account_id"]
+        self.selected_user_id = selected["user_id"]
+        self.selected_user_account_id = selected["account_id"]
+        self.selected_suspicious_account_id = selected["account_id"]
         self._refresh_dashboard_view()
-        action = "Froze" if updated["is_frozen"] else "Unfroze"
-        self.notify(f"{action} ACC-{updated['account_id']} (mock).", title="[ ACCOUNT ]")
+        action = "Froze" if freeze_result["is_frozen"] else "Unfroze"
+        self.notify(f"{action} ACC-{selected['account_id']}.", title="[ ACCOUNT ]")
+
+    def action_toggle_selected_account_freeze(self) -> None:
+        focused = self.app.focused
+        if not isinstance(focused, DataTable):
+            return
+
+        if focused.id == "staff-user-accounts-table":
+            selected = self._selected_user_account()
+            if selected is None:
+                self.notify("Select an account first.", title="[ ACCOUNT ]", severity="warning")
+                return
+            self._toggle_account_freeze(selected["account_id"])
+            return
+
+        if focused.id == "staff-suspicious-table":
+            self._toggle_account_freeze()
+
+    def on_key(self, event: Key) -> None:
+        if event.key != "space":
+            return
+
+        focused = self.app.focused
+        if isinstance(focused, DataTable) and focused.id in {"staff-user-accounts-table", "staff-suspicious-table"}:
+            self.action_toggle_selected_account_freeze()
+            event.stop()
 
     def action_show_users_page(self) -> None:
         self.current_page = "users-page"
@@ -826,20 +822,20 @@ class StaffDashboardScreen(Screen):
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         if event.data_table.id == "staff-user-table" and event.cursor_row < len(self.filtered_users):
             self.selected_user_id = self.filtered_users[event.cursor_row]["user_id"]
-            user_accounts = mock_get_accounts_for_user(self.selected_user_id)
+            user_accounts = self._accounts_for_user(self.selected_user_id)
             self.selected_user_account_id = user_accounts[0]["account_id"] if user_accounts else None
             self._render_selected_user()
             self._render_selected_user_accounts()
             return
 
         if event.data_table.id == "staff-user-accounts-table":
-            user_accounts = mock_get_accounts_for_user(self.selected_user_id) if self.selected_user_id is not None else []
+            user_accounts = self._accounts_for_user(self.selected_user_id)
             if event.cursor_row < len(user_accounts):
                 self.selected_user_account_id = user_accounts[event.cursor_row]["account_id"]
             return
 
         if event.data_table.id == "staff-suspicious-table":
-            suspicious_accounts = mock_get_suspicious_accounts()
+            suspicious_accounts = self._suspicious_accounts()
             if event.cursor_row < len(suspicious_accounts):
                 self.selected_suspicious_account_id = suspicious_accounts[event.cursor_row]["account_id"]
                 self._render_suspicious_preview()
@@ -858,8 +854,11 @@ class StaffDashboardScreen(Screen):
             self._open_create_account_modal()
         elif button_id == "staff-close-account-btn":
             self._close_selected_account()
+        elif button_id == "staff-user-freeze-account-btn":
+            selected = self._selected_user_account()
+            self._toggle_account_freeze(selected["account_id"] if selected else None)
         elif button_id == "staff-freeze-account-btn":
-            self._toggle_selected_account_freeze()
+            self._toggle_account_freeze()
         elif button_id in {"staff-users-refresh-btn", "staff-suspicious-refresh-btn"}:
             self.action_refresh()
         elif button_id == "staff-logout-btn":
