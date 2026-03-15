@@ -4,6 +4,7 @@ from pathlib import Path
 from server_ping_utils import server_running
 from login_screen import LoginScreen
 from deposit_modal import DepositModal
+from transfer_modal import TransferModal
 from withdraw_modal import WithdrawModal
 from freeze_accounts_modal import FreezeAccountsModal
 
@@ -121,7 +122,7 @@ class UserInfoBox(Container):
         self.user = user
 
     def compose(self) -> ComposeResult:
-        yield Static("╭─ USER SESSION ─────────────────────────╮", classes="box-top")
+        yield Static("USER SESSION", classes="box-top")
 
         permission = self.user.get("permission", 0)
         match permission:
@@ -140,7 +141,6 @@ class UserInfoBox(Container):
             f"  [dim]Access Level:[/] [{color}]{access_level}[/]",
             id="user-details"
         )
-        yield Static("╰────────────────────────────────────────╯", classes="box-bottom")
 
     def action_focus_left(self) -> None:
         return
@@ -163,17 +163,14 @@ class AccountsSection(Container):
         self.accounts = accounts
 
     def compose(self) -> ComposeResult:
-        yield Static("╭─ ACCOUNTS ──────────────────────────────────────────────────╮", classes="box-top")
+        yield Static("ACCOUNTS", classes="box-top")
         total = sum(acc["balance"] for acc in self.accounts)
         yield Static(
             f"  [bold]TOTAL BALANCE:[/] [bold green]${total:,.2f}[/]  [dim]│[/]  [dim]{len(self.accounts)} accounts[/]",
             id="total-balance"
         )
-        yield Static("├──────────────────────────────────────────────────────────────┤", classes="box-divider")
         yield AccountsList(self.accounts, id="accounts-list")
-        yield Static("├──────────────────────────────────────────────────────────────┤", classes="box-divider")
         yield Button("CREATE NEW ACCOUNT", id="accounts-new-account-btn", variant="success")
-        yield Static("╰──────────────────────────────────────────────────────────────╯", classes="box-bottom")
 
 
 class AccountsList(Vertical):
@@ -183,15 +180,23 @@ class AccountsList(Vertical):
         super().__init__(**kwargs)
         self.accounts = accounts
 
-    def compose(self) -> ComposeResult:
+    def _build_children(self) -> list[Static]:
         if not self.accounts:
-            yield Static(
-                "  [dim]You have no accounts yet. Create one to get started.[/]",
-                id="accounts-empty-state",
-            )
-            return
-        for acc in self.accounts:
-            yield AccountCard(acc, classes="account-card")
+            return [
+                Static(
+                    "  [dim]You have no accounts yet. Create one to get started.[/]",
+                )
+            ]
+        return [AccountCard(acc, classes="account-card") for acc in self.accounts]
+
+    def compose(self) -> ComposeResult:
+        yield from self._build_children()
+
+    def refresh_accounts(self, accounts: list) -> None:
+        """Rebuild the rendered account cards without replacing the list widget."""
+        self.accounts = accounts
+        self.remove_children()
+        self.mount(*self._build_children())
 
 
 class TransactionsTable(DataTable):
@@ -365,10 +370,9 @@ class TransactionsBox(Container):
     """Recent transactions box with data table."""
 
     def compose(self) -> ComposeResult:
-        yield Static("╭─ RECENT TRANSACTIONS ──────────────────────────────────────────────────╮", classes="box-top")
+        yield Static("RECENT TRANSACTIONS", classes="box-top")
         yield Static("", id="transactions-status")
         yield TransactionsTable(id="transactions-table")
-        yield Static("╰───────────────────────────────────────────────────────────────────────────╯", classes="box-bottom")
 
 
 class ActionBar(Horizontal):
@@ -379,7 +383,6 @@ class ActionBar(Horizontal):
         yield Button("TRANSFER", id="transfer-btn", variant="primary")
         yield Button("DEPOSIT", id="deposit-btn", variant="primary")
         yield Button("WITHDRAW", id="withdraw-btn", variant="warning")
-        yield Button("FREEZE ACCOUNTS", id="freeze-accounts-btn", variant="error")
         yield Button("LOGOUT", id="logout-btn", variant="error")
 
 
@@ -401,6 +404,7 @@ class DashboardScreen(Screen):
         super().__init__(**kwargs)
         self.accounts_data: list[dict] = []
         self.selected_account_id: int | None = None
+        self.preferred_selected_account_id: int | None = None
         self.transactions_error_message = ""
 
     def compose(self) -> ComposeResult:
@@ -414,7 +418,14 @@ class DashboardScreen(Screen):
 
         accounts = self.get_accounts() or []
         self.accounts_data = accounts
-        selected_account = accounts[0] if accounts else None
+        selected_account = next(
+            (
+                account
+                for account in accounts
+                if account["account_id"] == self.preferred_selected_account_id
+            ),
+            accounts[0] if accounts else None,
+        )
         self.selected_account_id = selected_account["account_id"] if selected_account else None
         transactions = self.get_transactions(self.selected_account_id) or []
         balance_history = self.build_balance_history(selected_account, transactions)
@@ -503,6 +514,7 @@ class DashboardScreen(Screen):
             card.remove_class("selected")
         selected_card.add_class("selected")
         self.selected_account_id = selected_card.account.get("account_id")
+        self.preferred_selected_account_id = self.selected_account_id
         self.refresh_selected_account_data()
         if announce:
             self.notify(
@@ -516,6 +528,7 @@ class DashboardScreen(Screen):
         delete_token()
         self.app.notify("Session expired. Please log in again.", title="[ AUTH ]", severity="error")
         from login_screen import LoginScreen
+        self.app.pop_screen()
         self.app.push_screen(LoginScreen())
 
     def get_user_info(self) -> dict:
@@ -536,7 +549,7 @@ class DashboardScreen(Screen):
                         "user_id": str(response_data.get("user_id", "unknown")),
                         "permission": response_data.get("permission", -1),
                     }
-                if response.status_code in (401, 403):
+                if response.status_code in (401, 403, 404):
                     self.handle_session_expired()
                     return None
                 print(f"Failed to fetch user info: {response.status_code}")
@@ -558,7 +571,7 @@ class DashboardScreen(Screen):
                 if response.status_code == 200:
                     response_data = response.json()
                     return self._normalize_accounts(response_data.get("accounts", []))
-                if response.status_code in (401, 403):
+                if response.status_code in (401, 403, 404):
                     self.handle_session_expired()
                     return None
                 print(f"Failed to fetch user info: {response.status_code}")
@@ -584,7 +597,7 @@ class DashboardScreen(Screen):
                     self.transactions_error_message = ""
                     response_data = response.json()
                     return self._normalize_transactions(response_data.get("transactions", []))
-                if response.status_code in (401, 403):
+                if response.status_code in (401, 403, 404):
                     self.handle_session_expired()
                     return None
                 self.transactions_error_message = (
@@ -777,11 +790,11 @@ class DashboardScreen(Screen):
         # Rebuild columns on refresh to avoid duplicate column definitions.
         table.clear(columns=True)
         # Add columns
-        table.add_column("ID", key="id", width=12)
-        table.add_column("DATE", key="date", width=12)
-        table.add_column("TIME", key="time", width=10)
-        table.add_column("TYPE", key="type", width=10)
-        table.add_column("DESCRIPTION", key="desc", width=22)
+        table.add_column("ID", key="id", width=10)
+        table.add_column("DATE", key="date", width=10)
+        table.add_column("TIME", key="time", width=8)
+        table.add_column("TYPE", key="type", width=15)
+        table.add_column("DESCRIPTION", key="desc", width=60)
         table.add_column("AMOUNT", key="amount", width=14)
         table.add_column("BALANCE", key="balance", width=14)
         
@@ -810,10 +823,19 @@ class DashboardScreen(Screen):
     def _populate_dashboard(self) -> None:
         cards = self._account_cards()
         if cards:
-            for card in cards[1:]:
+            selected_card = next(
+                (
+                    card
+                    for card in cards
+                    if card.account.get("account_id") == self.selected_account_id
+                ),
+                cards[0],
+            )
+            for card in cards:
                 card.remove_class("selected")
-            cards[0].add_class("selected")
-            self.selected_account_id = cards[0].account.get("account_id")
+            selected_card.add_class("selected")
+            self.selected_account_id = selected_card.account.get("account_id")
+            self.preferred_selected_account_id = self.selected_account_id
             self.refresh_selected_account_data()
             self.focus_accounts_list()
             return
@@ -864,15 +886,15 @@ class DashboardScreen(Screen):
         if event.button.id == "logout-btn":
             self.action_logout()
         elif event.button.id == "new-account-btn":
-            self.app.push_screen(CreateBankAccountModal())
+            self.app.push_screen(CreateBankAccountModal(), self._handle_account_change)
         elif event.button.id == "accounts-new-account-btn":
-            self.app.push_screen(CreateBankAccountModal())
+            self.app.push_screen(CreateBankAccountModal(), self._handle_account_change)
         elif event.button.id == "transfer-btn":
-            self.notify("Transfer feature coming soon!", title="[ TRANSFER ]", severity="information")
+            self.app.push_screen(TransferModal(), self._handle_account_change)
         elif event.button.id == "deposit-btn":
-            self.app.push_screen(DepositModal())
+            self.app.push_screen(DepositModal(), self._handle_account_change)
         elif event.button.id == "withdraw-btn":
-            self.app.push_screen(WithdrawModal())
+            self.app.push_screen(WithdrawModal(), self._handle_account_change)
         elif event.button.id == "freeze-accounts-btn":
             self.app.push_screen(FreezeAccountsModal())
 
@@ -886,19 +908,58 @@ class DashboardScreen(Screen):
 
     def action_new_account(self) -> None:
         """Create new account."""
-        self.app.push_screen(CreateBankAccountModal())
+        self.app.push_screen(CreateBankAccountModal(), self._handle_account_change)
 
     def action_transfer(self) -> None:
         """Transfer funds."""
-        self.notify("Transfer feature coming soon!", title="[ TRANSFER ]")
+        self.app.push_screen(TransferModal(), self._handle_account_change)
+
+    def _handle_account_change(self, result) -> None:
+        """Refresh dashboard state after a successful account action."""
+        if result is None:
+            return
+
+        if isinstance(result, dict):
+            self.preferred_selected_account_id = (
+                result.get("account_id")
+                or result.get("from_account_id")
+                or self.selected_account_id
+            )
+        else:
+            self.preferred_selected_account_id = self.selected_account_id
+        self._refresh_dashboard_view()
+
+    def _rebuild_accounts_section(self) -> None:
+        """Refresh the mounted accounts pane so cards and totals reflect current data."""
+        accounts_section = self.query_one("#accounts-section", AccountsSection)
+        accounts_section.accounts = self.accounts_data
+        total_balance = sum(account["balance"] for account in self.accounts_data)
+        self.query_one("#total-balance", Static).update(
+            f"  [bold]TOTAL BALANCE:[/] [bold green]${total_balance:,.2f}[/]  "
+            f"[dim]│[/]  [dim]{len(self.accounts_data)} accounts[/]"
+        )
+        existing_list = self.query_one("#accounts-list", AccountsList)
+        existing_list.refresh_accounts(self.accounts_data)
+
+    def _refresh_dashboard_view(self, notify: bool = False) -> None:
+        """Refresh mounted dashboard widgets from current server state."""
+        self.accounts_data = self.get_accounts() or []
+        account_ids = {account["account_id"] for account in self.accounts_data}
+
+        if not self.accounts_data:
+            self.selected_account_id = None
+        elif self.preferred_selected_account_id in account_ids:
+            self.selected_account_id = self.preferred_selected_account_id
+        elif self.selected_account_id in account_ids:
+            self.selected_account_id = self.selected_account_id
+        else:
+            self.selected_account_id = self.accounts_data[0]["account_id"]
+
+        self._rebuild_accounts_section()
+        self.call_after_refresh(self._populate_dashboard)
+        if notify:
+            self.notify("Data refreshed.", title="[ REFRESH ]", severity="information")
 
     def action_refresh(self) -> None:
         """Refresh dashboard data."""
-        self.accounts_data = self.get_accounts() or []
-        if not self.accounts_data:
-            self.selected_account_id = None
-        elif self.selected_account_id not in {account["account_id"] for account in self.accounts_data}:
-            self.selected_account_id = self.accounts_data[0]["account_id"]
-
-        self.refresh_selected_account_data()
-        self.notify("Data refreshed.", title="[ REFRESH ]", severity="information")
+        self._refresh_dashboard_view(notify=True)

@@ -47,6 +47,10 @@ class Customer():
     def get_accounts(self):
         return self.accounts
 
+    def get_owned_accounts(self):
+        """Returns only the accounts explicitly owned by this user."""
+        return self.accounts
+
     
     def register_account(self, account: CheckingAccount):
         self.accounts[account.get_account_id()] = account

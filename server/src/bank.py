@@ -154,7 +154,10 @@ class Bank:
 
 
         # Users
-        for user_record in json_data.get("users", {}):
+        user_records = list(json_data.get("users", {}))
+        user_records.sort(key=lambda record: (record.get("permission", record.get("permissions", 0)), record.get("id", 0)))
+        claimed_account_ids: set[int] = set()
+        for user_record in user_records:
             username = user_record.get("username")
             user_id = user_record.get("id")
 
@@ -174,7 +177,11 @@ class Bank:
             
             # Connecting Accs to Users
             for account_id in user_record.get("bank_account_ids", {}):
-                user.register_account(self.get_account_by_id(account_id))
+                account = self.get_account_by_id(account_id)
+                if account is None or account_id in claimed_account_ids:
+                    continue
+                user.register_account(account)
+                claimed_account_ids.add(account_id)
             
             self.users[user_id] = user
 
@@ -199,7 +206,7 @@ class Bank:
                     "username": user.get_name(),
                     "hashed_password": user.get_passwd(),
                     "permission": self._user_permission(user),
-                    "bank_account_ids": [account.get_account_id() for account in user.get_accounts().values()],
+                    "bank_account_ids": [account.get_account_id() for account in user.get_owned_accounts().values()],
                 }
             )
 
@@ -355,7 +362,7 @@ class Bank:
         """
         if user is None:
             return sum(account.balance for account in self.accounts.values())
-        return sum(account.balance for account in user.get_accounts().values())
+        return sum(account.balance for account in user.get_owned_accounts().values())
 
 
     def _compound_savings_interest(self) -> None:
@@ -435,7 +442,7 @@ class Bank:
         Args:
         user (Customer): the customer to find all accounts of
         """
-        return user.get_accounts()
+        return user.get_owned_accounts()
 
 
     def get_account_by_id(self, account_id: int) -> CheckingAccount | None:
@@ -536,10 +543,11 @@ class Bank:
         Args:
         id (int): the id of the user to be removed
         """
-        for key,cust in self.users.items():
+        for key, cust in list(self.users.items()):
             if cust.get_id() == user_id:
                 del self.users[key]
-                break
+                return cust
+        raise KeyError(f"User id not found: {user_id}")
 
 
     def remove_user_by_name(self, username: str) -> Customer:
@@ -549,10 +557,11 @@ class Bank:
         Args:
         username (str): the name of the user to be removed
         """
-        for key,value in self.users.items():
+        for key, value in list(self.users.items()):
             if value.get_name() == username:
                 del self.users[key]
-                break
+                return value
+        raise KeyError(f"Username not found: {username}")
 
 
     def remove_account(self, id: int) -> CheckingAccount:
@@ -562,7 +571,8 @@ class Bank:
         Args:
         id (int): the account_id of the account to be removed
         """
-        for key,acc in self.accounts.items():
+        for key, acc in list(self.accounts.items()):
             if acc.get_account_id() == id:
                 del self.accounts[key]
-                break
+                return acc
+        raise KeyError(f"Account id not found: {id}")
