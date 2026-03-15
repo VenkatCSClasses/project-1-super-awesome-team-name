@@ -790,11 +790,11 @@ class DashboardScreen(Screen):
         # Rebuild columns on refresh to avoid duplicate column definitions.
         table.clear(columns=True)
         # Add columns
-        table.add_column("ID", key="id", width=12)
-        table.add_column("DATE", key="date", width=12)
-        table.add_column("TIME", key="time", width=10)
-        table.add_column("TYPE", key="type", width=10)
-        table.add_column("DESCRIPTION", key="desc", width=22)
+        table.add_column("ID", key="id", width=10)
+        table.add_column("DATE", key="date", width=10)
+        table.add_column("TIME", key="time", width=8)
+        table.add_column("TYPE", key="type", width=15)
+        table.add_column("DESCRIPTION", key="desc", width=60)
         table.add_column("AMOUNT", key="amount", width=14)
         table.add_column("BALANCE", key="balance", width=14)
         
