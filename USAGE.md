@@ -74,3 +74,9 @@ From the staff dashboard, you can also create new user accounts by hitting the "
 We will create a teller account with username: ```teller``` and password: ```teller```, choosing the teller permission level.
 ![Create Teller](images/create_teller.png)
 Now we can log out and log back in with the teller account and see that we have access to the staff dashboard.
+![Teller View](images/teller.png)
+The teller view cannot delete users or freeze accounts, but they can still create bank accounts for users by selecting the user and hitting the create acccount button. They can also close the bank accounts. 
+![Tellers can create accounts](images/teller_create_account.png)
+
+Now the account shows up for the user, and they can use it as normal.
+![Account shows up](images/teller_created_account_shows_up.png)

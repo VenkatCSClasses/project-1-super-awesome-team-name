@@ -37,7 +37,7 @@ class SavingsAccount(CheckingAccount):
             balance (float, optional): The initial balance of the savings account.
                 Defaults to 0.0.
         """
-        super().__init__(account_id, bank, balance)
+        super().__init__(account_id, bank, balance, transaction_needed, next_transaction_id)
         self.curr_withdraw_limit = float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
 
 
@@ -112,6 +112,10 @@ class SavingsAccount(CheckingAccount):
             float: The max withdraw limit.
         """
         return float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
+
+    def get_account_type(self) -> str:
+        """Returns the account type label used by the API and UI."""
+        return "savings"
 
 
     def compound_interest(self) -> None:

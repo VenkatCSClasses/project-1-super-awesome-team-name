@@ -106,6 +106,18 @@ class StaffActionModal(ModalScreen):
         yield Vertical(*children, classes="modal-container")
 
     def on_mount(self) -> None:
+        for field in self.fields:
+            if field["kind"] != "select":
+                continue
+            select = self.query_one(f"#{field['id']}", Select)
+            initial_value = field.get("value", Select.BLANK)
+            if initial_value == Select.BLANK:
+                options = field.get("options", [])
+                if options:
+                    initial_value = options[0][1]
+            if initial_value != Select.BLANK:
+                select.value = initial_value
+
         first_input = self.query("Input, Select").first()
         if first_input is not None:
             first_input.focus()
@@ -120,7 +132,11 @@ class StaffActionModal(ModalScreen):
         values: dict[str, object] = {}
         for field in self.fields:
             if field["kind"] == "select":
-                values[field["id"]] = self.query_one(f"#{field['id']}", Select).value
+                select_value = self.query_one(f"#{field['id']}", Select).value
+                if select_value == Select.BLANK:
+                    self.query_one(".modal-feedback", Label).update(f"Select a value for {field['label']}.")
+                    return
+                values[field["id"]] = select_value
             else:
                 values[field["id"]] = self.query_one(f"#{field['id']}", Input).value.strip()
         self.dismiss(values)
