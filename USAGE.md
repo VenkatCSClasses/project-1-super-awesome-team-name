@@ -1,5 +1,5 @@
 # Usage
-First make sure to follow the instructions to install the dependencies and tools as described in the [INSTALL.md](INSTALL.md) file.
+First make sure to follow the instructions to install the dependencies and tools as described in the [INSTALL.md](INSTALLATION.md) file.
 
 Once installed run the project with 
 ```sh

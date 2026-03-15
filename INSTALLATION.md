@@ -13,8 +13,6 @@ Now navigate into the project directory and install the dependencies with the fo
 uv sync
 ```
 
-Installation is complete, navigate to the [Usage Instructions](USAGE.md) to learn how to run and use the project.
-
 ### Optional - Install just for easier command management
 If you want to use just for shorter commands, you can install just with the following command. This is more useful for development, but not necessary to run the project.
 ```sh
@@ -22,3 +20,5 @@ uv tool install rust-just
 uv tool update-shell
 ```
 Restart your shell and you have just avaliable to run the project with shorter commands. 
+
+Installation is complete, navigate to the [Usage Instructions](USAGE.md) to learn how to run and use the project.
