@@ -146,6 +146,7 @@ class LoginScreen(Screen):
                         pass
                     with RegisterForm(id=self._ACTIVE_REGISTER, classes="auth-form"):
                         pass
+
         yield Footer()
 
     def on_mount(self) -> None:

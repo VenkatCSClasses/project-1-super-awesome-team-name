@@ -129,19 +129,87 @@ class StaffActionModal(ModalScreen):
         self.dismiss(None)
 
 
+class StaffFocusBox(Container):
+    can_focus = True
+    BINDINGS = [
+        Binding("left,h", "nav_left", show=False),
+        Binding("right,l", "nav_right", show=False),
+        Binding("up,k", "nav_up", show=False),
+        Binding("down,j", "nav_down", show=False),
+    ]
+
+    def action_nav_left(self) -> None:
+        self.screen.handle_focus_box_nav(self.id or "", "left")
+
+    def action_nav_right(self) -> None:
+        self.screen.handle_focus_box_nav(self.id or "", "right")
+
+    def action_nav_up(self) -> None:
+        self.screen.handle_focus_box_nav(self.id or "", "up")
+
+    def action_nav_down(self) -> None:
+        self.screen.handle_focus_box_nav(self.id or "", "down")
+
+
+class StaffNavTable(DataTable):
+    BINDINGS = [
+        Binding("left,h", "nav_left", show=False),
+        Binding("right,l", "nav_right", show=False),
+        Binding("up,k", "nav_up", show=False),
+        Binding("down,j", "nav_down", show=False),
+    ]
+
+    def action_nav_left(self) -> None:
+        if self.cursor_coordinate.column > 0:
+            self.action_cursor_left()
+            return
+        self.screen.handle_staff_table_boundary(self.id or "", "left")
+
+    def action_nav_right(self) -> None:
+        if self.cursor_coordinate.column < len(self.columns) - 1:
+            self.action_cursor_right()
+            return
+        self.screen.handle_staff_table_boundary(self.id or "", "right")
+
+    def action_nav_up(self) -> None:
+        if self.row_count > 0 and self.cursor_coordinate.row > 0:
+            self.action_cursor_up()
+            return
+        self.screen.handle_staff_table_boundary(self.id or "", "up")
+
+    def action_nav_down(self) -> None:
+        if self.row_count > 0 and self.cursor_coordinate.row < self.row_count - 1:
+            self.action_cursor_down()
+            return
+        self.screen.handle_staff_table_boundary(self.id or "", "down")
+
+
+class StaffSearchInput(Input):
+    BINDINGS = [
+        Binding("up", "nav_up", show=False),
+        Binding("down", "nav_down", show=False),
+    ]
+
+    def action_nav_up(self) -> None:
+        self.screen.focus_current_page_button()
+
+    def action_nav_down(self) -> None:
+        self.screen.focus_user_table()
+
+
 class UserDirectoryBox(Container):
     def compose(self) -> ComposeResult:
         yield Static("USER DIRECTORY", classes="box-top")
         yield Horizontal(
             Static("Search >", classes="staff-search-prefix"),
-            Input(placeholder="username, id, role, or status", id="staff-user-search"),
+            StaffSearchInput(placeholder="username, id, role, or status", id="staff-user-search"),
             id="staff-user-search-row",
         )
         yield Static("", id="staff-user-status")
-        yield DataTable(id="staff-user-table")
+        yield StaffNavTable(id="staff-user-table")
 
 
-class SelectedUserBox(Container):
+class SelectedUserBox(StaffFocusBox):
     def compose(self) -> ComposeResult:
         yield Static("SELECTED USER", classes="box-top")
         yield Static("", id="staff-user-preview")
@@ -151,17 +219,17 @@ class SelectedUserAccountsBox(Container):
     def compose(self) -> ComposeResult:
         yield Static("SELECTED USER ACCOUNTS", classes="box-top")
         yield Static("", id="staff-user-accounts-status")
-        yield DataTable(id="staff-user-accounts-table")
+        yield StaffNavTable(id="staff-user-accounts-table")
 
 
 class SuspiciousAccountsBox(Container):
     def compose(self) -> ComposeResult:
         yield Static("SUSPICIOUS ACTIVITY", classes="box-top")
         yield Static("", id="staff-suspicious-status")
-        yield DataTable(id="staff-suspicious-table")
+        yield StaffNavTable(id="staff-suspicious-table")
 
 
-class SuspiciousPreviewBox(Container):
+class SuspiciousPreviewBox(StaffFocusBox):
     def compose(self) -> ComposeResult:
         yield Static("FLAG DETAILS", classes="box-top")
         yield Static("", id="staff-suspicious-preview")
@@ -224,6 +292,8 @@ class StaffDashboardScreen(Screen):
                     Button("CLOSE ACCOUNT", id="staff-close-account-btn", variant="warning"),
                     Button("FREEZE / UNFREEZE", id="staff-user-freeze-account-btn", variant="warning", disabled=self.permission < 2),
                     Button("REFRESH", id="staff-users-refresh-btn", variant="primary"),
+                    Static("", classes="staff-actions-spacer"),
+                    Button("LOGOUT", id="staff-users-logout-btn", variant="error"),
                     id="staff-users-actions",
                 ),
                 id="users-page",
@@ -237,6 +307,8 @@ class StaffDashboardScreen(Screen):
                 Horizontal(
                     Button("FREEZE / UNFREEZE", id="staff-freeze-account-btn", variant="warning", disabled=self.permission < 2),
                     Button("REFRESH", id="staff-suspicious-refresh-btn", variant="primary"),
+                    Static("", classes="staff-actions-spacer"),
+                    Button("LOGOUT", id="staff-suspicious-logout-btn", variant="error"),
                     id="staff-suspicious-actions",
                 ),
                 id="suspicious-page",
@@ -244,16 +316,12 @@ class StaffDashboardScreen(Screen):
             initial="users-page",
             id="staff-page-switcher",
         )
-        yield Horizontal(
-            Button("LOGOUT", id="staff-logout-btn", variant="error"),
-            id="action-bar",
-        )
         yield Footer()
 
     def _build_user_info_box(self) -> Container:
         color = _permission_color(self.permission)
         access = _permission_label(self.permission)
-        return Container(
+        return StaffFocusBox(
             Static("USER SESSION", classes="box-top"),
             Static(
                 f"  [dim]Username:[/] [bold {color}]@{self.user['username']}[/]\n"
@@ -265,7 +333,7 @@ class StaffDashboardScreen(Screen):
         )
 
     def _build_summary_box(self) -> Container:
-        return Container(
+        return StaffFocusBox(
             Static("OPERATIONS SUMMARY", classes="box-top"),
             Static("", id="staff-summary-content"),
             id="staff-summary-box",
@@ -273,6 +341,131 @@ class StaffDashboardScreen(Screen):
 
     def on_mount(self) -> None:
         self._refresh_dashboard_view()
+        self.call_after_refresh(self.focus_user_table)
+
+    def _page_nav_buttons(self) -> list[Button]:
+        return list(self.query("#staff-page-nav Button"))
+
+    def _users_action_buttons(self) -> list[Button]:
+        return list(self.query("#staff-users-actions Button"))
+
+    def _suspicious_action_buttons(self) -> list[Button]:
+        return list(self.query("#staff-suspicious-actions Button"))
+
+    def _current_action_buttons(self) -> list[Button]:
+        return self._users_action_buttons() if self.current_page == "users-page" else self._suspicious_action_buttons()
+
+    def focus_user_info_box(self) -> None:
+        self.query_one("#user-info-box", StaffFocusBox).focus()
+
+    def focus_summary_box(self) -> None:
+        self.query_one("#staff-summary-box", StaffFocusBox).focus()
+
+    def focus_current_page_button(self) -> None:
+        button_id = "#staff-users-page-btn" if self.current_page == "users-page" else "#staff-suspicious-page-btn"
+        self.query_one(button_id, Button).focus()
+
+    def focus_page_button(self, index: int) -> None:
+        buttons = self._page_nav_buttons()
+        if not buttons:
+            return
+        clamped = max(0, min(index, len(buttons) - 1))
+        buttons[clamped].focus()
+
+    def focus_user_search(self) -> None:
+        self.query_one("#staff-user-search", StaffSearchInput).focus()
+
+    def focus_user_table(self) -> None:
+        self.query_one("#staff-user-table", StaffNavTable).focus()
+
+    def focus_selected_user_box(self) -> None:
+        self.query_one("#staff-selected-user-box", SelectedUserBox).focus()
+
+    def focus_user_accounts_table(self) -> None:
+        self.query_one("#staff-user-accounts-table", StaffNavTable).focus()
+
+    def focus_suspicious_table(self) -> None:
+        self.query_one("#staff-suspicious-table", StaffNavTable).focus()
+
+    def focus_suspicious_preview(self) -> None:
+        self.query_one("#staff-suspicious-preview-box", SuspiciousPreviewBox).focus()
+
+    def focus_current_action_button(self, index: int = 0) -> None:
+        buttons = self._current_action_buttons()
+        if not buttons:
+            return
+        clamped = max(0, min(index, len(buttons) - 1))
+        buttons[clamped].focus()
+
+    def focus_logout_button(self) -> None:
+        buttons = self._current_action_buttons()
+        if buttons:
+            buttons[-1].focus()
+
+    def _focus_users_primary(self) -> None:
+        self.focus_user_search()
+
+    def _focus_suspicious_primary(self) -> None:
+        self.focus_suspicious_table()
+
+    def handle_focus_box_nav(self, box_id: str, direction: str) -> None:
+        if box_id == "user-info-box":
+            if direction == "right":
+                self.focus_summary_box()
+            elif direction == "down":
+                self.focus_current_page_button()
+            return
+
+        if box_id == "staff-summary-box":
+            if direction == "left":
+                self.focus_user_info_box()
+            elif direction == "down":
+                self.focus_current_page_button()
+            return
+
+        if box_id == "staff-selected-user-box":
+            if direction == "left":
+                self.focus_user_table()
+            elif direction == "up":
+                self.focus_current_page_button()
+            elif direction == "down":
+                self.focus_user_accounts_table()
+            return
+
+        if box_id == "staff-suspicious-preview-box":
+            if direction == "left":
+                self.focus_suspicious_table()
+            elif direction == "up":
+                self.focus_current_page_button()
+            elif direction == "down":
+                self.focus_current_action_button(0)
+
+    def handle_staff_table_boundary(self, table_id: str, direction: str) -> None:
+        if table_id == "staff-user-table":
+            if direction == "up":
+                self.focus_user_search()
+            elif direction == "right":
+                self.focus_selected_user_box()
+            elif direction == "down":
+                self.focus_current_action_button(0)
+            return
+
+        if table_id == "staff-user-accounts-table":
+            if direction == "left":
+                self.focus_user_table()
+            elif direction == "up":
+                self.focus_selected_user_box()
+            elif direction == "down":
+                self.focus_current_action_button(0)
+            return
+
+        if table_id == "staff-suspicious-table":
+            if direction == "up":
+                self.focus_current_page_button()
+            elif direction == "right":
+                self.focus_suspicious_preview()
+            elif direction == "down":
+                self.focus_current_action_button(0)
 
     def _handle_session_expired(self) -> None:
         delete_token()
@@ -451,8 +644,6 @@ class StaffDashboardScreen(Screen):
                     f"[bold]Role:[/] {_permission_label(selected['permission'])}",
                     f"[bold]Status:[/] {selected['status']}",
                     f"[bold]Accounts:[/] {len(related_accounts)}",
-                    "",
-                    "[dim]Create accounts, close the selected account, or delete the user if they have no accounts.[/]",
                 ]
             )
         )
@@ -779,17 +970,62 @@ class StaffDashboardScreen(Screen):
             self._toggle_account_freeze()
 
     def on_key(self, event: Key) -> None:
-        if event.key != "space":
+        focused = self.app.focused
+        if event.key == "space":
+            if isinstance(focused, DataTable) and focused.id in {"staff-user-accounts-table", "staff-suspicious-table"}:
+                self.action_toggle_selected_account_freeze()
+                event.stop()
             return
 
-        focused = self.app.focused
-        if isinstance(focused, DataTable) and focused.id in {"staff-user-accounts-table", "staff-suspicious-table"}:
-            self.action_toggle_selected_account_freeze()
-            event.stop()
+        if isinstance(focused, Button):
+            if focused.parent is None:
+                return
+
+            if focused.parent.id == "staff-page-nav":
+                buttons = self._page_nav_buttons()
+                if not buttons:
+                    return
+                index = buttons.index(focused)
+                if event.key in ("left", "h"):
+                    self.focus_page_button(index - 1)
+                    event.stop()
+                elif event.key in ("right", "l"):
+                    self.focus_page_button(index + 1)
+                    event.stop()
+                elif event.key in ("up", "k"):
+                    self.focus_user_info_box() if index == 0 else self.focus_summary_box()
+                    event.stop()
+                elif event.key in ("down", "j"):
+                    if focused.id == "staff-users-page-btn":
+                        self._focus_users_primary()
+                    elif focused.id == "staff-suspicious-page-btn":
+                        self._focus_suspicious_primary()
+                    event.stop()
+                return
+
+            if focused.parent.id in {"staff-users-actions", "staff-suspicious-actions"}:
+                buttons = self._current_action_buttons()
+                if not buttons:
+                    return
+                index = buttons.index(focused)
+                if event.key in ("left", "h"):
+                    self.focus_current_action_button(index - 1)
+                    event.stop()
+                elif event.key in ("right", "l"):
+                    self.focus_current_action_button(index + 1)
+                    event.stop()
+                elif event.key in ("up", "k"):
+                    if self.current_page == "users-page":
+                        self.focus_user_accounts_table()
+                    else:
+                        self.focus_suspicious_table()
+                    event.stop()
+                return
 
     def action_show_users_page(self) -> None:
         self.current_page = "users-page"
         self._sync_page_buttons()
+        self.focus_current_page_button()
 
     def action_show_suspicious_page(self) -> None:
         if self.permission < 2:
@@ -797,6 +1033,7 @@ class StaffDashboardScreen(Screen):
             return
         self.current_page = "suspicious-page"
         self._sync_page_buttons()
+        self.focus_current_page_button()
 
     def action_create_user(self) -> None:
         self._open_create_user_modal()
@@ -861,7 +1098,7 @@ class StaffDashboardScreen(Screen):
             self._toggle_account_freeze()
         elif button_id in {"staff-users-refresh-btn", "staff-suspicious-refresh-btn"}:
             self.action_refresh()
-        elif button_id == "staff-logout-btn":
+        elif button_id in {"staff-users-logout-btn", "staff-suspicious-logout-btn"}:
             self.action_logout()
 
 

@@ -746,12 +746,16 @@ class BankApp(App):
     #staff-suspicious-actions {
         width: 100%;
         height: 4;
-        align: center middle;
+        align: left middle;
     }
 
     #staff-users-actions Button,
     #staff-suspicious-actions Button {
         margin: 0 1;
+    }
+
+    .staff-actions-spacer {
+        width: 1fr;
     }
     """
 
