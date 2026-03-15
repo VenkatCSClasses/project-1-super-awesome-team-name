@@ -114,13 +114,13 @@ class CheckingAccount:
             self.log_transaction(amount, TransactionType.DEPOSIT)
 
 
-    def transfer(self, rec_account: 'CheckingAccount', amount: float) -> None:
+    def transfer(self, amount: float, rec_account: 'CheckingAccount') -> None:
         """
         Transfers a specified amount from this account to a receiving account.
 
         Args:
-            rec_account (Checking_Account): The account receiving the transfer.
             amount (float): The amount to transfer.
+            rec_account (Checking_Account): The account receiving the transfer.
 
         Raises:
             AmountInvalidException: If the transfer amount is non-positive or > 2 decimal places.

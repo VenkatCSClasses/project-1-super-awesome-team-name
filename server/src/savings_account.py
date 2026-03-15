@@ -65,13 +65,13 @@ class SavingsAccount(CheckingAccount):
         self.curr_withdraw_limit -= amount
 
 
-    def transfer(self, rec_account: CheckingAccount, amount: float) -> None:
+    def transfer(self, amount: float, rec_account: CheckingAccount) -> None:
         """
         Transfers a specified amount from this account to a receiving account.
 
         Args:
-            rec_account (CheckingAccount): The account receiving the transfer.
             amount (float): The amount to transfer.
+            rec_account (CheckingAccount): The account receiving the transfer.
 
         Raises:
             AmountInvalidException: If the withdraw amount is non-positive or > 2 decimal places.
@@ -80,9 +80,9 @@ class SavingsAccount(CheckingAccount):
             AccountFrozenException: If the account is frozen.
         """
         if (self.curr_withdraw_limit - amount < 0):
-                        raise WithdrawMaxedException(float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)), self.curr_withdraw_limit, amount)
+            raise WithdrawMaxedException(float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)), self.curr_withdraw_limit, amount)
 
-        super().transfer(rec_account, amount)
+        super().transfer(amount, rec_account)
 
 
     def get_interest_amount(self) -> float:
