@@ -26,7 +26,7 @@ class SavingsAccount(CheckingAccount):
         curr_withdraw_limit (float): Current remaining withdraw limit on the day.
     """
 
-    def __init__(self, account_num: int, bank: "Bank", balance: float = 0.0) -> None:
+    def __init__(self, account_id: int, bank: Bank, balance: float = 0.0, transaction_needed: bool = True, next_transaction_id: int = 1) -> None:
         """
         Initialize the SavingsAccount with the account number and optional balance.
         Also initalizes the is_frozen to false, transactions to an empty list, curr_withdraw_total to 0.0.
@@ -37,7 +37,7 @@ class SavingsAccount(CheckingAccount):
             balance (float, optional): The initial balance of the savings account.
                 Defaults to 0.0.
         """
-        super().__init__(account_num, bank, balance)
+        super().__init__(account_id, bank, balance, transaction_needed, next_transaction_id)
         self.curr_withdraw_limit = float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
 
 
@@ -65,13 +65,13 @@ class SavingsAccount(CheckingAccount):
         self.curr_withdraw_limit -= amount
 
 
-    def transfer(self, rec_account: CheckingAccount, amount: float) -> None:
+    def transfer(self, amount: float, rec_account: CheckingAccount) -> None:
         """
         Transfers a specified amount from this account to a receiving account.
 
         Args:
-            rec_account (CheckingAccount): The account receiving the transfer.
             amount (float): The amount to transfer.
+            rec_account (CheckingAccount): The account receiving the transfer.
 
         Raises:
             AmountInvalidException: If the withdraw amount is non-positive or > 2 decimal places.
@@ -80,9 +80,9 @@ class SavingsAccount(CheckingAccount):
             AccountFrozenException: If the account is frozen.
         """
         if (self.curr_withdraw_limit - amount < 0):
-                        raise WithdrawMaxedException(float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)), self.curr_withdraw_limit, amount)
+            raise WithdrawMaxedException(float(os.getenv("MAX_WITHDRAW_LIMIT", 10000)), self.curr_withdraw_limit, amount)
 
-        super().transfer(rec_account, amount)
+        super().transfer(amount, rec_account)
 
 
     def get_interest_amount(self) -> float:
@@ -112,6 +112,10 @@ class SavingsAccount(CheckingAccount):
             float: The max withdraw limit.
         """
         return float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
+
+    def get_account_type(self) -> str:
+        """Returns the account type label used by the API and UI."""
+        return "savings"
 
 
     def compound_interest(self) -> None:

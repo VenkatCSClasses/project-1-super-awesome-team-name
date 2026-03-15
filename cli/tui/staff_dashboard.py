@@ -106,6 +106,18 @@ class StaffActionModal(ModalScreen):
         yield Vertical(*children, classes="modal-container")
 
     def on_mount(self) -> None:
+        for field in self.fields:
+            if field["kind"] != "select":
+                continue
+            select = self.query_one(f"#{field['id']}", Select)
+            initial_value = field.get("value", Select.BLANK)
+            if initial_value == Select.BLANK:
+                options = field.get("options", [])
+                if options:
+                    initial_value = options[0][1]
+            if initial_value != Select.BLANK:
+                select.value = initial_value
+
         first_input = self.query("Input, Select").first()
         if first_input is not None:
             first_input.focus()
@@ -120,7 +132,11 @@ class StaffActionModal(ModalScreen):
         values: dict[str, object] = {}
         for field in self.fields:
             if field["kind"] == "select":
-                values[field["id"]] = self.query_one(f"#{field['id']}", Select).value
+                select_value = self.query_one(f"#{field['id']}", Select).value
+                if select_value == Select.BLANK:
+                    self.query_one(".modal-feedback", Label).update(f"Select a value for {field['label']}.")
+                    return
+                values[field["id"]] = select_value
             else:
                 values[field["id"]] = self.query_one(f"#{field['id']}", Input).value.strip()
         self.dismiss(values)
@@ -699,7 +715,7 @@ class StaffDashboardScreen(Screen):
                 f"ACC-{account['account_id']}",
                 f"@{account['owner']}",
                 f"${account['balance']:,.2f}",
-                account["status"],
+                "ACTIVE" if not account["is_frozen"] else "FROZEN",
                 account["last_activity"],
             )
             if account["account_id"] == self.selected_suspicious_account_id:
@@ -785,8 +801,8 @@ class StaffDashboardScreen(Screen):
                 "CREATE USER",
                 "Create a new customer, teller, or admin user.",
                 [
-                    {"id": "new-username", "label": "Username", "kind": "input", "placeholder": "new.user"},
-                    {"id": "new-password", "label": "Password", "kind": "input", "placeholder": "temporary password", "password": True},
+                    {"id": "new-username", "label": "Username", "kind": "input", "placeholder": "username"},
+                    {"id": "new-password", "label": "Password", "kind": "input", "placeholder": "password", "password": True},
                     {
                         "id": "new-permission",
                         "label": "Permission",

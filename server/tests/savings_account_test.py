@@ -29,6 +29,8 @@ class TestSavingsAccount:
         assert acc1.get_interest_amount() == float(os.getenv("DAILY_INTEREST", 0.0005))
         assert acc1.get_max_withdraw_limit() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
         assert acc1.get_max_withdraw_limit() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
+        assert acc0.get_account_type() == "savings"
+        assert acc1.get_account_type() == "savings"
     
 
     def test_withdraw_limit(self):

@@ -176,7 +176,7 @@ async def transfer(form_data: dict, current_user: dict = Depends(verify_token)):
     if from_account.is_frozen() or to_account.is_frozen():
         raise HTTPException(status_code=403, detail="Cannot transfer from or to a frozen account")
     
-    from_account.transfer(to_account, form_data["amount"])
+    from_account.transfer(form_data["amount"], to_account)
 
     return {
         "message": f"Transfer from account {form_data['from_account_id']} to account {form_data['to_account_id']} successful!",
