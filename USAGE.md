@@ -53,7 +53,24 @@ Now if I go to the customer that owns account 1, and check the balance of accoun
 You can now log out by hitting the log out button in the buttom right, this will take you back to the login page.
 You can hit ESC or CTRL+C to exit, terminating the program.
 
-## Staff Dashboard
-If you instead log in as a staff account, you will be met with the staff dashboard.
+## Staff Dashboard (Admin) 
+If you instead log in as a staff account, you will be met with the staff dashboard. This is available to both teller and admin accounts, but some functionality is only available to admin accounts.
 ![Staff Dashboard](images/staff_dashboard.png)
 The default credentials for the root account are username: ```root``` and password: ```root```. This account has full administrative privileges and is automatically created when the database is initialized. 
+
+You can now select any user in the database to view their accounts where you can perform staff actions such as freezing or unfreezing and closing accounts. You can also view the total balance of the bank in the top right, but only if you have admin privileges.
+Simply click on the account to select it and hit the respective button on the bottom to perform the action.
+![Demo Account Frozen](images/demo_account_frozen.png)
+You can also view suspicious activity, by hitting the "SUSPICIOUS ACTIVITY" tab. 
+Suspicious activity is determined by any account that has withdrawn more than ```$10,000``` at once. 
+If we unfreeze the demo account and make a withdraw of ```$10,000```, we can see that the account is flagged for suspicious activity and shows up in the suspicious activity tab.
+![Suspicious Activity](images/sus_activity.png)
+We can then freeze the account, which will stop deposits and withdraws from being made on the account until it is unfrozen.
+
+Now going back to that acount and trying to deposit, withdraw or transfer, will give this error message, since the account is frozen.
+![cannot deposit into a frozen account](images/frozen_deposit.png)
+
+From the staff dashboard, you can also create new user accounts by hitting the "CREATE USER" button in the bottom left.
+We will create a teller account with username: ```teller``` and password: ```teller```, choosing the teller permission level.
+![Create Teller](images/create_teller.png)
+Now we can log out and log back in with the teller account and see that we have access to the staff dashboard.

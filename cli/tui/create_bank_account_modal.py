@@ -45,9 +45,9 @@ class CreateBankAccountModal(ModalScreen):
         """Validate initial deposit amount."""
         try:
             amount = float(value)
-            if amount > 0:
+            if amount >= 0:
                 return True, ""
-            return False, "Amount must be greater than zero"
+            return False, "Amount must be greater than or equal to zero"
         except ValueError:
             return False, "Amount must be a valid number"
 
