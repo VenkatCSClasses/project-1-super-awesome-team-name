@@ -15,5 +15,5 @@ def server_running() -> bool:
             return True
         else:
             print(f"Server responded with status code {response.status_code}.")
-    except httpx.RequestException as e:
+    except httpx.HTTPError as e:
         return False
