@@ -27,10 +27,10 @@ class CreateBankAccountModal(ModalScreen):
             ),
             Label("Initial deposit:", classes="modal-hint"),
             Input(placeholder="$0.00", id="initial-deposit-input"),
-            Label("Choose the account type to create.", id="create-account-feedback", classes="modal-feedback"),
+            Label("Enter an amount greater than $0.00", id="create-account-feedback", classes="modal-feedback"),
             Horizontal(
                 Button("Cancel", id="create-account-cancel", variant="default"),
-                Button("Create", id="create-account-submit", variant="success"),
+                Button("Create", id="create-account-submit", variant="success", disabled=True),
                 id="modal-actions",
             ),
             classes="modal-container",
@@ -41,18 +41,71 @@ class CreateBankAccountModal(ModalScreen):
             return "SAVINGS"
         return "CHECKING"
 
+    def amount_validator(self, value: str) -> tuple[bool, str]:
+        """Validate initial deposit amount."""
+        try:
+            amount = float(value)
+            if amount > 0:
+                return True, ""
+            return False, "Amount must be greater than zero"
+        except ValueError:
+            return False, "Amount must be a valid number"
+
+    @staticmethod
+    def _response_error_message(response: httpx.Response, fallback: str) -> str:
+        """Extract a readable error message from an API response."""
+        try:
+            payload = response.json()
+        except ValueError:
+            return fallback
+        if isinstance(payload, dict):
+            detail = payload.get("detail")
+            if isinstance(detail, str) and detail:
+                return detail
+        return fallback
+
+    def update_submit_state(self) -> None:
+        """Enable submit only when the initial deposit is valid."""
+        submit = self.query_one("#create-account-submit", Button)
+        feedback = self.query_one("#create-account-feedback", Label)
+        valid, message = self.amount_validator(self.query_one("#initial-deposit-input", Input).value.strip())
+        if valid:
+            feedback.update("[green]Amount Valid[/]")
+            submit.disabled = False
+        else:
+            feedback.update(f"[red]{message}[/]")
+            submit.disabled = True
+
+    def on_mount(self) -> None:
+        self.update_submit_state()
+        self.query_one("#initial-deposit-input", Input).focus()
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        if event.input.id != "initial-deposit-input":
+            return
+        self.update_submit_state()
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "create-account-cancel":
             self.dismiss(None)
             return
 
         if event.button.id == "create-account-submit":
+            raw_initial_deposit = self.query_one("#initial-deposit-input", Input).value.strip()
+            valid, _ = self.amount_validator(raw_initial_deposit)
+            if not valid:
+                self.update_submit_state()
+                return
             account_type = self.get_selected_account_type()
-            result = self.create_account(account_type, 0.00)
+            initial_deposit = float(raw_initial_deposit)
+            result = self.create_account(account_type, initial_deposit)
             if result is None:
                 return
-            self.app.notify(f"Account created: {account_type}", title="[ NEW ACCOUNT ]")
-            self.dismiss({"account_type": account_type, "status": "created"})
+            self.app.notify(
+                f"Account created: {account_type} with ${initial_deposit:,.2f}",
+                title="[ NEW ACCOUNT ]",
+            )
+            self.dismiss({"account_type": account_type, "status": "created", "initial_deposit": initial_deposit})
 
     def action_close_modal(self) -> None:
         self.dismiss(None)
@@ -65,7 +118,7 @@ class CreateBankAccountModal(ModalScreen):
         from login_screen import LoginScreen
         self.app.push_screen(LoginScreen())
 
-    def create_account(self, account_type: str, inital_balance: float) -> None:
+    def create_account(self, account_type: str, initial_balance: float) -> dict | None:
         """Make API call to create account and handle response."""
         token = load_token()
         if not token:
@@ -77,7 +130,7 @@ class CreateBankAccountModal(ModalScreen):
             try:
                 payload = {
                     "bank_account_type": account_type,
-                    "initial_deposit": 0.00,
+                    "initial_deposit": initial_balance,
                 }
                 response = client.post("/bank/create_bank_account", headers=headers, json=payload)
                 if response.status_code in (401, 403):
@@ -85,7 +138,12 @@ class CreateBankAccountModal(ModalScreen):
                     return None
                 if response.status_code == 200:
                     return response.json()
-                print(f"Failed to create account: {response.status_code}")
+                self.query_one("#create-account-feedback", Label).update(
+                    f"[red]{self._response_error_message(response, 'Unable to create account')}[/]"
+                )
+                return None
             except httpx.RequestError as e:
+                self.query_one("#create-account-feedback", Label).update("[red]Unable to reach the server[/]")
                 print(f"Error connecting to server: {e}")
+                return None
         raise Exception("Unable to create an account on the server")

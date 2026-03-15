@@ -25,7 +25,7 @@ class CheckingAccount:
     """
 
 
-    def __init__(self, account_id: int, bank: "Bank", balance: float = 0.0) -> None:
+    def __init__(self, account_id: int, bank: Bank, balance: float = 0.0, transaction_needed: bool = True, next_transaction_id: int = 1) -> None:
         """
         Initialize the CheckingAccount with the params account number and optional balance.
         Also initalizes the attributes is_frozen to false and transactions to an empty list of transactions.
@@ -35,6 +35,10 @@ class CheckingAccount:
             bank (Bank): The bank the account belongs to.
             balance (float, optional): The initial balance of the checking account.
                 Defaults to 0.0.
+            transaction_needed (bool, optional): Whether or not to log the transaction of creating an account.
+                Defaults to True.
+            next_transaction_id (int, optional): What the next transaction ID should be
+                Defaults to 1.
 
         Raises:
             AmountInvalidException: If the inputted balance is invalid.
@@ -47,10 +51,11 @@ class CheckingAccount:
         self.balance: float = balance
         self.frozen: bool = False
         self.transactions: dict[int, Transaction] = {}
-        self.next_transaction_id = 1
+        self.next_transaction_id = next_transaction_id
         self.bank = bank
 
-        self.log_transaction(balance, TransactionType.NEW_ACCOUNT)
+        if transaction_needed:
+            self.log_transaction(balance, TransactionType.NEW_ACCOUNT)
 
 
     def withdraw(self, amount: float, is_transfer: bool = False, transfer_account_id: int | None = None) -> None:
@@ -109,20 +114,20 @@ class CheckingAccount:
             self.log_transaction(amount, TransactionType.DEPOSIT)
 
 
-    def transfer(self, amount: float, rec_account: 'CheckingAccount') -> None:
+    def transfer(self, rec_account: 'CheckingAccount', amount: float) -> None:
         """
         Transfers a specified amount from this account to a receiving account.
 
         Args:
-            amount (float): The amount to transfer.
             rec_account (Checking_Account): The account receiving the transfer.
+            amount (float): The amount to transfer.
 
         Raises:
             AmountInvalidException: If the transfer amount is non-positive or > 2 decimal places.
             InsufficientFundsException: If the withdraw amount exceeds the balance.
             AccountFrozenException: If the account is frozen.
         """
-        self.withdraw(amount, True, rec_account)    
+        self.withdraw(amount, True, rec_account.get_account_id())
         rec_account.deposit(amount, True, self.account_id) 
 
 
@@ -232,47 +237,14 @@ class CheckingAccount:
         """
         return self.transactions
 
-
-    def get_transaction_str(self, transaction_num: int, is_relative: bool = False) -> str:
+    def get_next_transaction_id(self) -> int:
         """
-        Retrieves a specific transaction by its number as a human-readable string.
-
-        Args:
-            transaction_num (int): The transaction number to retrieve.
-            is_relative (bool, optional): Whether or not the transaction ID is relative (account) or absolute (bank).
-                Defaults to False.
-
-        Raises:
-            IndexError: If transaction_num is negative.
-            KeyError: Transaction number not found in list of transactions.
+        Returns the next transaction ID associated with this account.
 
         Returns:
-            str: The human-readable string showing information about the transaction.
+            int: The next transaction ID.
         """
-        if (transaction_num < 0):
-            raise IndexError("Transaction number must be non-negative.")
-        
-        # If is_relative = false, search by absolute id. If is_relative = true, search by relative id.
-        if (is_relative):
-            for transaction in self.transactions.values():
-                if (transaction.get_relative_id() == transaction_num):
-                    return str(transaction)
-        else:
-            for transaction in self.transactions.values():
-                if (transaction.get_absolute_id() == transaction_num):
-                    return str(transaction)
-                
-        raise KeyError(f"Transaction with number {transaction_num} not found in list of transactions for {self.account_id}.")
-
-    def get_all_transaction_str(self) -> str:
-        """
-        Retrieves all transactions as one human-readable string.
-
-        Returns:
-            str: The human-readable string showing information about all transactions, with a new line between each one.
-        """
-        return '\n'.join(str(transaction) for transaction in self.transactions.values())
-
+        return self.next_transaction_id
 
     @staticmethod
     def _is_amount_valid(amount: float) -> bool:
@@ -300,3 +272,13 @@ class CheckingAccount:
             str: The type of the account.
         """
         return "checking"
+    
+    def add_transaction(self, transaction: Transaction):
+        """
+        Adds the transaction to the transactions dict of the account.
+
+        Args:
+            transaction (Transaction): Transaction to add.
+        """
+        self.transactions[transaction.get_absolute_id] = transaction
+    

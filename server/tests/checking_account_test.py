@@ -162,38 +162,6 @@ class TestCheckingAccount:
         assert history.get(2).get_post_balance() == 150
         assert history.get(3).get_post_balance() == 120
 
-
-    def test_get_transaction_str(self):
-        """Test that a transaction is returned correctly as a human readable string."""
-        bank = Bank()
-        account = CheckingAccount(1, bank, balance=100)
-        account.deposit(50)  # Transaction ID 2
-        account.withdraw(30)  # Transaction ID 3
-        
-        trans1 = account.get_transaction(1, True)
-        trans2 = account.get_transaction(2, True)
-
-        assert str(trans1) == account.get_transaction_str(1, True)
-        assert str(trans2) == account.get_transaction_str(2, True)
-
-
-    def test_get_all_transaction_str(self):
-        """Test that the transaction history is returned correctly as a human-readable string."""
-        bank = Bank()
-        account = CheckingAccount(1, bank, balance=100)
-        account.deposit(50)  # Transaction ID 2
-
-        trans1 = account.get_transaction(1, True)
-        trans2 = account.get_transaction(2, True)
-
-        assert (str(trans1) + '\n' + str(trans2)) == account.get_all_transaction_str()
-
-        account.withdraw(30)  # Transaction ID 3
-        trans3 = account.get_transaction(3, True)
-
-        assert (str(trans1) + '\n' + str(trans2) + '\n' + str(trans3)) == account.get_all_transaction_str()
-
-
     def test_is_amount_valid(self):
         """Tests to see if an amount is valid (non-negative and 2 or less decimal places)"""
         assert CheckingAccount._is_amount_valid(10) 

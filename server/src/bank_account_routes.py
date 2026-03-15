@@ -2,7 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from server_utils import verify_token
 from dotenv import load_dotenv
 from app_state import bank
+from transaction_type import TransactionType
 load_dotenv()
+
+_SUSPICIOUS_TRANSACTION_TYPES = {
+    TransactionType.DEPOSIT,
+    TransactionType.WITHDRAW,
+    TransactionType.TRANSFER_DEPOSIT,
+    TransactionType.TRANSFER_WITHDRAW,
+}
 
 # Everything starts at "/bank" for these routes, 
 # so the full path for creating a bank account would be "/bank/create_bank_account"
@@ -57,17 +65,6 @@ async def view_bank_account(form_data: dict, current_user: dict = Depends(verify
     return {"message": "Bank account details displayed successfully!"}
 
 
-@bank_routes.get("/delete_bank_account", response_model=dict)
-async def delete_bank_account(current_user: dict = Depends(verify_token)):
-    """Delete a bank account"""
-    # Only allow users with permission level 1 (teller) or higher to delete bank accounts
-    if current_user.get("permission", -1) < 0:
-        raise HTTPException(status_code=403, detail="Must be logged in to delete a bank account")
-    
-    # Logic to delete a bank account would go here
-    return {"message": "Bank account deleted successfully!"}
-
-
 @bank_routes.get("/get_all_bank_accounts", response_model=dict)
 async def view_all_bank_accounts(current_user: dict = Depends(verify_token)):
     """View all bank accounts within the bank. 
@@ -90,6 +87,20 @@ async def view_all_bank_accounts(current_user: dict = Depends(verify_token)):
             "is_frozen": account.is_frozen()
         })
     return {"message": "All bank accounts displayed successfully!", "accounts": accounts}
+
+
+@bank_routes.get("/get_all_bank_account_ids", response_model=dict)
+async def get_all_bank_account_ids(current_user: dict = Depends(verify_token)):
+    """Return all account ids so users can choose transfer destinations."""
+    if current_user.get("permission", -1) < 0:
+        raise HTTPException(status_code=403, detail="Must be logged in to view bank account ids")
+
+    user = bank.get_user_by_id(current_user["user_id"])
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    account_ids = [account.get_account_id() for account in bank.get_all_accounts().values()]
+    return {"message": "All bank account ids displayed successfully!", "account_ids": account_ids}
 
 
 @bank_routes.post("/deposit", response_model=dict)
@@ -155,12 +166,14 @@ async def transfer(form_data: dict, current_user: dict = Depends(verify_token)):
     accounts = bank.get_accounts_for_user(user)
     if form_data["from_account_id"] not in [account.get_account_id() for account in accounts.values()] and current_user.get("permission", -1) == 0:
         raise HTTPException(status_code=403, detail="Customers can only transfer from their own accounts")
+    if form_data["from_account_id"] == form_data["to_account_id"]:
+        raise HTTPException(status_code=400, detail="Cannot transfer to the same account")
     
     from_account = bank.get_account_by_id(form_data["from_account_id"])
     to_account = bank.get_account_by_id(form_data["to_account_id"])
     if from_account is None or to_account is None:
         raise HTTPException(status_code=404, detail="One or both accounts not found")
-    if from_account.is_frozen() or to_account.is_frozen:
+    if from_account.is_frozen() or to_account.is_frozen():
         raise HTTPException(status_code=403, detail="Cannot transfer from or to a frozen account")
     
     from_account.transfer(to_account, form_data["amount"])
@@ -177,98 +190,36 @@ async def view_transaction_history(account_id: int, current_user: dict = Depends
     if current_user.get("permission", -1) < 0:
         raise HTTPException(status_code=403, detail="Must be logged in to view transaction history")
     
+    if current_user.get("permission", -1) == 0:
+        # If the user is a customer, only allow them to view their own accounts
+        user = bank.get_user_by_id(current_user["user_id"])
+        accounts = bank.get_accounts_for_user(user)
+        if account_id not in [account.get_account_id() for account in accounts.values()]:
+            raise HTTPException(status_code=403, detail="Customers can only view transaction history for their own accounts")
+    # If the user is a teller or admin, they can view transaction history for any account
+    account = bank.get_account_by_id(account_id)
+    if account is None:
+        raise HTTPException(status_code=404, detail="Account not found")
 
-    # if current_user.get("permission", -1) == 0:
-    #     # If the user is a customer, only allow them to view their own accounts
-    #     user = bank.get_user_by_id(current_user["user_id"])
-    #     accounts = bank.get_accounts_for_user(user)
-    #     if account_id not in [account.get_account_id() for account in accounts.values()]:
-    #         raise HTTPException(status_code=403, detail="Customers can only view transaction history for their own accounts")
-    # # If the user is a teller or admin, they can view transaction history for any account
-    # account = bank.get_account_by_id(account_id)
-    # if account is None:
-    #     raise HTTPException(status_code=404, detail="Account not found")
+    transactions = []
+    for transaction in account.get_all_transactions().values():
+        transactions.append(
+            {
+                "absolute_transaction_id": transaction.get_absolute_id(),
+                "relative_transaction_id": transaction.get_relative_id(),
+                "account_id": transaction.get_account_id(),
+                "amount": transaction.get_amount(),
+                "balance": transaction.get_post_balance(),
+                "type": transaction.get_type().name,
+                "description": transaction.get_description(),
+                "transfer_account_id": transaction.get_transfer_account_id(),
+                "datetime_str": transaction.get_time().isoformat(),
+            }
+        )
 
-    # transactions = account.get_all_transactions()
-
-    mock_transaction_history = [
-        {
-            "id": 1,
-            "amount": 100.00,
-            "date": "2024-01-01",
-            "time": "12:00",
-            "description": "Deposited $100.00",
-            "type": "DEPOSIT",
-            "balance": 10000
-        },
-        {
-            "id": 2,
-            "amount": -20.00,
-            "date": "2024-01-02",
-            "time": "12:00",
-            "description": "Withdrew $20.00",
-            "type": "WITHDRAWAL",
-            "balance": 10000
-        },
-        {
-            "id": 3,
-            "amount": -50.00,
-            "time": "12:00",
-            "date": "2024-01-03",
-            "description": "Transferred $50.00 to account 123456",
-            "type": "WITHDRAWAL",
-            "balance": 10000
-        }
-    ]
     return {
         "message": f"Transaction history for account {account_id} displayed successfully!",
-        "transactions": mock_transaction_history
-    }
-
-@bank_routes.get("/view_my_transaction_history/", response_model=dict)
-async def view_my_transaction_history(current_user: dict = Depends(verify_token)):
-    """View the transaction history for all accounts belonging to a specific user"""
-    # Only allow users with permission level 1 (teller) or higher to view user transaction history
-    if current_user.get("permission", -1) < 0:
-        raise HTTPException(status_code=403, detail="Must be a teller or higher to view user transaction history")
-    
-    # Logic to view user transaction history would go here
-
-    mock_transaction_history = [
-        {
-            "id": 1,
-            "amount": 100.00,
-            "date": "2024-01-01",
-            "time": "12:00",
-            "description": "Deposited $100.00",
-            "type": "DEPOSIT",
-            "balance": 10000,
-            "account_id": 123456
-        },
-        {
-            "id": 2,
-            "amount": -20.00,
-            "date": "2024-01-02",
-            "time": "12:00",
-            "description": "Withdrew $20.00",
-            "type": "WITHDRAWAL",
-            "balance": 10000,
-            "account_id": 123456
-        },
-        {
-            "id": 3,
-            "amount": -50.00,
-            "time": "12:00",
-            "date": "2024-01-03",
-            "description": "Transferred $50.00 to account 123456",
-            "type": "WITHDRAWAL",
-            "balance": 10000,
-            "account_id": 654321
-        }
-    ]
-    return {
-        "message": "Transaction history displayed successfully!",
-        "transactions": mock_transaction_history
+        "transactions": transactions
     }
 
 
@@ -279,11 +230,20 @@ async def close_bank_account(account_id: int, current_user: dict = Depends(verif
     if current_user.get("permission", -1) < 1:
         raise HTTPException(status_code=403, detail="Must be a teller or higher to close a bank account")
     
-    # Logic to close a bank account would go here
-    try:
-        bank.get_account_by_id(account_id).close_account()
-    except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    account = bank.get_account_by_id(account_id)
+    if account is None:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    owner = None
+    for user in bank.get_all_users().values():
+        if account_id in user.get_owned_accounts():
+            owner = user
+            break
+    if owner is None:
+        raise HTTPException(status_code=404, detail="Account owner not found")
+
+    owner.get_owned_accounts().pop(account_id, None)
+    bank.remove_account(account_id)
     return {"message": f"Bank account {account_id} closed successfully!"}
 
 
@@ -316,10 +276,42 @@ async def get_suspicious_accounts(current_user: dict = Depends(verify_token)):
     if current_user.get("permission", -1) < 2:
         raise HTTPException(status_code=403, detail="Must be an admin to view suspicious accounts")
 
-    sussy_accounts = bank.get_suspicious_accounts()
+    suspicious_accounts = []
+    for account in bank.get_all_accounts().values():
+        matching_transaction = None
+        for transaction in account.get_all_transactions().values():
+            if transaction.get_type() not in _SUSPICIOUS_TRANSACTION_TYPES:
+                continue
+            if abs(float(transaction.get_amount())) >= 10000:
+                matching_transaction = transaction
+                break
+        if matching_transaction is None:
+            continue
+
+        owner = None
+        for user in bank.get_all_users().values():
+            if account.get_account_id() in user.get_owned_accounts():
+                owner = user
+                break
+
+        transactions = list(account.get_all_transactions().values())
+        suspicious_accounts.append(
+            {
+                "account_id": account.get_account_id(),
+                "user_id": owner.get_id() if owner is not None else None,
+                "owner": owner.get_name() if owner is not None else "unknown",
+                "account_type": account.get_account_type().upper(),
+                "balance": account.get_balance(),
+                "status": "FROZEN" if account.is_frozen() else "ACTIVE",
+                "is_frozen": account.is_frozen(),
+                "is_suspicious": True,
+                "suspicious_reason": matching_transaction.get_description(),
+                "last_activity": max(transactions, key=lambda tx: tx.get_time()).get_time().strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        )
     return {
         "message": "Suspicious accounts retrieved successfully!",
-        "suspicious_accounts": sussy_accounts
+        "suspicious_accounts": suspicious_accounts
     }
 
 

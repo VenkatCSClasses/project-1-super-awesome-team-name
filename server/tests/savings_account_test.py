@@ -4,6 +4,7 @@ sys.path.append("./server/src")
 from savings_account import SavingsAccount
 from bank import Bank
 from exceptions.withdraw_maxed_exception import WithdrawMaxedException
+from transaction_type import TransactionType
 
 import pytest
 import os
@@ -24,8 +25,8 @@ class TestSavingsAccount:
         assert acc0.get_account_id() == 0
         assert acc1.get_account_id() == 1
 
-        assert acc0.get_interest_amount() == float(os.getenv("DAILY_INTEREST", 0.05))
-        assert acc1.get_interest_amount() == float(os.getenv("DAILY_INTEREST", 0.05))
+        assert acc0.get_interest_amount() == float(os.getenv("DAILY_INTEREST", 0.0005))
+        assert acc1.get_interest_amount() == float(os.getenv("DAILY_INTEREST", 0.0005))
         assert acc1.get_max_withdraw_limit() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
         assert acc1.get_max_withdraw_limit() == float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
     
@@ -76,8 +77,8 @@ class TestSavingsAccount:
         acc0.compound_interest()
         acc1.compound_interest()
 
-        amount0 = round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * 100, 2)
-        amount1 = round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * 500, 2)
+        amount0 = round((1 + float(os.getenv("DAILY_INTEREST", 0.0005))) * 100, 2)
+        amount1 = round((1 + float(os.getenv("DAILY_INTEREST", 0.0005))) * 500, 2)
 
         assert acc0.check_balance() == amount0
         assert acc1.check_balance() == amount1
@@ -85,18 +86,21 @@ class TestSavingsAccount:
         acc0.compound_interest()
         acc1.compound_interest()
 
-        amount2 = round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * amount0, 2)
-        amount3 = round((1 + float(os.getenv("DAILY_INTEREST", 0.05))) * amount1, 2)
+        amount2 = round((1 + float(os.getenv("DAILY_INTEREST", 0.0005))) * amount0, 2)
+        amount3 = round((1 + float(os.getenv("DAILY_INTEREST", 0.0005))) * amount1, 2)
  
         assert acc0.check_balance() == amount2
         assert acc1.check_balance() == amount3
 
-        assert amount0 - 100 == acc0.get_transaction(1).get_amount()
-        assert amount1 - 500 == acc1.get_transaction(2).get_amount()
-        assert amount2 - amount0 == acc0.get_transaction(3).get_amount()
-        assert amount3 - amount1 == acc1.get_transaction(4).get_amount()
+        assert amount0 - 100 == acc0.get_transaction(3).get_amount()
+        assert amount1 - 500 == acc1.get_transaction(4).get_amount()
+        assert amount2 - amount0 == acc0.get_transaction(5).get_amount()
+        assert amount3 - amount1 == acc1.get_transaction(6).get_amount()
 
-
+        assert TransactionType.INTEREST == acc0.get_transaction(3).get_type()
+        assert TransactionType.INTEREST == acc1.get_transaction(4).get_type()
+        assert TransactionType.INTEREST == acc0.get_transaction(5).get_type()
+        assert TransactionType.INTEREST == acc1.get_transaction(6).get_type()
 
 
     def test_reset_withdraw_limit(self):

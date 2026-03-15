@@ -13,6 +13,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "server" / "src"))
 from textual.app import App
 from textual.binding import Binding
 from dashboard import DashboardScreen
+from staff_dashboard import get_dashboard_screen_for_permission
+import httpx
 
 from token_utils import load_token, get_permissions
 
@@ -239,7 +241,8 @@ class BankApp(App):
         max-height: 100%;
     }
 
-    DashboardScreen {
+    DashboardScreen,
+    StaffDashboardScreen {
         layout: vertical;
     }
 
@@ -422,7 +425,6 @@ class BankApp(App):
         margin-bottom: 1;
         background: #0d0d0d;
         align: center middle;
-        border: solid #00ff88;
     }
 
     #action-bar Button {
@@ -574,6 +576,187 @@ class BankApp(App):
         color: #8a8a8a;
         margin-top: 1;
     }
+
+    #staff-summary-box,
+    #managed-accounts-box,
+    #managed-users-box,
+    #managed-account-preview-box,
+    #managed-user-preview-box,
+    #staff-user-directory-box,
+    #staff-selected-user-box,
+    #staff-user-accounts-box,
+    #staff-suspicious-box,
+    #staff-suspicious-preview-box {
+        width: 100%;
+        border: solid #00ff88;
+        padding: 0 1;
+    }
+
+    #staff-summary-box {
+        height: 1fr;
+    }
+
+    #staff-summary-content,
+    #managed-account-preview,
+    #managed-user-preview {
+        width: 100%;
+        padding: 1 0;
+        color: #cccccc;
+    }
+
+    #staff-top-row {
+        width: 100%;
+        height: 9;
+        layout: horizontal;
+        padding: 0 1;
+    }
+
+    #staff-top-row #user-info-box {
+        width: 45;
+        margin-right: 1;
+        margin-bottom: 0;
+    }
+
+    #managed-accounts-box {
+        height: 1fr;
+        margin-bottom: 1;
+    }
+
+    #managed-users-box {
+        height: 14;
+        margin: 0 1 1 1;
+    }
+
+    #managed-accounts-table,
+    #managed-users-table {
+        width: 100%;
+        height: 1fr;
+        background: #0a0a0a;
+        margin: 0 1;
+    }
+
+    #staff-users-shell {
+        width: 100%;
+        height: 16;
+    }
+
+    #staff-detail-row {
+        width: 100%;
+        height: 14;
+    }
+
+    #managed-account-preview-box {
+        width: 1fr;
+        margin-right: 1;
+    }
+
+    #managed-user-preview-box {
+        width: 1fr;
+    }
+
+    #staff-page-nav {
+        width: 100%;
+        height: 3;
+        padding: 0 1;
+        align: left middle;
+    }
+
+    #staff-page-nav Button {
+        margin-right: 1;
+    }
+
+    #staff-page-switcher {
+        width: 100%;
+        height: 1fr;
+    }
+
+    #users-page,
+    #suspicious-page {
+        width: 100%;
+        height: 1fr;
+        padding: 0 1;
+    }
+
+    #staff-users-layout,
+    #staff-suspicious-layout {
+        width: 100%;
+        height: 1fr;
+        margin-bottom: 1;
+    }
+
+    #staff-user-directory-box,
+    #staff-suspicious-box {
+        width: 60%;
+        height: 100%;
+        margin-right: 1;
+    }
+
+    #staff-user-right-rail,
+    #staff-suspicious-preview-box {
+        width: 40%;
+        height: 100%;
+    }
+
+    #staff-selected-user-box {
+        width: 100%;
+        height: 12;
+        margin-bottom: 1;
+    }
+
+    #staff-user-accounts-box {
+        width: 100%;
+        height: 1fr;
+    }
+
+    #staff-user-search-row {
+        width: 100%;
+        height: 3;
+        align: left middle;
+        margin-bottom: 1;
+    }
+
+    .staff-search-prefix {
+        width: 10;
+        color: #00ff88;
+        text-style: bold;
+    }
+
+    #staff-user-search {
+        width: 1fr;
+    }
+
+    #staff-user-table,
+    #staff-user-accounts-table,
+    #staff-suspicious-table {
+        width: 100%;
+        height: 1fr;
+        background: #0a0a0a;
+        margin: 0 1;
+    }
+
+    #staff-user-preview,
+    #staff-suspicious-preview {
+        width: 100%;
+        height: 1fr;
+        padding: 1 0;
+        color: #cccccc;
+    }
+
+    #staff-users-actions,
+    #staff-suspicious-actions {
+        width: 100%;
+        height: 4;
+        align: left middle;
+    }
+
+    #staff-users-actions Button,
+    #staff-suspicious-actions Button {
+        margin: 0 1;
+    }
+
+    .staff-actions-spacer {
+        width: 1fr;
+    }
     """
 
     TITLE = "BankOS Terminal"
@@ -583,12 +766,26 @@ class BankApp(App):
         Binding("ctrl+q", "quit", "Quit"),
     ]
 
+    def _token_points_to_live_user(self, token: str) -> bool:
+        """Validate that the saved token still resolves to a real user."""
+        headers = {"Authorization": f"Bearer {token}"}
+        server_base_url = os.getenv("SERVER_BASE_URL", "http://localhost:8000")
+        try:
+            with httpx.Client(base_url=server_base_url, timeout=5) as client:
+                response = client.get("/whoami", headers=headers)
+        except httpx.RequestError:
+            return True
+        return response.status_code == 200
+
     def on_mount(self) -> None:
         """Check if already logged in on startup."""
         token = load_token()
-        if token and get_permissions() >= 0:
-            self.push_screen(DashboardScreen())
+        if token and get_permissions() >= 0 and self._token_points_to_live_user(token):
+            self.push_screen(get_dashboard_screen_for_permission(get_permissions()))
         else:
+            if token:
+                from token_utils import delete_token
+                delete_token()
             self.push_screen(LoginScreen())
 
 

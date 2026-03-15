@@ -8,8 +8,11 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 
 from customer import Customer
+from teller import Teller
+from admin import Admin
 from savings_account import SavingsAccount
 from transaction import Transaction 
+from transaction_type import TransactionType
 from checking_account import CheckingAccount
 
 
@@ -112,52 +115,80 @@ class Bank:
         Args: 
             json_data (dict): Data of each attribute stored in a dictionary parsed from json.
         """
-        self.users = []
-        self.accounts = []
+        self.users = {}
+        self.accounts = {}
 
-        for user_record in json_data.get("users", []):
-            username = user_record.get("username", user_record.get("name"))
-            user_id = user_record.get("id")
-            if username is None or user_id is None:
-                continue
-
-            hashed_password = user_record.get(
-                "hashed_password",
-                user_record.get("password", user_record.get("passwd", "")),
-            )
-            permission = user_record.get("permission", user_record.get("permissions", 0))
-            self.users.append(Customer(username, user_id, hashed_password, self, permission))
-
+        # Accounts
         accounts_by_id: dict[int, CheckingAccount] = {}
         for account_record in json_data.get("accounts", {}):
             account_id = account_record.get("id")
             if account_id is None:
                 continue
 
-            balance = float(account_record.get("balance", 0.0))
+            balance = float(account_record.get("balance"))
             account_type = account_record.get("type", "checking")
+            account_transaction_id = account_record.get("next_transaction_id")
             if account_type == "savings":
-                account = SavingsAccount(account_id, self, balance)
+                account = SavingsAccount(account_id, self, balance, False, account_transaction_id)
             else:
-                account = CheckingAccount(account_id, self, balance)
+                account = CheckingAccount(account_id, self, balance, False, account_transaction_id)
 
-            account.is_frozen = bool(account_record.get("frozen", False))
-            self.accounts.append(account)
+            account.frozen = bool(account_record.get("frozen"))
+            self.accounts[account_id] = account
             accounts_by_id[account_id] = account
 
-        for user, user_record in zip(self.users, json_data.get("users", {})):
-            for account_id in user_record.get("bank_account_ids", {}):
-                account = accounts_by_id.get(account_id)
-                if account:
-                    user.register_account(account)
+            # Transactions
+            for transaction_record in account_record.get("transactions"):
+                absolute_transaction_id = transaction_record.get("absolute_transaction_id")
+                relative_transaction_id = transaction_record.get("relative_transaction_id")
+                transaction_id = transaction_record.get("transaction_id")
+                amount = transaction_record.get("amount")
+                transaction_balance = transaction_record.get("balance")
+                type = TransactionType(transaction_record.get("type"))
+                transfer_account_id = transaction_record.get("transfer_account_id")
+                datetime_str = transaction_record.get("datetime_str")
 
-        max_user_id = max((user.get_id() for user in self.users), default=0)
-        counter_user_id = int(json_data.get("counters", {}).get("users", 0))
-        self._next_user_id = max(max_user_id, counter_user_id) + 1
-        max_account_id = max((account.account_id for account in self.accounts), default=0)
-        counter_account_id = int(json_data.get("counters", {}).get("accounts", 0))
-        self._next_account_id = max(max_account_id, counter_account_id) + 1
-    
+                transaction = Transaction(absolute_transaction_id, relative_transaction_id, transaction_id, amount, transaction_balance, type, transfer_account_id, datetime_str)
+
+                account.add_transaction(transaction)
+
+
+        # Users
+        user_records = list(json_data.get("users", {}))
+        user_records.sort(key=lambda record: (record.get("permission", record.get("permissions", 0)), record.get("id", 0)))
+        claimed_account_ids: set[int] = set()
+        for user_record in user_records:
+            username = user_record.get("username")
+            user_id = user_record.get("id")
+
+            hashed_password = user_record.get(
+                "hashed_password",
+                user_record.get("password", user_record.get("passwd", "")),
+            )
+
+            permission = user_record.get("permission", user_record.get("permissions"))
+            match permission:
+                case 0:
+                    user = Customer(username, user_id, hashed_password, self, permission)
+                case 1:
+                    user = Teller(username, user_id, hashed_password, self, permission)
+                case 2:
+                    user = Admin(username, user_id, hashed_password, self, permission)
+            
+            # Connecting Accs to Users
+            for account_id in user_record.get("bank_account_ids", {}):
+                account = self.get_account_by_id(account_id)
+                if account is None or account_id in claimed_account_ids:
+                    continue
+                user.register_account(account)
+                claimed_account_ids.add(account_id)
+            
+            self.users[user_id] = user
+
+        # Counters
+        self._next_user_id = json_data.get("counters").get("users")
+        self._next_account_id = json_data.get("counters").get("accounts")
+        self._next_transaction_id = json_data.get("counters").get("transactions")
 
 
     def save_to_json(self) -> dict:
@@ -168,40 +199,53 @@ class Bank:
             dict: Dictionary that holds lists of each data type stored.
         """
         users = []
-        for user in self.users:
+        for user in self.users.values():
             users.append(
                 {
                     "id": user.get_id(),
                     "username": user.get_name(),
                     "hashed_password": user.get_passwd(),
                     "permission": self._user_permission(user),
-                    "bank_account_ids": [account.account_id for account in user.get_accounts()],
+                    "bank_account_ids": [account.get_account_id() for account in user.get_owned_accounts().values()],
                 }
             )
 
         accounts = []
-        transaction = []
-        for account in self.accounts:
+        for account in self.accounts.values():
+
+            transactions: list[Transaction] = []
+            for transaction in account.get_all_transactions().values():
+                transactions.append(
+                    {
+                        "absolute_transaction_id": transaction.get_absolute_id(),
+                        "relative_transaction_id": transaction.get_relative_id(),
+                        "transaction_id": transaction.get_account_id(),
+                        "amount": transaction.get_amount(),
+                        "balance": transaction.get_post_balance(),
+                        "type": transaction.get_type().value,
+                        "transfer_account_id": transaction.get_transfer_account_id(),
+                        "datetime_str": transaction.get_time().isoformat()
+                    }
+                )
+
             accounts.append(
                 {
-                    "id": account.account_id,
-                    "balance": account.balance,
-                    "frozen": account.is_frozen,
+                    "id": account.get_account_id(),
+                    "balance": account.check_balance(),
+                    "frozen": account.is_frozen(),
                     "type": "savings" if isinstance(account, SavingsAccount) else "checking",
-                    "transactions": []
+                    "next_transaction_id": account.get_next_transaction_id(),
+                    "transactions": transactions
                 }
             )
-
-
-
-
-
+            
         return {
             "users": users,
             "accounts": accounts,
             "counters": {
-                "users": self._next_user_id - 1,
-                "accounts": self._next_account_id - 1,
+                "users": self._next_user_id,
+                "accounts": self._next_account_id,
+                "transactions": self._next_transaction_id
             },
         }
 
@@ -317,8 +361,8 @@ class Bank:
         user (Customer): optional -- the user to sum account balances for
         """
         if user is None:
-            return sum(account.balance for account in self.accounts)
-        return sum(account.balance for account in user.get_accounts().values())
+            return sum(account.balance for account in self.accounts.values())
+        return sum(account.balance for account in user.get_owned_accounts().values())
 
 
     def _compound_savings_interest(self) -> None:
@@ -348,7 +392,7 @@ class Bank:
         """
         if self.get_user_by_id(user.get_id()) is not None:
             raise KeyError(f"User id already exists: {user.get_id()}")
-        self.users[user.get_id] = user
+        self.users[user.get_id()] = user
         self._next_user_id = max(self._next_user_id, user.get_id() + 1)
 
 
@@ -359,9 +403,9 @@ class Bank:
         Args:
         account (CheckingAccount): the bank account to add
         """
-        if any(existing.account_id == account.account_id for existing in self.accounts):
+        if any(existing.account_id == account.account_id for existing in self.accounts.values()):
             raise KeyError(f"Account id already exists: {account.account_id}")
-        self.accounts[account.get_account_id] = account
+        self.accounts[account.get_account_id()] = account
         self._next_account_id = max(self._next_account_id, account.account_id + 1)
 
     def _next_account_num(self) -> int:
@@ -371,15 +415,17 @@ class Bank:
         return next_id
 
 
-    def create_account_for_user(self, user: Customer, account_type: str = "checking", balance: float = 0.0) -> CheckingAccount:
+    def create_account_for_user(self, user: Customer, account_type: str = "CHECKING", balance: float = 0.0) -> CheckingAccount:
         """
         creates a bank account for a given user and adds it to the bank
 
         Args:
         user (Customer): the customer to add the new accoun to
         account_type (str): the type of account, either checking or savings
+        balance (float, optional): the initial balance to create the account with
+            defaults to 0.0
         """
-        if account_type == "savings":
+        if account_type == "SAVINGS":
             account = SavingsAccount(self._next_account_num(), self, balance)
         else:
             account = CheckingAccount(self._next_account_num(), self, balance)
@@ -396,7 +442,7 @@ class Bank:
         Args:
         user (Customer): the customer to find all accounts of
         """
-        return user.get_accounts()
+        return user.get_owned_accounts()
 
 
     def get_account_by_id(self, account_id: int) -> CheckingAccount | None:
@@ -406,8 +452,8 @@ class Bank:
         Args:
         account_id (int): the id of the account to search for
         """
-        for account in self.accounts:
-            if account.account_id == account_id:
+        for account in self.accounts.values():
+            if account.get_account_id() == account_id:
                 return account
         return None
     
@@ -497,10 +543,11 @@ class Bank:
         Args:
         id (int): the id of the user to be removed
         """
-        for key,cust in self.users.items():
+        for key, cust in list(self.users.items()):
             if cust.get_id() == user_id:
                 del self.users[key]
-                break
+                return cust
+        raise KeyError(f"User id not found: {user_id}")
 
 
     def remove_user_by_name(self, username: str) -> Customer:
@@ -510,10 +557,11 @@ class Bank:
         Args:
         username (str): the name of the user to be removed
         """
-        for key,value in self.users.items():
+        for key, value in list(self.users.items()):
             if value.get_name() == username:
                 del self.users[key]
-                break
+                return value
+        raise KeyError(f"Username not found: {username}")
 
 
     def remove_account(self, id: int) -> CheckingAccount:
@@ -523,8 +571,8 @@ class Bank:
         Args:
         id (int): the account_id of the account to be removed
         """
-        for key,acc in self.accounts.items():
+        for key, acc in list(self.accounts.items()):
             if acc.get_account_id() == id:
                 del self.accounts[key]
-                break
-
+                return acc
+        raise KeyError(f"Account id not found: {id}")

@@ -18,7 +18,7 @@ from textual.screen import Screen
 from textual.widgets import Button, ContentSwitcher, Footer, Header, Input, Label, LoadingIndicator, Static
 from dotenv import load_dotenv
 
-from token_utils import save_token
+from token_utils import get_permissions, save_token
 
 load_dotenv()
 SERVER_BASE_URL = os.getenv("SERVER_BASE_URL", "http://localhost:8000")
@@ -146,6 +146,7 @@ class LoginScreen(Screen):
                         pass
                     with RegisterForm(id=self._ACTIVE_REGISTER, classes="auth-form"):
                         pass
+
         yield Footer()
 
     def on_mount(self) -> None:
@@ -339,9 +340,11 @@ class LoginScreen(Screen):
         token = data.get("token")
         if token:
             save_token(token)
-            from dashboard import DashboardScreen
+            from staff_dashboard import get_dashboard_screen_for_permission
 
-            self.app.push_screen(DashboardScreen())
+            permission = get_permissions()
+            self.app.pop_screen()
+            self.app.push_screen(get_dashboard_screen_for_permission(permission))
             return
         self.show_error("Invalid response from server")
 

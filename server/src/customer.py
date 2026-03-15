@@ -47,6 +47,10 @@ class Customer():
     def get_accounts(self):
         return self.accounts
 
+    def get_owned_accounts(self):
+        """Returns only the accounts explicitly owned by this user."""
+        return self.accounts
+
     
     def register_account(self, account: CheckingAccount):
         self.accounts[account.get_account_id()] = account
@@ -61,8 +65,10 @@ class Customer():
     returns a formatted string containing all transactions in an accounts history
     """
     def get_total_transact_hist(self):
-        result = ""
-        for acc in self.accounts:
-            result.append(acc.get_all_transaction_str())
-            result.append("\n")
-        return result
+        total_hist = {} 
+
+        for acc in self.accounts.values():
+            for transaction in acc.get_all_transactions().values():
+                total_hist[transaction.get_absolute_id()] = transaction
+            
+        return total_hist

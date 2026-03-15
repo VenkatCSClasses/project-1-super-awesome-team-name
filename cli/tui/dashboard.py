@@ -4,6 +4,7 @@ from pathlib import Path
 from server_ping_utils import server_running
 from login_screen import LoginScreen
 from deposit_modal import DepositModal
+from transfer_modal import TransferModal
 from withdraw_modal import WithdrawModal
 from freeze_accounts_modal import FreezeAccountsModal
 
@@ -121,7 +122,7 @@ class UserInfoBox(Container):
         self.user = user
 
     def compose(self) -> ComposeResult:
-        yield Static("╭─ USER SESSION ─────────────────────────╮", classes="box-top")
+        yield Static("USER SESSION", classes="box-top")
 
         permission = self.user.get("permission", 0)
         match permission:
@@ -140,7 +141,6 @@ class UserInfoBox(Container):
             f"  [dim]Access Level:[/] [{color}]{access_level}[/]",
             id="user-details"
         )
-        yield Static("╰────────────────────────────────────────╯", classes="box-bottom")
 
     def action_focus_left(self) -> None:
         return
@@ -163,17 +163,14 @@ class AccountsSection(Container):
         self.accounts = accounts
 
     def compose(self) -> ComposeResult:
-        yield Static("╭─ ACCOUNTS ──────────────────────────────────────────────────╮", classes="box-top")
+        yield Static("ACCOUNTS", classes="box-top")
         total = sum(acc["balance"] for acc in self.accounts)
         yield Static(
             f"  [bold]TOTAL BALANCE:[/] [bold green]${total:,.2f}[/]  [dim]│[/]  [dim]{len(self.accounts)} accounts[/]",
             id="total-balance"
         )
-        yield Static("├──────────────────────────────────────────────────────────────┤", classes="box-divider")
         yield AccountsList(self.accounts, id="accounts-list")
-        yield Static("├──────────────────────────────────────────────────────────────┤", classes="box-divider")
         yield Button("CREATE NEW ACCOUNT", id="accounts-new-account-btn", variant="success")
-        yield Static("╰──────────────────────────────────────────────────────────────╯", classes="box-bottom")
 
 
 class AccountsList(Vertical):
@@ -183,9 +180,23 @@ class AccountsList(Vertical):
         super().__init__(**kwargs)
         self.accounts = accounts
 
+    def _build_children(self) -> list[Static]:
+        if not self.accounts:
+            return [
+                Static(
+                    "  [dim]You have no accounts yet. Create one to get started.[/]",
+                )
+            ]
+        return [AccountCard(acc, classes="account-card") for acc in self.accounts]
+
     def compose(self) -> ComposeResult:
-        for acc in self.accounts:
-            yield AccountCard(acc, classes="account-card")
+        yield from self._build_children()
+
+    def refresh_accounts(self, accounts: list) -> None:
+        """Rebuild the rendered account cards without replacing the list widget."""
+        self.accounts = accounts
+        self.remove_children()
+        self.mount(*self._build_children())
 
 
 class TransactionsTable(DataTable):
@@ -301,8 +312,25 @@ class BalanceTrendBox(Container):
             height = 6
         chart_widget.update(f"[green]{self.render_line_chart(width=width, height=height)}[/]")
 
+    def update_balance_history(self, balance_history: list[float]) -> None:
+        """Replace the chart data and refresh the rendered stats."""
+        self.balance_history = balance_history or [0]
+        min_bal = min(self.balance_history)
+        max_bal = max(self.balance_history)
+        start_bal = self.balance_history[0]
+        end_bal = self.balance_history[-1]
+        change = end_bal - start_bal
+        change_pct = (change / start_bal) * 100 if start_bal else 0
+        change_color = "green" if change >= 0 else "red"
+        self.query_one("#trend-stats", Static).update(
+            f"  [dim]MIN:[/] [red]${min_bal:,.0f}[/]  [dim]│[/]  "
+            f"[dim]MAX:[/] [green]${max_bal:,.0f}[/]  [dim]│[/]  "
+            f"[dim]CHANGE:[/] [{change_color}]{change:+,.0f} ({change_pct:+.1f}%)[/]"
+        )
+        self.update_chart()
+
     def compose(self) -> ComposeResult:
-        yield Static("╭─ TRANSACTION BALANCE TREND ─────────────────────────────────────────────╮", classes="box-top")
+        yield Static("TRANSACTION BALANCE TREND", classes="box-top")
         yield Static("", id="balance-line-chart")
         min_bal = min(self.balance_history)
         max_bal = max(self.balance_history)
@@ -315,9 +343,9 @@ class BalanceTrendBox(Container):
             f"  [dim]MIN:[/] [red]${min_bal:,.0f}[/]  [dim]│[/]  "
             f"[dim]MAX:[/] [green]${max_bal:,.0f}[/]  [dim]│[/]  "
             f"[dim]CHANGE:[/] [{change_color}]{change:+,.0f} ({change_pct:+.1f}%)[/]",
-            classes="trend-stats"
+            classes="trend-stats",
+            id="trend-stats",
         )
-        yield Static("╰───────────────────────────────────────────────────────────────────────────╯", classes="box-bottom")
 
     def on_mount(self) -> None:
         self.call_after_refresh(self.update_chart)
@@ -342,9 +370,9 @@ class TransactionsBox(Container):
     """Recent transactions box with data table."""
 
     def compose(self) -> ComposeResult:
-        yield Static("╭─ RECENT TRANSACTIONS ──────────────────────────────────────────────────╮", classes="box-top")
+        yield Static("RECENT TRANSACTIONS", classes="box-top")
+        yield Static("", id="transactions-status")
         yield TransactionsTable(id="transactions-table")
-        yield Static("╰───────────────────────────────────────────────────────────────────────────╯", classes="box-bottom")
 
 
 class ActionBar(Horizontal):
@@ -355,7 +383,6 @@ class ActionBar(Horizontal):
         yield Button("TRANSFER", id="transfer-btn", variant="primary")
         yield Button("DEPOSIT", id="deposit-btn", variant="primary")
         yield Button("WITHDRAW", id="withdraw-btn", variant="warning")
-        yield Button("FREEZE ACCOUNTS", id="freeze-accounts-btn", variant="error")
         yield Button("LOGOUT", id="logout-btn", variant="error")
 
 
@@ -373,6 +400,13 @@ class DashboardScreen(Screen):
         Binding("r", "refresh", "Refresh"),
     ]
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.accounts_data: list[dict] = []
+        self.selected_account_id: int | None = None
+        self.preferred_selected_account_id: int | None = None
+        self.transactions_error_message = ""
+
     def compose(self) -> ComposeResult:
         try:
             user = self.get_user_info()
@@ -383,8 +417,18 @@ class DashboardScreen(Screen):
             user = {"username": "unknown", "user_id": "unknown", "permission": -1}
 
         accounts = self.get_accounts() or []
-        transactions = self.get_transactions() or []
-        balance_history = self.build_balance_history(accounts, transactions)
+        self.accounts_data = accounts
+        selected_account = next(
+            (
+                account
+                for account in accounts
+                if account["account_id"] == self.preferred_selected_account_id
+            ),
+            accounts[0] if accounts else None,
+        )
+        self.selected_account_id = selected_account["account_id"] if selected_account else None
+        transactions = self.get_transactions(self.selected_account_id) or []
+        balance_history = self.build_balance_history(selected_account, transactions)
 
         yield Header()
         yield Container(StatusBar(), id="status-bar")
@@ -469,9 +513,12 @@ class DashboardScreen(Screen):
         for card in self._account_cards():
             card.remove_class("selected")
         selected_card.add_class("selected")
+        self.selected_account_id = selected_card.account.get("account_id")
+        self.preferred_selected_account_id = self.selected_account_id
+        self.refresh_selected_account_data()
         if announce:
             self.notify(
-                f"Selected ACC-{selected_card.account.get('id', 'unknown')}",
+                f"Selected ACC-{selected_card.account.get('account_id', 'unknown')}",
                 title="[ ACCOUNT ]",
                 timeout=1.2,
             )
@@ -481,6 +528,7 @@ class DashboardScreen(Screen):
         delete_token()
         self.app.notify("Session expired. Please log in again.", title="[ AUTH ]", severity="error")
         from login_screen import LoginScreen
+        self.app.pop_screen()
         self.app.push_screen(LoginScreen())
 
     def get_user_info(self) -> dict:
@@ -501,7 +549,7 @@ class DashboardScreen(Screen):
                         "user_id": str(response_data.get("user_id", "unknown")),
                         "permission": response_data.get("permission", -1),
                     }
-                if response.status_code in (401, 403):
+                if response.status_code in (401, 403, 404):
                     self.handle_session_expired()
                     return None
                 print(f"Failed to fetch user info: {response.status_code}")
@@ -523,16 +571,19 @@ class DashboardScreen(Screen):
                 if response.status_code == 200:
                     response_data = response.json()
                     return self._normalize_accounts(response_data.get("accounts", []))
-                if response.status_code in (401, 403):
+                if response.status_code in (401, 403, 404):
                     self.handle_session_expired()
                     return None
                 print(f"Failed to fetch user info: {response.status_code}")
             except httpx.RequestError as e:
                 print(f"Error connecting to server: {e}")
-        raise Exception("Unable to fetch transaction info from server")
+        return []
 
-    def get_transactions(self) -> list:
-        """Fetch transactions from server"""
+    def get_transactions(self, account_id: int | None) -> list:
+        """Fetch transactions for the selected account from server."""
+        if account_id is None:
+            return []
+
         token = load_token()
         if not token:
             self.handle_session_expired()
@@ -541,33 +592,39 @@ class DashboardScreen(Screen):
         headers = {"Authorization": f"Bearer {token}"}
         with httpx.Client(base_url=SERVER_BASE_URL, timeout=5) as client:
             try:
-                response = client.get("/bank/view_my_transaction_history/", headers=headers)
+                response = client.get(f"/bank/view_transaction_history/{account_id}", headers=headers)
                 if response.status_code == 200:
+                    self.transactions_error_message = ""
                     response_data = response.json()
-                    return response_data.get("transactions", [])
-                if response.status_code in (401, 403):
+                    return self._normalize_transactions(response_data.get("transactions", []))
+                if response.status_code in (401, 403, 404):
                     self.handle_session_expired()
                     return None
-                print(f"Failed to fetch user info: {response.status_code}")
+                self.transactions_error_message = (
+                    f"Unable to load transaction history for ACC-{account_id} right now."
+                )
+                print(f"Failed to fetch transaction info: {response.status_code}")
             except httpx.RequestError as e:
+                self.transactions_error_message = (
+                    f"Unable to reach the server for ACC-{account_id} transaction history."
+                )
                 print(f"Error connecting to server: {e}")
-        raise Exception("Unable to fetch transaction info from server")
+        return []
         
 
-    def build_balance_history(self, accounts: list, transactions: list) -> list[float]:
+    def build_balance_history(self, account: dict | None, transactions: list) -> list[float]:
         """Build balance history from transactions in chronological order."""
         if transactions:
             ordered_transactions = sorted(
                 transactions,
-                key=lambda txn: f"{txn.get('date', '')} {txn.get('time', '')}"
+                key=lambda txn: txn.get("sort_key", ""),
             )
             history = [txn["balance"] for txn in ordered_transactions if "balance" in txn]
             if history:
                 return history
 
-        if accounts:
-            total = sum(acc["balance"] for acc in accounts)
-            return [total]
+        if account:
+            return [account["balance"]]
 
         return [0]
 
@@ -584,6 +641,146 @@ class DashboardScreen(Screen):
             normalized.append(account)
         return normalized
 
+    def _normalize_transactions(self, transactions: object) -> list[dict]:
+        """Convert API responses into rows the TUI can render."""
+        if isinstance(transactions, dict):
+            raw_transactions = transactions.values()
+        elif isinstance(transactions, list):
+            raw_transactions = transactions
+        else:
+            return []
+
+        normalized: list[dict] = []
+        for transaction in raw_transactions:
+            if not isinstance(transaction, dict):
+                continue
+
+            timestamp = (
+                transaction.get("timestamp")
+                or transaction.get("datetime_str")
+                or transaction.get("datetime")
+                or ""
+            )
+            date_str = transaction.get("date", "")
+            time_str = transaction.get("time", "")
+            sort_key = ""
+            if timestamp:
+                try:
+                    parsed = datetime.datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+                    date_str = parsed.strftime("%Y-%m-%d")
+                    time_str = parsed.strftime("%H:%M:%S")
+                    sort_key = parsed.isoformat()
+                except ValueError:
+                    sort_key = str(timestamp)
+            else:
+                sort_key = f"{date_str} {time_str}".strip()
+
+            transaction_type = self._format_transaction_type(
+                transaction.get("type", transaction.get("transaction_type"))
+            )
+            amount = float(transaction.get("amount", 0.0))
+            balance = float(transaction.get("balance", transaction.get("post_balance", 0.0)))
+            description = transaction.get("description") or self._build_transaction_description(
+                transaction_type,
+                amount,
+                transaction.get("transfer_account_id"),
+            )
+            normalized.append(
+                {
+                    "id": str(
+                        transaction.get(
+                            "absolute_transaction_id",
+                            transaction.get("id", transaction.get("relative_transaction_id", "")),
+                        )
+                    ),
+                    "date": date_str or "--",
+                    "time": time_str or "--",
+                    "type": transaction_type,
+                    "description": description,
+                    "amount": amount,
+                    "balance": balance,
+                    "sort_key": sort_key,
+                }
+            )
+
+        return sorted(normalized, key=lambda txn: txn["sort_key"])
+
+    def _format_transaction_type(self, raw_type: object) -> str:
+        """Normalize server transaction types into readable labels."""
+        type_map = {
+            1: "WITHDRAWAL",
+            2: "DEPOSIT",
+            3: "TRANSFER",
+            4: "TRANSFER",
+            5: "NEW ACCOUNT",
+            6: "INTEREST",
+            "WITHDRAW": "WITHDRAWAL",
+            "DEPOSIT": "DEPOSIT",
+            "TRANSFER_WITHDRAW": "TRANSFER",
+            "TRANSFER_DEPOSIT": "TRANSFER",
+            "NEW_ACCOUNT": "NEW ACCOUNT",
+            "INTEREST": "INTEREST",
+        }
+        if isinstance(raw_type, dict):
+            raw_type = raw_type.get("value", raw_type.get("name"))
+        return type_map.get(raw_type, str(raw_type or "UNKNOWN").replace("_", " ").upper())
+
+    def _build_transaction_description(self, transaction_type: str, amount: float, transfer_account_id: object) -> str:
+        """Fallback description when the API doesn't send one."""
+        amount_text = f"${abs(amount):,.2f}"
+        if transaction_type == "WITHDRAWAL":
+            return f"Withdrawal of {amount_text}"
+        if transaction_type == "DEPOSIT":
+            return f"Deposit of {amount_text}"
+        if transaction_type == "TRANSFER":
+            if transfer_account_id is not None:
+                direction = "from" if amount > 0 else "to"
+                return f"Transfer {direction} ACC-{transfer_account_id} of {amount_text}"
+            return f"Transfer of {amount_text}"
+        if transaction_type == "NEW ACCOUNT":
+            return f"New account created with balance {amount_text}"
+        if transaction_type == "INTEREST":
+            return f"Collected interest amount of {amount_text}"
+        return transaction_type.title()
+
+    def update_transactions_status(self, message: str) -> None:
+        """Update the help text above the transaction history table."""
+        self.query_one("#transactions-status", Static).update(message)
+
+    def refresh_selected_account_data(self) -> None:
+        """Reload the table and trend box for the currently selected account."""
+        selected_account = next(
+            (account for account in self.accounts_data if account["account_id"] == self.selected_account_id),
+            None,
+        )
+        if selected_account is None:
+            self.generate_transaction_table([])
+            self.query_one("#trend-box", BalanceTrendBox).update_balance_history([0])
+            self.update_transactions_status(
+                "  [dim]You have no accounts yet. Create one to view transaction history.[/]"
+            )
+            return
+
+        transactions = self.get_transactions(self.selected_account_id)
+        if transactions is None:
+            return
+
+        self.generate_transaction_table(transactions)
+        self.query_one("#trend-box", BalanceTrendBox).update_balance_history(
+            self.build_balance_history(selected_account, transactions)
+        )
+        if self.transactions_error_message:
+            self.update_transactions_status(f"  [red]{self.transactions_error_message}[/]")
+            return
+        if transactions:
+            self.update_transactions_status(
+                f"  [dim]Showing transaction history for ACC-{self.selected_account_id}.[/]"
+            )
+        else:
+            self.update_transactions_status(
+                f"  [dim]ACC-{self.selected_account_id} has no transactions yet.[/]"
+            )
+
     def generate_transaction_table(self, transactions: list) -> None:
         """Helper to populate the transactions data table."""
         table = self.query("#transactions-table").first()
@@ -593,11 +790,11 @@ class DashboardScreen(Screen):
         # Rebuild columns on refresh to avoid duplicate column definitions.
         table.clear(columns=True)
         # Add columns
-        table.add_column("ID", key="id", width=12)
-        table.add_column("DATE", key="date", width=12)
-        table.add_column("TIME", key="time", width=10)
-        table.add_column("TYPE", key="type", width=10)
-        table.add_column("DESCRIPTION", key="desc", width=22)
+        table.add_column("ID", key="id", width=10)
+        table.add_column("DATE", key="date", width=10)
+        table.add_column("TIME", key="time", width=8)
+        table.add_column("TYPE", key="type", width=15)
+        table.add_column("DESCRIPTION", key="desc", width=60)
         table.add_column("AMOUNT", key="amount", width=14)
         table.add_column("BALANCE", key="balance", width=14)
         
@@ -624,14 +821,27 @@ class DashboardScreen(Screen):
             )
 
     def _populate_dashboard(self) -> None:
-        transactions = self.get_transactions()
-        if transactions is None:
-            return
-        self.generate_transaction_table(transactions)
         cards = self._account_cards()
         if cards:
-            self.set_selected_account(cards[0], announce=False)
-        self.focus_accounts_list()
+            selected_card = next(
+                (
+                    card
+                    for card in cards
+                    if card.account.get("account_id") == self.selected_account_id
+                ),
+                cards[0],
+            )
+            for card in cards:
+                card.remove_class("selected")
+            selected_card.add_class("selected")
+            self.selected_account_id = selected_card.account.get("account_id")
+            self.preferred_selected_account_id = self.selected_account_id
+            self.refresh_selected_account_data()
+            self.focus_accounts_list()
+            return
+
+        self.refresh_selected_account_data()
+        self.focus_accounts_new_account_button()
 
     def on_mount(self) -> None:
         self.call_after_refresh(self._populate_dashboard)
@@ -676,15 +886,15 @@ class DashboardScreen(Screen):
         if event.button.id == "logout-btn":
             self.action_logout()
         elif event.button.id == "new-account-btn":
-            self.app.push_screen(CreateBankAccountModal())
+            self.app.push_screen(CreateBankAccountModal(), self._handle_account_change)
         elif event.button.id == "accounts-new-account-btn":
-            self.app.push_screen(CreateBankAccountModal())
+            self.app.push_screen(CreateBankAccountModal(), self._handle_account_change)
         elif event.button.id == "transfer-btn":
-            self.notify("Transfer feature coming soon!", title="[ TRANSFER ]", severity="information")
+            self.app.push_screen(TransferModal(), self._handle_account_change)
         elif event.button.id == "deposit-btn":
-            self.app.push_screen(DepositModal())
+            self.app.push_screen(DepositModal(), self._handle_account_change)
         elif event.button.id == "withdraw-btn":
-            self.app.push_screen(WithdrawModal())
+            self.app.push_screen(WithdrawModal(), self._handle_account_change)
         elif event.button.id == "freeze-accounts-btn":
             self.app.push_screen(FreezeAccountsModal())
 
@@ -698,18 +908,58 @@ class DashboardScreen(Screen):
 
     def action_new_account(self) -> None:
         """Create new account."""
-        self.app.push_screen(CreateBankAccountModal())
+        self.app.push_screen(CreateBankAccountModal(), self._handle_account_change)
 
     def action_transfer(self) -> None:
         """Transfer funds."""
-        self.notify("Transfer feature coming soon!", title="[ TRANSFER ]")
+        self.app.push_screen(TransferModal(), self._handle_account_change)
+
+    def _handle_account_change(self, result) -> None:
+        """Refresh dashboard state after a successful account action."""
+        if result is None:
+            return
+
+        if isinstance(result, dict):
+            self.preferred_selected_account_id = (
+                result.get("account_id")
+                or result.get("from_account_id")
+                or self.selected_account_id
+            )
+        else:
+            self.preferred_selected_account_id = self.selected_account_id
+        self._refresh_dashboard_view()
+
+    def _rebuild_accounts_section(self) -> None:
+        """Refresh the mounted accounts pane so cards and totals reflect current data."""
+        accounts_section = self.query_one("#accounts-section", AccountsSection)
+        accounts_section.accounts = self.accounts_data
+        total_balance = sum(account["balance"] for account in self.accounts_data)
+        self.query_one("#total-balance", Static).update(
+            f"  [bold]TOTAL BALANCE:[/] [bold green]${total_balance:,.2f}[/]  "
+            f"[dim]│[/]  [dim]{len(self.accounts_data)} accounts[/]"
+        )
+        existing_list = self.query_one("#accounts-list", AccountsList)
+        existing_list.refresh_accounts(self.accounts_data)
+
+    def _refresh_dashboard_view(self, notify: bool = False) -> None:
+        """Refresh mounted dashboard widgets from current server state."""
+        self.accounts_data = self.get_accounts() or []
+        account_ids = {account["account_id"] for account in self.accounts_data}
+
+        if not self.accounts_data:
+            self.selected_account_id = None
+        elif self.preferred_selected_account_id in account_ids:
+            self.selected_account_id = self.preferred_selected_account_id
+        elif self.selected_account_id in account_ids:
+            self.selected_account_id = self.selected_account_id
+        else:
+            self.selected_account_id = self.accounts_data[0]["account_id"]
+
+        self._rebuild_accounts_section()
+        self.call_after_refresh(self._populate_dashboard)
+        if notify:
+            self.notify("Data refreshed.", title="[ REFRESH ]", severity="information")
 
     def action_refresh(self) -> None:
         """Refresh dashboard data."""
-        transactions = self.get_transactions()
-        if transactions is None:
-            return
-        
-        
-        self.generate_transaction_table(transactions)
-        self.notify("Data refreshed.", title="[ REFRESH ]", severity="information")
+        self._refresh_dashboard_view(notify=True)
