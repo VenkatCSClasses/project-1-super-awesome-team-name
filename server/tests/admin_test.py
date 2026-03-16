@@ -48,7 +48,7 @@ class TestAdmin:
         acc.withdraw(25000)
         acc2.withdraw(100)
         assert test.check_sus_activity(acc)
-        assert test.check_sus_activity(acc2)
+        assert test.check_sus_activity(acc2) == False
 
     def test_toggle_frozen(self):
         """integration test: ensures freeze effect is applied at the correct times"""
