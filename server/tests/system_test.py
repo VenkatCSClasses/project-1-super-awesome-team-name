@@ -9,6 +9,7 @@ from exceptions.account_frozen_exception import AccountFrozenException
 import pytest
 
 def test_system():
+    """System Test: Tests everything together as a realistic use case"""
     # Create a bank 
     bank = Bank()
 

@@ -16,7 +16,7 @@ load_dotenv()
 class TestSavingsAccount:
 
     def test_constructor_getters(self):
-        """Tests covering the constructor and the accessors of the savingsaccount"""
+        """Intergration Test: Tests covering the constructor and the accessors of the savingsaccount"""
         bank = Bank()
         acc0 = SavingsAccount(0, bank)
         acc1 = SavingsAccount(1, bank, 100)
@@ -36,7 +36,7 @@ class TestSavingsAccount:
     
 
     def test_withdraw_limit(self):
-        """Tests covering the updated withdraw method and ensuring withdraw limit is changed"""
+        """Intergration Test: Tests covering the updated withdraw method and ensuring withdraw limit is changed"""
         bank = Bank()
         max_limit = float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
         acc0 = SavingsAccount(0, bank, max_limit + 200)
@@ -55,7 +55,7 @@ class TestSavingsAccount:
     
 
     def test_transfer_limit(self):
-        """Tests covering the updated transfer method and ensuring withdraw limit is changed"""
+        """Intergration Test: Tests covering the updated transfer method and ensuring withdraw limit is changed"""
         bank = Bank()
         max_limit = float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
         acc0 = SavingsAccount(0, bank, max_limit + 200)
@@ -72,7 +72,7 @@ class TestSavingsAccount:
 
 
     def test_compound_interest(self):
-        """Tests covering the compound interest method and transaction logging"""
+        """Intergration Test: Tests covering the compound interest method and transaction logging"""
         bank = Bank()
         acc0 = SavingsAccount(0, bank, 100)
         acc1 = SavingsAccount(1, bank, 500)
@@ -108,7 +108,7 @@ class TestSavingsAccount:
 
 
     def test_reset_withdraw_limit(self):
-        """Tests covering resetting the withdraw limit"""
+        """Intergration Tests: Tests covering resetting the withdraw limit"""
         bank = Bank()
         max_limit = float(os.getenv("MAX_WITHDRAW_LIMIT", 10000))
         acc0 = SavingsAccount(0, bank, 50)

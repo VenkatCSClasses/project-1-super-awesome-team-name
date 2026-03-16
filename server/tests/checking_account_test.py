@@ -13,7 +13,7 @@ import pytest
 class TestCheckingAccount:
 
     def test_initial_balance_check_balance(self):
-        """Test that the initial balance of the checking account is set correctly."""
+        """Integration Test: Test that the initial balance of the checking account is set correctly."""
         bank = Bank()
         account = CheckingAccount(1, bank, balance=100.00)
         assert account.check_balance() == 100.00
@@ -24,7 +24,7 @@ class TestCheckingAccount:
 
 
     def test_withdraw(self):
-        """Test that withdrawing from the checking account updates the balance correctly."""
+        """Intergration Test: Test that withdrawing from the checking account updates the balance correctly."""
         bank = Bank()
         account = CheckingAccount(1, bank, balance=100)
         account.withdraw(30)
@@ -38,7 +38,7 @@ class TestCheckingAccount:
 
 
     def test_deposit(self):
-        """Test that depositing into the checking account updates the balance correctly."""
+        """Intergration Test: Test that depositing into the checking account updates the balance correctly."""
         bank = Bank()
         account = CheckingAccount(1, bank, balance=100)
         account.deposit(50)
@@ -50,7 +50,7 @@ class TestCheckingAccount:
     
 
     def test_transfer(self):
-        """Test that transferring between two checking accounts updates both balances correctly."""
+        """Intergration Test: Test that transferring between two checking accounts updates both balances correctly."""
         bank = Bank()
         account1 = CheckingAccount(1, bank, balance=100)
         account2 = CheckingAccount(2, bank, balance=50)
@@ -64,7 +64,7 @@ class TestCheckingAccount:
 
 
     def test_frozen_account(self):
-        """Test that a frozen account does not allow withdrawals, transfers, and deposit."""
+        """Intergration Test: Test that a frozen account does not allow withdrawals, transfers, and deposit."""
         bank = Bank()
         account1 = CheckingAccount(1, bank, balance=100)
         account2 = CheckingAccount(2, bank, balance=50)
@@ -146,7 +146,7 @@ class TestCheckingAccount:
 
 
     def test_get_all_transactions(self):
-        """Test that the transaction history is returned correctly."""
+        """Intergration Test: Test that the transaction history is returned correctly."""
         bank = Bank()
         account = CheckingAccount(1, bank, balance=100)
         account.deposit(50)  # Transaction ID 2
@@ -163,7 +163,7 @@ class TestCheckingAccount:
         assert history.get(3).get_post_balance() == 120
 
     def test_is_amount_valid(self):
-        """Tests to see if an amount is valid (non-negative and 2 or less decimal places)"""
+        """Unit Test: Tests to see if an amount is valid (non-negative and 2 or less decimal places)"""
         assert CheckingAccount._is_amount_valid(10) 
         assert CheckingAccount._is_amount_valid(10.01)
         assert CheckingAccount._is_amount_valid(0.01)
