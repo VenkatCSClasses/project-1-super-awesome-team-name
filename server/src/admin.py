@@ -38,7 +38,7 @@ class Admin(Teller):
             acc - the account to check for suspicious activity
         """
         for transact in acc.get_all_transactions().values():
-            if transact.get_amount() <= 10000 and (transact.get_type() == TransactionType.WITHDRAW or transact.get_type() == TransactionType.TRANSFER_WITHDRAW):
+            if abs(transact.get_amount()) >= 10000 and (transact.get_type() == TransactionType.WITHDRAW or transact.get_type() == TransactionType.TRANSFER_WITHDRAW):
                 return True
         return False
 
