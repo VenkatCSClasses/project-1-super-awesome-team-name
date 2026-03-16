@@ -11,9 +11,15 @@ For information on how to use the project, please refer to [USAGE.md](USAGE.md).
 ## Class Diagram
 ![Project Class Diagram](/images/class_diagram.png)
 
-## Stage Diagram
+## State Diagram
 ![Project State Diagram](/images/state_diagram.png)
 
+## Sequence Diagrams
+![Project Customer Sequence Diagram](/images/sequence_customer_diagram.png)
+
+![Project Teller Sequence Diagram](/images/sequence_teller_diagram.png)
+
+![Project Admin Sequence Diagram](/images/sequence_admin_diagram.png)
 
 # Project Details
 
@@ -24,10 +30,10 @@ The three use cases that are going to be implemented are:
 - Withdraw
 
 ## Work Distribution
-- Abe: TUI and Login Implementation, database setup and api endpoints, bank class, and README/USAGE/INSTALLATION documentation
-- Andrew: checking_account class; savings_account and transaction classes/tests; custom exceptions; json saving/reading
-- Dylan: customer, teller, user classes & tests; bank tests; 
-- Cameron: checking_account tests; finalized state & class diagrams
+- Abe: TUI and Login Implementation; database setup and api endpoints; bank class; and README/USAGE/INSTALLATION documentation
+- Andrew: checking_account class; savings_account and transaction classes/tests; custom exceptions; json saving/reading; customer, teller sequence diagrams; finalized class diagram
+- Dylan: customer, teller, user classes & tests; bank tests; admin sequence diagram
+- Cameron: checking_account tests; state diagram
 
 ## Coding Agent Usage
 The areas where coding agents were utilized in this project were:
@@ -37,7 +43,6 @@ The areas where coding agents were utilized in this project were:
 - Speeding up development of the terminal user interface
 - General debugging assistance
 - Copilot auto completions and suggestions across the codebase
-
 
 ## Dependencies Used (installed via uv):
 - **Textual**: Used for building the terminal user interface (TUI) of the application. 
