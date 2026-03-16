@@ -11,6 +11,9 @@ For information on how to use the project, please refer to [USAGE.md](USAGE.md).
 ## Class Diagram
 ![Project Class Diagram](/images/class_diagram.png)
 
+## Stage Diagram
+![Project State Diagram](/images/state_diagram.png)
+
 
 # Project Details
 
