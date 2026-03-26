@@ -322,10 +322,24 @@ class Bank:
         Creates a root user if it doesn't already exist, ensuring that one admin user exists on each new bank.
 
         Returns:
-            bool: True if root user gets created, false if root user already exists.
+            bool: True if root user is created or repaired, false if root user already exists as an admin.
         """
-        if self.get_user_by_name("root") is not None:
-            return False
+        existing_root = self.get_user_by_name("root")
+        if existing_root is not None:
+            if self._user_permission(existing_root) >= 2:
+                return False
+
+            upgraded_root = Admin(
+                "root",
+                existing_root.get_id(),
+                existing_root.get_passwd(),
+                self,
+                permissions=2,
+            )
+            for account in existing_root.get_owned_accounts().values():
+                upgraded_root.register_account(account)
+            self.users[existing_root.get_id()] = upgraded_root
+            return True
 
         user = Customer(
             "root",
