@@ -74,19 +74,30 @@ async def view_all_bank_accounts(current_user: dict = Depends(verify_token)):
         raise HTTPException(status_code=403, detail="Must be logged in to view bank accounts")
 
     user = bank.get_user_by_id(current_user["user_id"])
-    user_accounts = bank.get_accounts_for_user(user)
-    if not user_accounts:
-        return {"message": "No bank accounts found for this user", "accounts": []}
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if current_user.get("permission", -1) >= 1:
+        visible_accounts = bank.get_all_accounts()
+        empty_message = "No bank accounts found in the bank"
+        success_message = "All bank accounts displayed successfully!"
+    else:
+        visible_accounts = bank.get_accounts_for_user(user)
+        empty_message = "No bank accounts found for this user"
+        success_message = "All bank accounts displayed successfully!"
+
+    if not visible_accounts:
+        return {"message": empty_message, "accounts": []}
 
     accounts = []
-    for account in user_accounts.values():
+    for account in visible_accounts.values():
         accounts.append({
             "account_id": account.get_account_id(),
             "account_type": account.get_account_type(),
             "balance": account.get_balance(),
             "is_frozen": account.is_frozen()
         })
-    return {"message": "All bank accounts displayed successfully!", "accounts": accounts}
+    return {"message": success_message, "accounts": accounts}
 
 
 @bank_routes.get("/get_all_bank_account_ids", response_model=dict)

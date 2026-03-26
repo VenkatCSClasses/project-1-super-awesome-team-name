@@ -62,11 +62,14 @@ def _response_error_message(response: httpx.Response, fallback: str) -> str:
 class StaffActionModal(ModalScreen):
     BINDINGS = [Binding("escape", "close_modal", "Close")]
 
-    def __init__(self, title: str, subtitle: str, fields: list[dict]) -> None:
+    def __init__(self, title: str, subtitle: str, fields: list[dict], validator=None) -> None:
         super().__init__()
         self.title = title
         self.subtitle = subtitle
         self.fields = fields
+        self.validator = validator
+        self.feedback_widget_id = "staff-modal-feedback"
+        self.submit_button_id = "staff-modal-submit"
 
     def compose(self) -> ComposeResult:
         children: list = [
@@ -95,7 +98,7 @@ class StaffActionModal(ModalScreen):
                 )
         children.extend(
             [
-                Label("", classes="modal-feedback"),
+                Label("", id=self.feedback_widget_id, classes="modal-feedback"),
                 Horizontal(
                     Button("Cancel", id="staff-modal-cancel"),
                     Button("Submit", id="staff-modal-submit", variant="success"),
@@ -121,6 +124,45 @@ class StaffActionModal(ModalScreen):
         first_input = self.query("Input, Select").first()
         if first_input is not None:
             first_input.focus()
+        self._update_validation_feedback()
+
+    def _collect_values(self) -> dict[str, object]:
+        values: dict[str, object] = {}
+        for field in self.fields:
+            if field["kind"] == "select":
+                values[field["id"]] = self.query_one(f"#{field['id']}", Select).value
+            else:
+                values[field["id"]] = self.query_one(f"#{field['id']}", Input).value.strip()
+        return values
+
+    def _update_validation_feedback(self) -> None:
+        if self.validator is None:
+            return
+
+        values = self._collect_values()
+        feedback = self.query_one(f"#{self.feedback_widget_id}", Label)
+        submit = self.query_one(f"#{self.submit_button_id}", Button)
+        blank_select = next(
+            (
+                field
+                for field in self.fields
+                if field["kind"] == "select" and values.get(field["id"]) == Select.BLANK
+            ),
+            None,
+        )
+        if blank_select is not None:
+            feedback.update(f"Select a value for {blank_select['label']}.")
+            submit.disabled = True
+            return
+
+        error_message = self.validator(values)
+        if error_message:
+            feedback.update(error_message)
+            submit.disabled = True
+            return
+
+        feedback.update("")
+        submit.disabled = False
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "staff-modal-cancel":
@@ -134,12 +176,25 @@ class StaffActionModal(ModalScreen):
             if field["kind"] == "select":
                 select_value = self.query_one(f"#{field['id']}", Select).value
                 if select_value == Select.BLANK:
-                    self.query_one(".modal-feedback", Label).update(f"Select a value for {field['label']}.")
+                    self.query_one(f"#{self.feedback_widget_id}", Label).update(f"Select a value for {field['label']}.")
                     return
                 values[field["id"]] = select_value
             else:
                 values[field["id"]] = self.query_one(f"#{field['id']}", Input).value.strip()
+        if self.validator is not None:
+            error_message = self.validator(values)
+            if error_message:
+                self.query_one(f"#{self.feedback_widget_id}", Label).update(error_message)
+                return
         self.dismiss(values)
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        del event
+        self._update_validation_feedback()
+
+    def on_select_changed(self, event: Select.Changed) -> None:
+        del event
+        self._update_validation_feedback()
 
     def action_close_modal(self) -> None:
         self.dismiss(None)
@@ -306,6 +361,9 @@ class StaffDashboardScreen(Screen):
                     Button("DELETE USER", id="staff-delete-user-btn", variant="error", disabled=self.permission < 2),
                     Button("CREATE ACCOUNT", id="staff-create-account-btn", variant="success"),
                     Button("CLOSE ACCOUNT", id="staff-close-account-btn", variant="warning"),
+                    Button("DEPOSIT", id="staff-deposit-btn", variant="success"),
+                    Button("WITHDRAW", id="staff-withdraw-btn", variant="warning"),
+                    Button("TRANSFER", id="staff-transfer-btn", variant="primary"),
                     Button("FREEZE / UNFREEZE", id="staff-user-freeze-account-btn", variant="warning", disabled=self.permission < 2),
                     Button("REFRESH", id="staff-users-refresh-btn", variant="primary"),
                     Static("", classes="staff-actions-spacer"),
@@ -792,6 +850,158 @@ class StaffDashboardScreen(Screen):
             None,
         )
 
+    def _account_label(self, account: dict) -> str:
+        owner = account.get("owner")
+        owner_label = f"@{owner} • " if owner else ""
+        return (
+            f"{owner_label}ACC-{account['account_id']} • "
+            f"{account['account_type']} • ${float(account['balance']):,.2f}"
+        )
+
+    def _account_by_id(self, account_id: int) -> dict | None:
+        return next((account for account in self.accounts_data if account["account_id"] == account_id), None)
+
+    @staticmethod
+    def _parse_positive_amount(raw_value: object) -> tuple[float | None, str | None]:
+        try:
+            amount = float(str(raw_value).strip())
+        except ValueError:
+            return None, "Amount must be a valid number"
+        if amount <= 0:
+            return None, "Amount must be greater than zero"
+        return amount, None
+
+    def _validate_staff_deposit(self, values: dict[str, object]) -> str | None:
+        _, error = self._parse_positive_amount(values.get("deposit-amount", ""))
+        return error
+
+    def _validate_staff_withdraw(self, values: dict[str, object]) -> str | None:
+        amount, error = self._parse_positive_amount(values.get("withdraw-amount", ""))
+        if error:
+            return error
+        account_id = int(values["withdraw-account-id"])
+        account = self._account_by_id(account_id)
+        if account is None:
+            return "Select a valid source account"
+        if amount is not None and amount > float(account["balance"]):
+            return "Amount exceeds available balance"
+        return None
+
+    def _validate_staff_transfer(self, values: dict[str, object]) -> str | None:
+        amount, error = self._parse_positive_amount(values.get("transfer-amount", ""))
+        if error:
+            return error
+        from_account_id = int(values["transfer-from-account-id"])
+        to_account_id = int(values["transfer-to-account-id"])
+        if from_account_id == to_account_id:
+            return "Choose a different destination account"
+        account = self._account_by_id(from_account_id)
+        if account is None:
+            return "Select a valid source account"
+        if amount is not None and amount > float(account["balance"]):
+            return "Amount exceeds available balance"
+        return None
+
+    def _open_deposit_modal(self) -> None:
+        if self.permission < 1:
+            self.notify("Only tellers and admins can deposit funds.", title="[ ACCOUNT ]", severity="warning")
+            return
+        selected = self._selected_user_account()
+        if selected is None:
+            self.notify("Select an account first.", title="[ ACCOUNT ]", severity="warning")
+            return
+
+        options = [(self._account_label(account), account["account_id"]) for account in self.accounts_data]
+        self.app.push_screen(
+            StaffActionModal(
+                "DEPOSIT FUNDS",
+                "Deposit funds into any bank account.",
+                [
+                    {
+                        "id": "deposit-account-id",
+                        "label": "Target Account",
+                        "kind": "select",
+                        "options": options,
+                        "value": selected["account_id"],
+                    },
+                    {"id": "deposit-amount", "label": "Amount", "kind": "input", "placeholder": "0.00"},
+                ],
+                validator=self._validate_staff_deposit,
+            ),
+            self._handle_deposit,
+        )
+
+    def _open_withdraw_modal(self) -> None:
+        if self.permission < 1:
+            self.notify("Only tellers and admins can withdraw funds.", title="[ ACCOUNT ]", severity="warning")
+            return
+        selected = self._selected_user_account()
+        if selected is None:
+            self.notify("Select an account first.", title="[ ACCOUNT ]", severity="warning")
+            return
+
+        options = [(self._account_label(account), account["account_id"]) for account in self.accounts_data]
+        self.app.push_screen(
+            StaffActionModal(
+                "WITHDRAW FUNDS",
+                "Withdraw funds from any bank account.",
+                [
+                    {
+                        "id": "withdraw-account-id",
+                        "label": "Source Account",
+                        "kind": "select",
+                        "options": options,
+                        "value": selected["account_id"],
+                    },
+                    {"id": "withdraw-amount", "label": "Amount", "kind": "input", "placeholder": "0.00"},
+                ],
+                validator=self._validate_staff_withdraw,
+            ),
+            self._handle_withdraw,
+        )
+
+    def _open_transfer_modal(self) -> None:
+        if self.permission < 1:
+            self.notify("Only tellers and admins can transfer funds.", title="[ ACCOUNT ]", severity="warning")
+            return
+        selected = self._selected_user_account()
+        if selected is None:
+            self.notify("Select an account first.", title="[ ACCOUNT ]", severity="warning")
+            return
+
+        destination_accounts = [
+            account for account in self.accounts_data if account["account_id"] != selected["account_id"]
+        ]
+        if not destination_accounts:
+            self.notify("No destination accounts are available.", title="[ ACCOUNT ]", severity="warning")
+            return
+
+        self.app.push_screen(
+            StaffActionModal(
+                "TRANSFER FUNDS",
+                "Transfer funds between any two bank accounts.",
+                [
+                    {
+                        "id": "transfer-from-account-id",
+                        "label": "From Account",
+                        "kind": "select",
+                        "options": [(self._account_label(account), account["account_id"]) for account in self.accounts_data],
+                        "value": selected["account_id"],
+                    },
+                    {
+                        "id": "transfer-to-account-id",
+                        "label": "To Account",
+                        "kind": "select",
+                        "options": [(self._account_label(account), account["account_id"]) for account in destination_accounts],
+                        "value": destination_accounts[0]["account_id"],
+                    },
+                    {"id": "transfer-amount", "label": "Amount", "kind": "input", "placeholder": "0.00"},
+                ],
+                validator=self._validate_staff_transfer,
+            ),
+            self._handle_transfer,
+        )
+
     def _open_create_user_modal(self) -> None:
         if self.permission < 2:
             self.notify("Only admins can create users.", title="[ USER ]", severity="warning")
@@ -897,6 +1107,101 @@ class StaffDashboardScreen(Screen):
         self.current_page = "users-page"
         self._refresh_dashboard_view()
         self.notify(f"Created ACC-{created['account_id']} for @{created['owner']}.", title="[ ACCOUNT ]")
+
+    def _handle_deposit(self, result: dict | None) -> None:
+        if result is None:
+            return
+        try:
+            account_id = int(result["deposit-account-id"])
+            amount = float(str(result["deposit-amount"]).strip() or "0")
+            deposit_result = self._request(
+                "POST",
+                "/bank/deposit",
+                json={"account_id": account_id, "amount": amount},
+            )
+        except (KeyError, ValueError, StaffApiError) as error:
+            if isinstance(error, StaffApiError) and error.session_expired:
+                self._handle_session_expired()
+                return
+            self.notify(str(error), title="[ ERROR ]", severity="error")
+            return
+
+        selected_account = next((account for account in self.accounts_data if account["account_id"] == account_id), None)
+        if selected_account is not None:
+            self.selected_user_id = selected_account["user_id"]
+            self.selected_user_account_id = account_id
+        self.current_page = "users-page"
+        self._refresh_dashboard_view()
+        self.notify(
+            f"Deposited ${amount:,.2f} into ACC-{account_id}. New balance: ${float(deposit_result['balance']):,.2f}.",
+            title="[ DEPOSIT ]",
+        )
+
+    def _handle_withdraw(self, result: dict | None) -> None:
+        if result is None:
+            return
+        try:
+            account_id = int(result["withdraw-account-id"])
+            amount = float(str(result["withdraw-amount"]).strip() or "0")
+            withdraw_result = self._request(
+                "POST",
+                "/bank/withdraw",
+                json={"account_id": account_id, "amount": amount},
+            )
+        except (KeyError, ValueError, StaffApiError) as error:
+            if isinstance(error, StaffApiError) and error.session_expired:
+                self._handle_session_expired()
+                return
+            self.notify(str(error), title="[ ERROR ]", severity="error")
+            return
+
+        selected_account = next((account for account in self.accounts_data if account["account_id"] == account_id), None)
+        if selected_account is not None:
+            self.selected_user_id = selected_account["user_id"]
+            self.selected_user_account_id = account_id
+        self.current_page = "users-page"
+        self._refresh_dashboard_view()
+        self.notify(
+            f"Withdrew ${amount:,.2f} from ACC-{account_id}. New balance: ${float(withdraw_result['balance']):,.2f}.",
+            title="[ WITHDRAW ]",
+        )
+
+    def _handle_transfer(self, result: dict | None) -> None:
+        if result is None:
+            return
+        try:
+            from_account_id = int(result["transfer-from-account-id"])
+            to_account_id = int(result["transfer-to-account-id"])
+            amount = float(str(result["transfer-amount"]).strip() or "0")
+            transfer_result = self._request(
+                "POST",
+                "/bank/transfer",
+                json={
+                    "from_account_id": from_account_id,
+                    "to_account_id": to_account_id,
+                    "amount": amount,
+                },
+            )
+        except (KeyError, ValueError, StaffApiError) as error:
+            if isinstance(error, StaffApiError) and error.session_expired:
+                self._handle_session_expired()
+                return
+            self.notify(str(error), title="[ ERROR ]", severity="error")
+            return
+
+        from_account = next((account for account in self.accounts_data if account["account_id"] == from_account_id), None)
+        if from_account is not None:
+            self.selected_user_id = from_account["user_id"]
+            self.selected_user_account_id = from_account_id
+        self.current_page = "users-page"
+        self._refresh_dashboard_view()
+        self.notify(
+            (
+                f"Transferred ${amount:,.2f} from ACC-{from_account_id} to ACC-{to_account_id}. "
+                f"Source balance: ${float(transfer_result['from_account_balance']):,.2f}."
+            ),
+            title="[ TRANSFER ]",
+        )
 
     def _delete_selected_user(self) -> None:
         if self.permission < 2:
@@ -1107,6 +1412,12 @@ class StaffDashboardScreen(Screen):
             self._open_create_account_modal()
         elif button_id == "staff-close-account-btn":
             self._close_selected_account()
+        elif button_id == "staff-deposit-btn":
+            self._open_deposit_modal()
+        elif button_id == "staff-withdraw-btn":
+            self._open_withdraw_modal()
+        elif button_id == "staff-transfer-btn":
+            self._open_transfer_modal()
         elif button_id == "staff-user-freeze-account-btn":
             selected = self._selected_user_account()
             self._toggle_account_freeze(selected["account_id"] if selected else None)
